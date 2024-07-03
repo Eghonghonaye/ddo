@@ -22,6 +22,7 @@ use std::fs::File;
 use std::io::{BufRead, BufReader, Lines, Read};
 
 use ddo::*;
+use std::sync::Arc;
 
 use crate::graph::Graph;
 
@@ -30,6 +31,9 @@ pub struct McpState {
     pub benef  : Vec<isize>,
     pub depth  : u16,
 }
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
+pub struct McpDecisionState;
 
 // Define a few constants to improve readability
 const S      : isize = 1;
@@ -44,6 +48,7 @@ impl Mcp {
 }
 impl Problem for Mcp {
     type State = McpState;
+    type DecisionState = McpDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.graph.nb_vertices
@@ -57,16 +62,16 @@ impl Problem for Mcp {
         self.graph.sum_of_negative_edges()
     }
 
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback) {
+    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>) {
         if state.depth == 0 { 
-            f.apply(Decision{variable, value: S});
+            f.apply(Arc::new(Decision{variable, value: S, state : None}));
         } else { 
-            f.apply(Decision{variable, value: S});
-            f.apply(Decision{variable, value: T});
+            f.apply(Arc::new(Decision{variable, value: S, state : None}));
+            f.apply(Arc::new(Decision{variable, value: T, state : None}));
         }
     }
 
-    fn transition(&self, state: &McpState, d: Decision) -> McpState {
+    fn transition(&self, state: &McpState, d: &Decision<McpDecisionState>) -> McpState {
         let mut benefits = vec![0; self.nb_variables()];
         
         let x = d.variable.id();
@@ -77,7 +82,7 @@ impl Problem for Mcp {
         McpState {depth: 1 + state.depth, benef: benefits}
     }
 
-    fn transition_cost(&self, state: &McpState, _: &Self::State, d: Decision) -> isize {
+    fn transition_cost(&self, state: &McpState, _: &Self::State, d: &Decision<McpDecisionState>) -> isize {
         match d.value {
             S => if state.depth == 0 { 0 } else { self.branch_on_s(state, d) },
             T => if state.depth == 0 { 0 } else { self.branch_on_t(state, d) },
@@ -96,7 +101,7 @@ impl Problem for Mcp {
 }
 // private methods
 impl Mcp {
-    fn branch_on_s(&self, state: &McpState, d: Decision) -> isize {
+    fn branch_on_s(&self, state: &McpState, d: &Decision<McpDecisionState>) -> isize {
         let n = self.nb_variables();
         let x = d.variable.id();
 
@@ -112,7 +117,7 @@ impl Mcp {
         }
         res + sum
     }
-    fn branch_on_t(&self, state: &McpState, d: Decision) -> isize {
+    fn branch_on_t(&self, state: &McpState, d: &Decision<McpDecisionState>) -> isize {
         let n = self.nb_variables();
         let x = d.variable.id();
 
@@ -154,6 +159,7 @@ impl <B: BufRead> From<Lines<B>> for Mcp {
 pub struct McpRanking;
 impl StateRanking for McpRanking {
     type State = McpState;
+    type DecisionState = McpDecisionState;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
         let xa = a.benef.iter().map(|v| v.abs()).sum::<isize>();

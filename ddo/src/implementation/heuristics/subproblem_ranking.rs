@@ -44,6 +44,7 @@ use crate::{StateRanking, SubProblemRanking, SubProblem};
 /// struct CharRanking;
 /// impl StateRanking for CharRanking {
 ///     type State = char;
+///     type DecisionState = char;
 ///     fn compare(&self, a: &Self::State, b: &Self::State) -> Ordering {
 ///         a.cmp(b)
 ///     }
@@ -82,8 +83,9 @@ impl <'a, O: StateRanking> MaxUB<'a, O> {
 }
 impl<O: StateRanking> SubProblemRanking for MaxUB<'_, O> {
     type State = O::State;
+    type DecisionState = O::DecisionState;
 
-    fn compare(&self, l: &SubProblem<O::State>, r: &SubProblem<O::State>) -> Ordering {
+    fn compare(&self, l: &SubProblem<O::State,O::DecisionState>, r: &SubProblem<O::State,O::DecisionState>) -> Ordering {
         l.ub.cmp(&r.ub)
             .then_with(|| l.value.cmp(&r.value))
             .then_with(|| self.0.compare(&l.state, &r.state))
@@ -106,6 +108,7 @@ mod test_maxub {
     struct CharRanking;
     impl StateRanking for CharRanking {
         type State = char;
+        type DecisionState = char;
 
         fn compare(&self, a: &Self::State, b: &Self::State) -> Ordering {
             a.cmp(b)

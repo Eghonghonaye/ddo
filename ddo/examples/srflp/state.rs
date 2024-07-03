@@ -35,3 +35,6 @@ pub struct SrflpState {
     /// This is the 'depth' in the arrangement, the number of departments that have already been placed
     pub depth: usize
 }
+
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct SrflpDecisionState;

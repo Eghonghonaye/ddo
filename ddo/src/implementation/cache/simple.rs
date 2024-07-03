@@ -25,6 +25,7 @@
 //! implement in order to be able to use our library.
 
 use std::{sync::Arc, hash::Hash};
+use std::marker::PhantomData;
 
 use dashmap::DashMap;
 
@@ -33,22 +34,24 @@ use crate::{Cache, Threshold};
 /// Simple implementation of Cache using one hashmap for each layer,
 /// each protected with a read-write lock.
 #[derive(Debug)]
-pub struct SimpleCache<T>
+pub struct SimpleCache<T,X>
 where T: Hash + Eq {
     thresholds_by_layer: Vec<DashMap<Arc<T>, Threshold, fxhash::FxBuildHasher>>,
+    phantom: PhantomData<X>
 }
-impl <T> Default for SimpleCache<T> 
+impl <T,X> Default for SimpleCache<T,X> 
 where T: Hash + Eq {
     fn default() -> Self {
-        Self { thresholds_by_layer: vec![] }
+        Self { thresholds_by_layer: vec![],phantom: PhantomData}
     }
 }
 
-impl<T> Cache for SimpleCache<T>
+impl<T,X> Cache for SimpleCache<T,X>
 where T: Hash + Eq {
     type State = T;
+    type DecisionState = X;
 
-    fn initialize(&mut self, problem: &dyn crate::Problem<State = Self::State>) {
+    fn initialize(&mut self, problem: &dyn crate::Problem<State = Self::State,DecisionState = Self::DecisionState>) {
         let nb_variables = problem.nb_variables();
         for _ in 0..=nb_variables {
             self.thresholds_by_layer.push(Default::default());

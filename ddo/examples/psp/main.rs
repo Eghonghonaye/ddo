@@ -21,10 +21,11 @@
 //! using ddo. It is a fairly simple example but it features most of the aspects you will
 //! want to copy when implementing your own solver.
 
-use std::{time::{Duration, Instant}};
+use std::time::{Duration, Instant};
 
 use clap::Parser;
 use ddo::*;
+// use std::sync::Arc;
 
 use crate::{io_utils::read_instance, model::{PspRelax, PspRanking}};
 
@@ -65,7 +66,7 @@ struct Args {
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
 /// in the overall problem.
-fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State> + Send + Sync> {
+fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State,P::DecisionState> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {

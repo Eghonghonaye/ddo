@@ -43,6 +43,9 @@ pub struct KnapsackState {
     capacity: usize
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct KnapsackDecisionState;
+
 /// This structure represents a particular instance of the knapsack problem.
 /// This is the structure that will implement the knapsack model.
 /// 
@@ -86,16 +89,17 @@ const LEAVE_IT_OUT: isize = 0;
 /// encouraged to go checking the documentation of the `Problem` trait.
 impl Problem for Knapsack {
     type State = KnapsackState;
+    type DecisionState = KnapsackDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.profit.len()
     }
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
     {
         if state.capacity >= self.weight[variable.id()] {
-            f.apply(Decision { variable, value: TAKE_IT });
+            f.apply(Arc::new(Decision { variable, value: TAKE_IT, state : None }));
         }
-        f.apply(Decision { variable, value: LEAVE_IT_OUT });
+        f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state : None }));
     }
     fn initial_state(&self) -> Self::State {
         KnapsackState{ depth: 0, capacity: self.capacity }
@@ -103,7 +107,7 @@ impl Problem for Knapsack {
     fn initial_value(&self) -> isize {
         0
     }
-    fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+    fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
         let mut ret = *state;
         ret.depth  += 1;
         if dec.value == TAKE_IT { 
@@ -111,7 +115,7 @@ impl Problem for Knapsack {
         }
         ret
     }
-    fn transition_cost(&self, _state: &Self::State, _: &Self::State, dec: Decision) -> isize {
+    fn transition_cost(&self, _state: &Self::State, _: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
         self.profit[dec.variable.id()] * dec.value
     }
 
@@ -146,12 +150,13 @@ impl Problem for Knapsack {
 pub struct KPRelax<'a>{pub pb: &'a Knapsack}
 impl Relaxation for KPRelax<'_> {
     type State = KnapsackState;
+    type DecisionState = KnapsackDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
         states.max_by_key(|node| node.capacity).copied().unwrap()
     }
 
-    fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+    fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
         cost
     }
 
@@ -187,6 +192,7 @@ impl Relaxation for KPRelax<'_> {
 pub struct KPRanking;
 impl StateRanking for KPRanking {
     type State = KnapsackState;
+    type DecisionState = KnapsackDecisionState;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
         a.capacity.cmp(&b.capacity)
@@ -301,7 +307,7 @@ pub fn read_instance<P: AsRef<Path>>(fname: P) -> Result<Knapsack, Error> {
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
 /// in the overall problem.
-fn max_width<T>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T> + Send + Sync> {
+fn max_width<T,X>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T,X> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {

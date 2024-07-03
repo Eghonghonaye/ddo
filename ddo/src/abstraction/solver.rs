@@ -20,16 +20,17 @@
 //! This module defines the `Solver` trait.
 
 use crate::{Decision, Completion};
+use std::sync::Arc;
 
 /// A decision is nothing but a sequence of decision covering all problem
 /// variables.
-pub type Solution = Vec<Decision>;
+pub type Solution<T> = Vec<Arc<Decision<T>>>;
 
 /// This is the solver abstraction. It is implemented by a structure that 
 /// implements the branch-and-bound with MDD paradigm (or possibly an other
 /// optimization algorithm -- currently only branch-and-bound with DD) to
 /// find the best possible solution to a given problem.
-pub trait Solver {
+pub trait Solver<T> {
     /// This method orders the solver to search for the optimal solution among
     /// all possibilities. It returns a structure standing for the outcome of
     /// the attempted maximization. Such a `Completion` may either be marked 
@@ -62,7 +63,7 @@ pub trait Solver {
     /// That is, it returns the vector of decision which maximizes the value 
     /// of the objective function (sum of transition costs + initial value).
     /// It returns `None` when the problem admits no feasible solution.
-    fn best_solution(&self) -> Option<Solution>;
+    fn best_solution(&self) -> Option<Solution<T>>;
 
     /// Returns the best lower bound that has been identified so far.
     /// In case where no solution has been found, it should return the minimum
@@ -74,7 +75,7 @@ pub trait Solver {
     fn best_upper_bound(&self) -> isize;
 
     /// Sets a primal (best known value and solution) of the problem.
-    fn set_primal(&mut self, value: isize, solution: Solution);
+    fn set_primal(&mut self, value: isize, solution: Solution<T>);
 
     /// Computes the optimality gap
     fn gap(&self) -> f32 {

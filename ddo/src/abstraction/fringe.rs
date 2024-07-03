@@ -25,15 +25,16 @@ use crate::SubProblem;
 /// the nodes remaining to explore.
 pub trait Fringe {
     type State;
+    type DecisionState;
 
     /// This is how you push a node onto the fringe.
-    fn push(&mut self, node: SubProblem<Self::State>);
+    fn push(&mut self, node: SubProblem<Self::State,Self::DecisionState>);
     /// This method yields the most promising node from the fringe.
     /// # Note:
     /// The solvers rely on the assumption that a fringe will pop nodes in
     /// descending upper bound order. Hence, it is a requirement for any fringe
     /// implementation to enforce that requirement.
-    fn pop(&mut self) -> Option<SubProblem<Self::State>>;
+    fn pop(&mut self) -> Option<SubProblem<Self::State,Self::DecisionState>>;
     /// This method clears the fringe: it removes all nodes from the queue.
     fn clear(&mut self);
     /// Yields the length of the queue.

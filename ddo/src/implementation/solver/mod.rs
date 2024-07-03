@@ -26,22 +26,22 @@ pub use sequential::*;
 use crate::{DefaultMDDLEL, EmptyCache, SimpleCache, DefaultMDDFC, Pooled};
 
 /// A type alias to emphasize that this is the solver that should be used by default.
-pub type DefaultSolver<'a, State>        = ParNoCachingSolverLel<'a, State>;
-pub type DefaultCachingSolver<'a, State> = ParCachingSolverFc<'a, State>;
+pub type DefaultSolver<'a, State, DecisionState>        = ParNoCachingSolverLel<'a, State, DecisionState,>;
+pub type DefaultCachingSolver<'a, State, DecisionState> = ParCachingSolverFc<'a, State, DecisionState>;
 
-pub type ParNoCachingSolverLel<'a, State>   = ParallelSolver<'a, State, DefaultMDDLEL<State>, EmptyCache<State>>;
-pub type ParNoCachingSolverFc<'a, State>    = ParallelSolver<'a, State, DefaultMDDFC<State>,  EmptyCache<State>>;
-pub type ParNoCachingSolverPooled<'a, State>= ParallelSolver<'a, State, Pooled<State>,        EmptyCache<State>>;
+pub type ParNoCachingSolverLel<'a, State, DecisionState>   = ParallelSolver<'a, State, DecisionState, DefaultMDDLEL<State, DecisionState>, EmptyCache<State, DecisionState,>>;
+pub type ParNoCachingSolverFc<'a, State, DecisionState>    = ParallelSolver<'a, State, DecisionState, DefaultMDDFC<State, DecisionState>,  EmptyCache<State, DecisionState>>;
+pub type ParNoCachingSolverPooled<'a, State, DecisionState>= ParallelSolver<'a, State, DecisionState, Pooled<State, DecisionState>,        EmptyCache<State, DecisionState>>;
 
-pub type ParCachingSolverLel<'a, State>   = ParallelSolver<'a, State, DefaultMDDLEL<State>, SimpleCache<State>>;
-pub type ParCachingSolverFc<'a, State>    = ParallelSolver<'a, State, DefaultMDDFC<State>,  SimpleCache<State>>;
-pub type ParCachingSolverPooled<'a, State>= ParallelSolver<'a, State, Pooled<State>,        SimpleCache<State>>;
+pub type ParCachingSolverLel<'a, State, DecisionState>   = ParallelSolver<'a, State, DecisionState, DefaultMDDLEL<State, DecisionState>, SimpleCache<State, DecisionState>>;
+pub type ParCachingSolverFc<'a, State, DecisionState>    = ParallelSolver<'a, State, DecisionState, DefaultMDDFC<State, DecisionState>,  SimpleCache<State, DecisionState>>;
+pub type ParCachingSolverPooled<'a, State, DecisionState>= ParallelSolver<'a, State, DecisionState, Pooled<State, DecisionState>,        SimpleCache<State, DecisionState>>;
 
 
-pub type SeqNoCachingSolverLel<'a, State>   = SequentialSolver<'a, State, DefaultMDDLEL<State>, EmptyCache<State>>;
-pub type SeqNoCachingSolverFc<'a, State>    = SequentialSolver<'a, State, DefaultMDDFC<State>,  EmptyCache<State>>;
-pub type SeqNoCachingSolverPooled<'a, State>= SequentialSolver<'a, State, Pooled<State>,        EmptyCache<State>>;
+pub type SeqNoCachingSolverLel<'a, State, DecisionState>   = SequentialSolver<'a, State, DecisionState, DefaultMDDLEL<State, DecisionState>, EmptyCache<State, DecisionState>>;
+pub type SeqNoCachingSolverFc<'a, State, DecisionState>    = SequentialSolver<'a, State, DecisionState, DefaultMDDFC<State, DecisionState>,  EmptyCache<State, DecisionState>>;
+pub type SeqNoCachingSolverPooled<'a, State, DecisionState>= SequentialSolver<'a, State, DecisionState, Pooled<State, DecisionState>,        EmptyCache<State, DecisionState>>;
 
-pub type SeqCachingSolverLel<'a, State>   = SequentialSolver<'a, State, DefaultMDDLEL<State>, SimpleCache<State>>;
-pub type SeqCachingSolverFc<'a, State>    = SequentialSolver<'a, State, DefaultMDDFC<State>,  SimpleCache<State>>;
-pub type SeqCachingSolverPooled<'a, State>= SequentialSolver<'a, State, Pooled<State>,        SimpleCache<State>>;
+pub type SeqCachingSolverLel<'a, State, DecisionState>   = SequentialSolver<'a, State, DecisionState, DefaultMDDLEL<State, DecisionState>, SimpleCache<State, DecisionState>>;
+pub type SeqCachingSolverFc<'a, State, DecisionState>    = SequentialSolver<'a, State, DecisionState, DefaultMDDFC<State, DecisionState>,  SimpleCache<State, DecisionState>>;
+pub type SeqCachingSolverPooled<'a, State, DecisionState>= SequentialSolver<'a, State, DecisionState, Pooled<State, DecisionState>,        SimpleCache<State, DecisionState>>;

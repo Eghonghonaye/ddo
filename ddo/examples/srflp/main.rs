@@ -26,7 +26,7 @@ use std::{time::{Duration, Instant}};
 use clap::Parser;
 use ddo::*;
 use heuristics::SrflpWidth;
-use state::SrflpState;
+use state::{SrflpDecisionState, SrflpState};
 
 use crate::{io_utils::read_instance, model::Srflp, relax::SrflpRelax, heuristics::SrflpRanking};
 
@@ -60,7 +60,7 @@ struct Args {
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
 /// in the overall problem.
-fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<SrflpState> + Send + Sync> {
+fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<SrflpState,SrflpDecisionState> + Send + Sync> {
     if let Some(w) = w {
         Box::new(SrflpWidth::new(p.nb_variables(), w))
     } else {

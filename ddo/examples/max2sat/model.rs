@@ -23,6 +23,7 @@ use std::cmp::{max, min, Ordering};
 use std::ops::{Index, IndexMut};
 
 use ddo::*;
+use std::sync::Arc;
 
 use crate::data::Weighed2Sat;
 
@@ -60,6 +61,10 @@ pub struct State {
     pub depth: usize,
     pub substates: Vec<isize>,
 }
+
+#[derive(Debug, Hash, Eq, PartialEq, Clone)]
+pub struct DecisionState;
+
 /// For the sake of convenience, a state can be indexd as if it were a plain vector
 impl Index<Variable> for State {
     type Output = isize;
@@ -251,6 +256,7 @@ impl Max2Sat {
 
 impl Problem for Max2Sat {
     type State = State;
+    type DecisionState = DecisionState;
 
     fn nb_variables(&self) -> usize {
         self.nb_vars
@@ -267,12 +273,12 @@ impl Problem for Max2Sat {
         // sum of all tautologies
         self.initial
     }
-    fn for_each_in_domain(&self, variable: Variable, _state: &Self::State, f: &mut dyn DecisionCallback) {
-        f.apply(Decision { variable, value: T });
-        f.apply(Decision { variable, value: F });
+    fn for_each_in_domain(&self, variable: Variable, _state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>) {
+        f.apply(Arc::new(Decision { variable, value: T, state : None}));
+        f.apply(Arc::new(Decision { variable, value: F, state : None}));
     }
 
-    fn transition(&self, state: &State, d: Decision) -> State {
+    fn transition(&self, state: &State, d: &Decision<Self::DecisionState>) -> State {
         let k = d.variable;
         let mut ret = state.clone();
         ret.depth += 1;
@@ -291,7 +297,7 @@ impl Problem for Max2Sat {
         ret
     }
 
-    fn transition_cost(&self, state: &State, _: &Self::State, d: Decision) -> isize {
+    fn transition_cost(&self, state: &State, _: &Self::State, d: &Decision<Self::DecisionState>) -> isize {
         let k = d.variable;
         let vars = self.varset(state);
         if d.value == F {
@@ -407,11 +413,12 @@ mod tests {
         assert_eq!(expected, root);
 
         //vars.remove(Variable(0));
-        let dec_f = Decision {
+        let dec_f = Arc::new(Decision {
             variable: Variable(0),
             value: F,
-        };
-        let nod_f = problem.transition(&root, dec_f);
+            state: None
+        });
+        let nod_f = problem.transition(&root, &dec_f);
 
         let expected = State {
             depth: 1,
@@ -419,11 +426,12 @@ mod tests {
         };
         assert_eq!(expected, nod_f);
 
-        let dec_t = Decision {
+        let dec_t = Arc::new(Decision {
             variable: Variable(0),
             value: 1,
-        };
-        let nod_t = problem.transition(&root, dec_t);
+            state: None
+        });
+        let nod_t = problem.transition(&root, &dec_t);
         let expected = State {
             depth: 1,
             substates: vec![0, 0, 0],

@@ -48,25 +48,25 @@ pub enum CompilationType {
 }
 
 /// The set of parameters used to tweak the compilation of a MDD
-pub struct CompilationInput<'a, State> {   
+pub struct CompilationInput<'a, State, DecisionState> {   
     /// How is the mdd being compiled ?
     pub comp_type: CompilationType,
     /// A reference to the original problem we try to maximize
-    pub problem: &'a dyn Problem<State = State>,
+    pub problem: &'a dyn Problem<State = State, DecisionState = DecisionState>,
     /// The relaxation which we use to merge nodes in a relaxed dd
-    pub relaxation: &'a dyn Relaxation<State = State>,
+    pub relaxation: &'a dyn Relaxation<State = State, DecisionState = DecisionState>,
     /// The state ranking heuristic to chose the nodes to keep and those to discard
-    pub ranking: &'a dyn StateRanking<State = State>,
+    pub ranking: &'a dyn StateRanking<State = State, DecisionState = DecisionState>,
     /// The cutoff used to decide when to stop trying to solve the problem
     pub cutoff: &'a dyn Cutoff,
     /// What is the maximum width of the mdd ?
     pub max_width: usize,
     /// The subproblem whose state space must be explored
-    pub residual: &'a SubProblem<State>,
+    pub residual: &'a SubProblem<State,DecisionState>,
     /// The best known lower bound at the time when the dd is being compiled
     pub best_lb: isize,
     /// Data structure containing info about past compilations used to prune the search
-    pub cache: &'a dyn Cache<State = State>,
+    pub cache: &'a dyn Cache<State = State, DecisionState = DecisionState>,
     pub dominance: &'a dyn DominanceChecker<State = State>,
 }
 
@@ -76,10 +76,11 @@ pub trait DecisionDiagram {
     /// This associated type corresponds to the `State` type of the problems 
     /// that can be solved when using this DD.
     type State;
+    type DecisionState;
 
     /// This method provokes the compilation of the DD based on the given 
     /// compilation input (compilation type, and root subproblem)
-    fn compile(&mut self, input: &CompilationInput<Self::State>) 
+    fn compile(&mut self, input: &CompilationInput<Self::State,Self::DecisionState>) 
         -> Result<Completion, Reason>;
     /// Returns true iff the DD which has been compiled is an exact DD.
     fn is_exact(&self) -> bool;
@@ -91,7 +92,7 @@ pub trait DecisionDiagram {
     /// Returns the best solution of this subproblem as a sequence of decision
     /// maximizing the objective value. When no feasible solution exists in the
     /// approximate DD, it returns the value None instead.
-    fn best_solution(&self) -> Option<Solution>;
+    fn best_solution(&self) -> Option<Solution<Self::DecisionState>>;
     /// Returns the value of the objective function for the best exact node in the DD
     /// or None when no feasible solution has been identified (no r-t path) either because
     /// the subproblem at the root of this DD is infeasible or because restriction/relaxation
@@ -100,7 +101,7 @@ pub trait DecisionDiagram {
     /// Returns the best exact solution of this subproblem as a sequence of decision
     /// maximizing the objective value. When no feasible solution exists in the
     /// approximate DD, it returns the value None instead.
-    fn best_exact_solution(&self) -> Option<Solution>;
+    fn best_exact_solution(&self) -> Option<Solution<Self::DecisionState>>;
     /// Iteratively applies the given function `func` to each element of the
     /// exact cut-set that was computed during DD compilation.
     ///
@@ -110,5 +111,5 @@ pub trait DecisionDiagram {
     /// this method will be called at most once per relaxed DD compilation.
     fn drain_cutset<F>(&mut self, func: F)
     where
-        F: FnMut(SubProblem<Self::State>);
+        F: FnMut(SubProblem<Self::State,Self::DecisionState>);
 }

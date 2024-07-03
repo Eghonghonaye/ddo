@@ -72,7 +72,7 @@ fn cutoff(timeout: Option<u64>) -> Box<dyn Cutoff + Send + Sync> {
         Box::new(NoCutoff)
     }
 }
-fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State> + Send + Sync> {
+fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State,P::DecisionState> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {

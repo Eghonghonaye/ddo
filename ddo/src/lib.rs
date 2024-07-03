@@ -71,6 +71,7 @@
 //! implements the dynamic programming model for the problem at hand.
 //! ```
 //! use ddo::*;
+//! use std::sync::Arc;
 //! #
 //! # #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 //! # struct KnapsackState {
@@ -113,6 +114,7 @@
 //!     // a state of the knapsack problem is `KnapsackState`. Hence the state-space
 //!     // of the problem consists of the set of KnapsackStates that can be represented
 //!     type State = KnapsackState;
+//!     type DecisionState = char;
 //! 
 //!     // This method is used to tell the number of variables in the knapsack instance
 //!     // you are willing to solve. In the literature, it is often referred to as 'N'.
@@ -134,7 +136,7 @@
 //!     // This method implements a transition in the DP model. It yields a new sate
 //!     // based on a decision (affectation of a value to a variable) which is made from
 //!     // a given state. 
-//!     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+//!     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 //!         let mut ret = state.clone();
 //!         ret.depth  += 1;
 //!         if dec.value == TAKE_IT { 
@@ -145,7 +147,7 @@
 //!     // This method is analogous to the transition function. But instead to returning
 //!     // the next state when a decision is made, it returns the "cost", that is the 
 //!     // impact of making that decision on the objective function.
-//!     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+//!     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 //!         self.profit[dec.variable.id()] as isize * dec.value
 //!     }
 //!     // This method is used to determine the order in which the variables will be branched
@@ -164,13 +166,13 @@
 //!     // designed to perform a call to the callback `f` for each possible decision regarding
 //!     // a given state and variable. In other words, it calls the callback `f` for each value
 //!     // in the domain of `variable` given that the current state is `state`.
-//!     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+//!     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 //!     {
 //!         if state.capacity >= self.weight[variable.id()] {
-//!             f.apply(Decision { variable, value: TAKE_IT });
-//!             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+//!             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+//!             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 //!         } else {
-//!             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+//!             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 //!         }
 //!     }
 //! }
@@ -190,6 +192,7 @@
 //!
 //! ```
 //! # use ddo::*;
+//! # use std::sync::Arc;
 //! #
 //! # #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 //! # struct KnapsackState {
@@ -208,6 +211,8 @@
 //! # 
 //! # impl Problem for Knapsack {
 //! #     type State = KnapsackState;
+//! #     type DecisionState = char;
+//! #
 //! #     fn nb_variables(&self) -> usize {
 //! #         self.profit.len()
 //! #     }
@@ -217,7 +222,7 @@
 //! #     fn initial_value(&self) -> isize {
 //! #         0
 //! #     }
-//! #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+//! #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 //! #         let mut ret = state.clone();
 //! #         ret.depth  += 1;
 //! #         if dec.value == TAKE_IT { 
@@ -225,7 +230,7 @@
 //! #         }
 //! #         ret
 //! #     }
-//! #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+//! #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 //! #         self.profit[dec.variable.id()] as isize * dec.value
 //! #     }
 //! #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -236,13 +241,13 @@
 //! #             None
 //! #         }
 //! #     }
-//! #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+//! #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 //! #     {
 //! #         if state.capacity >= self.weight[variable.id()] {
-//! #             f.apply(Decision { variable, value: TAKE_IT });
-//! #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+//! #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None  }));
+//! #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None  }));
 //! #         } else {
-//! #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+//! #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 //! #         }
 //! #     }
 //! # }
@@ -252,6 +257,7 @@
 //!     // Just like the Problem definition which told us that its state spaces
 //!     // consisted of all the possible KnapsackStates.
 //!     type State = KnapsackState;
+//!     type DecisionState = char;
 //!     
 //!     // This method creates and returns a new KnapsackState that will stand for
 //!     // all the states returned by the 'states' iterator. The newly created state
@@ -265,7 +271,7 @@
 //!     // the cost of the relaxed edge (that is you wont offset any cost on the entering
 //!     // edges as that wont be required by your relaxation. But is some -- infrequent -- cases
 //!     // your model will require that you do something smart here). 
-//!     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+//!     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 //!         cost
 //!     }
 //! }
@@ -296,6 +302,7 @@
 //!     // This associated type has the same meaning as in the problem and 
 //!     // relaxation definitions.
 //!     type State = KnapsackState;
+//!     type DecisionState = char;
 //!     
 //!     // It compares two states and returns an ordering. Greater means that
 //!     // state a is preferred over state b. Less means that state b should be 
@@ -332,6 +339,8 @@
 //! # 
 //! # impl Problem for Knapsack {
 //! #     type State = KnapsackState;
+//! #     type DecisionState = char;
+//! #
 //! #     fn nb_variables(&self) -> usize {
 //! #         self.profit.len()
 //! #     }
@@ -341,7 +350,7 @@
 //! #     fn initial_value(&self) -> isize {
 //! #         0
 //! #     }
-//! #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+//! #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 //! #         let mut ret = state.clone();
 //! #         ret.depth  += 1;
 //! #         if dec.value == TAKE_IT { 
@@ -349,7 +358,7 @@
 //! #         }
 //! #         ret
 //! #     }
-//! #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+//! #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 //! #         self.profit[dec.variable.id()] as isize * dec.value
 //! #     }
 //! #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -360,24 +369,26 @@
 //! #             None
 //! #         }
 //! #     }
-//! #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+//! #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 //! #     {
 //! #         if state.capacity >= self.weight[variable.id()] {
-//! #             f.apply(Decision { variable, value: TAKE_IT });
-//! #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+//! #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None  }));
+//! #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None  }));
 //! #         } else {
-//! #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+//! #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None  }));
 //! #         }
 //! #     }
 //! # }
 //! # struct KPRelax<'a>{pb: &'a Knapsack}
 //! # impl Relaxation for KPRelax<'_> {
 //! #     type State = KnapsackState;
+//! #     type DecisionState = char;
+//! #
 //! # 
 //! #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 //! #         states.max_by_key(|node| node.capacity).copied().unwrap()
 //! #     }
-//! #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+//! #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 //! #         cost
 //! #     }
 //! # }
@@ -385,6 +396,7 @@
 //! # struct KPRanking;
 //! # impl StateRanking for KPRanking {
 //! #     type State = KnapsackState;
+//! #     type DecisionState = char;
 //! #     
 //! #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 //! #         a.capacity.cmp(&b.capacity)

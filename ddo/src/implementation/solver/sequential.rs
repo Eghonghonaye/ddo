@@ -31,13 +31,13 @@ use std::{sync::Arc, hash::Hash};
 use crate::{Fringe, Decision, Problem, Relaxation, StateRanking, WidthHeuristic, Cutoff, SubProblem, DecisionDiagram, CompilationInput, CompilationType, Solver, Solution, Completion, Reason, Cache, EmptyCache, DefaultMDDLEL, DominanceChecker};
 
 /// The workload a thread can get from the shared state
-enum WorkLoad<T> {
+enum WorkLoad<T,X> {
     /// There is no work left to be done: you can safely terminate
     Complete,
     /// The work must stop because of an external cutoff
     Aborted,
     /// The item to process
-    WorkItem { node: SubProblem<T> },
+    WorkItem { node: SubProblem<T,X> },
 }
 
 /// This is the structure implementing an single-threaded MDD solver.
@@ -64,6 +64,8 @@ enum WorkLoad<T> {
 /// # 
 /// # impl Problem for Knapsack {
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
+/// 
 /// #     fn nb_variables(&self) -> usize {
 /// #         self.profit.len()
 /// #     }
@@ -73,7 +75,7 @@ enum WorkLoad<T> {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -81,7 +83,7 @@ enum WorkLoad<T> {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -92,24 +94,25 @@ enum WorkLoad<T> {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// # }
 /// # struct KPRelax<'a>{pb: &'a Knapsack}
 /// # impl Relaxation for KPRelax<'_> {
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// # 
 /// #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 /// #         states.max_by_key(|node| node.capacity).copied().unwrap()
 /// #     }
-/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 /// #         cost
 /// #     }
 /// # }
@@ -117,6 +120,7 @@ enum WorkLoad<T> {
 /// # struct KPRanking;
 /// # impl StateRanking for KPRanking {
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     
 /// #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 /// #         a.capacity.cmp(&b.capacity)
@@ -199,20 +203,20 @@ enum WorkLoad<T> {
 ///     }
 /// }
 /// ```
-pub struct SequentialSolver<'a, State, D = DefaultMDDLEL<State>, C = EmptyCache<State>> 
-where D: DecisionDiagram<State = State> + Default,
-      C: Cache<State = State> + Default,
+pub struct SequentialSolver<'a, State, DecisionState, D = DefaultMDDLEL<State,DecisionState>, C = EmptyCache<State,DecisionState>,> 
+where D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
+      C: Cache<State = State,DecisionState = DecisionState> + Default,
 {
     /// A reference to the problem being solved with branch-and-bound MDD
-    problem: &'a (dyn Problem<State = State>),
+    problem: &'a (dyn Problem<State = State,DecisionState = DecisionState>),
     /// The relaxation used when a DD layer grows too large
-    relaxation: &'a (dyn Relaxation<State = State>),
+    relaxation: &'a (dyn Relaxation<State = State,DecisionState = DecisionState>),
     /// The ranking heuristic used to discriminate the most promising from
     /// the least promising states
-    ranking: &'a (dyn StateRanking<State = State>),
+    ranking: &'a (dyn StateRanking<State = State,DecisionState = DecisionState>),
     /// The maximum width heuristic used to enforce a given maximum memory
     /// usage when compiling mdds
-    width_heu: &'a (dyn WidthHeuristic<State>),
+    width_heu: &'a (dyn WidthHeuristic<State,DecisionState>),
     /// A cutoff heuristic meant to decide when to stop the resolution of 
     /// a given problem.
     cutoff: &'a (dyn Cutoff),
@@ -227,7 +231,7 @@ where D: DecisionDiagram<State = State> + Default,
     /// any of the nodes remaining on the fringe. As a consequence, the
     /// exploration can be stopped as soon as a node with an ub <= current best
     /// lower bound is popped.
-    fringe: &'a mut (dyn Fringe<State = State>),
+    fringe: &'a mut (dyn Fringe<State = State,DecisionState = DecisionState>),
     /// This is a counter that tracks the number of nodes that have effectively
     /// been explored. That is, the number of nodes that have been popped from
     /// the fringe, and for which a restricted and relaxed mdd have been developed.
@@ -241,7 +245,7 @@ where D: DecisionDiagram<State = State> + Default,
     /// This is the value of the best known upper bound.
     best_ub: isize,
     /// If set, this keeps the info about the best solution so far.
-    best_sol: Option<Vec<Decision>>,
+    best_sol: Option<Vec<Arc<Decision<DecisionState>>>>,
     /// If we decide not to go through a complete proof of optimality, this is
     /// the reason why we took that decision.
     abort_proof: Option<Reason>,
@@ -254,32 +258,33 @@ where D: DecisionDiagram<State = State> + Default,
     dominance: &'a (dyn DominanceChecker<State = State>),
 }
 
-impl<'a, State, D, C>  SequentialSolver<'a, State, D, C>
+impl<'a, State, DecisionState, D, C>  SequentialSolver<'a, State, DecisionState, D, C>
 where 
     State: Eq + Hash + Clone,
-    D: DecisionDiagram<State = State> + Default,
-    C: Cache<State = State> + Default,
+    DecisionState: Eq + Hash + Clone,
+    D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
+    C: Cache<State = State,DecisionState = DecisionState> + Default,
 {
     pub fn new(
-        problem: &'a (dyn Problem<State = State>),
-        relaxation: &'a (dyn Relaxation<State = State>),
-        ranking: &'a (dyn StateRanking<State = State>),
-        width: &'a (dyn WidthHeuristic<State>),
+        problem: &'a (dyn Problem<State = State,DecisionState = DecisionState>),
+        relaxation: &'a (dyn Relaxation<State = State,DecisionState = DecisionState>),
+        ranking: &'a (dyn StateRanking<State = State,DecisionState = DecisionState>),
+        width: &'a (dyn WidthHeuristic<State,DecisionState>),
         dominance: &'a (dyn DominanceChecker<State = State>),
         cutoff: &'a (dyn Cutoff), 
-        fringe: &'a mut (dyn Fringe<State = State>),
+        fringe: &'a mut (dyn Fringe<State = State,DecisionState = DecisionState>),
     ) -> Self {
         Self::custom(problem, relaxation, ranking, width, dominance, cutoff, fringe)
     }
 
     pub fn custom(
-        problem: &'a (dyn Problem<State = State>),
-        relaxation: &'a (dyn Relaxation<State = State>),
-        ranking: &'a (dyn StateRanking<State = State>),
-        width_heu: &'a (dyn WidthHeuristic<State>),
+        problem: &'a (dyn Problem<State = State,DecisionState = DecisionState>),
+        relaxation: &'a (dyn Relaxation<State = State,DecisionState = DecisionState>),
+        ranking: &'a (dyn StateRanking<State = State,DecisionState = DecisionState>),
+        width_heu: &'a (dyn WidthHeuristic<State,DecisionState>),
         dominance: &'a (dyn DominanceChecker<State = State>),
         cutoff: &'a (dyn Cutoff),
-        fringe: &'a mut (dyn Fringe<State = State>),
+        fringe: &'a mut (dyn Fringe<State = State,DecisionState = DecisionState>),
     ) -> Self {
         SequentialSolver {
             problem,
@@ -312,7 +317,7 @@ where
         self.open_by_layer[0] += 1;
     }
 
-    fn root_node(&self) -> SubProblem<State> {
+    fn root_node(&self) -> SubProblem<State,DecisionState> {
         SubProblem {
             state: Arc::new(self.problem.initial_state()),
             value: self.problem.initial_value(),
@@ -328,7 +333,7 @@ where
     /// it stores cut-set nodes onto the fringe for further parallel processing.
     fn process_one_node(
         &mut self,
-        node: SubProblem<State>,
+        node: SubProblem<State,DecisionState>,
     ) -> Result<(), Reason> {
         // 1. RESTRICTION
         let node_ub = node.ub;
@@ -430,7 +435,7 @@ where
     ///     and thus the problem cannot be considered solved).
     ///   + WorkItem, when the thread successfully obtained a subproblem to
     ///     process.
-    fn get_workload(&mut self) -> WorkLoad<State>
+    fn get_workload(&mut self) -> WorkLoad<State,DecisionState>
     {
         // Can we clean up the cache?
         while self.first_active_layer < self.problem.nb_variables() &&
@@ -461,11 +466,12 @@ where
     }
 }
 
-impl<'a, State, D, C> Solver for SequentialSolver<'a, State, D, C>
+impl<'a, State, DecisionState, D, C> Solver<DecisionState> for SequentialSolver<'a, State, DecisionState, D, C>
 where
     State: Eq + PartialEq + Hash + Clone,
-    D: DecisionDiagram<State = State> + Default,
-    C: Cache<State = State> + Default,
+    DecisionState: Eq + PartialEq + Hash + Clone,
+    D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
+    C: Cache<State = State,DecisionState = DecisionState> + Default,
 {
     /// Applies the branch and bound algorithm proposed by Bergman et al. to
     /// solve the problem to optimality. To do so, it spawns `nb_threads` workers
@@ -493,7 +499,7 @@ where
     }
 
     /// Returns the best solution that has been identified for this problem.
-    fn best_solution(&self) -> Option<Vec<Decision>> {
+    fn best_solution(&self) -> Option<Vec<Arc<Decision<DecisionState>>>> {
         self.best_sol.clone()
     }
     /// Returns the value of the best solution that has been identified for
@@ -512,7 +518,7 @@ where
         self.best_ub
     }
     /// Sets a primal (best known value and solution) of the problem.
-    fn set_primal(&mut self, value: isize, solution: Solution) {
+    fn set_primal(&mut self, value: isize, solution: Solution<DecisionState>) {
         if value > self.best_lb {
             self.best_sol = Some(solution);
             self.best_lb  = value;
@@ -534,9 +540,10 @@ where
 #[cfg(test)]
 mod test_solver {
     use crate::*;
+    use std::{sync::Arc, hash::Hash};
 
-    type SeqSolver<'a, T> = SequentialSolver<'a, T, DefaultMDDLEL<T>, EmptyCache<T>>;
-    type SeqCachingSolver<'a, T> = SequentialSolver<'a, T, DefaultMDDFC<T>, SimpleCache<T>>;
+    type SeqSolver<'a, T, X> = SequentialSolver<'a, T, X, DefaultMDDLEL<T,X>, EmptyCache<T,X>>;
+    type SeqCachingSolver<'a, T, X> = SequentialSolver<'a, T, X, DefaultMDDFC<T,X>, SimpleCache<T,X>>;
     
     #[test]
     fn by_default_best_lb_is_min_infinity() {
@@ -773,9 +780,9 @@ mod test_solver {
         let mut sln = solver.best_solution().unwrap();
         sln.sort_unstable_by_key(|d| d.variable.id());
         assert_eq!(sln, vec![
-            Decision{variable: Variable(0), value: 0},
-            Decision{variable: Variable(1), value: 1},
-            Decision{variable: Variable(2), value: 1},
+            Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
+            Arc::new(Decision{variable: Variable(1), value: 1, state: None}),
+            Arc::new(Decision{variable: Variable(2), value: 1, state: None})
         ]);
     }
 
@@ -811,9 +818,9 @@ mod test_solver {
         let mut sln = solver.best_solution().unwrap();
         sln.sort_unstable_by_key(|d| d.variable.id());
         assert_eq!(sln, vec![
-            Decision{variable: Variable(0), value: 0},
-            Decision{variable: Variable(1), value: 1},
-            Decision{variable: Variable(2), value: 1},
+            Arc::new(Decision{variable: Variable(0), value: 0, state: None }),
+            Arc::new(Decision{variable: Variable(1), value: 1, state: None }),
+            Arc::new(Decision{variable: Variable(2), value: 1, state: None })
         ]);
     }
 
@@ -849,13 +856,13 @@ mod test_solver {
         let mut sln = solver.best_solution().unwrap();
         sln.sort_unstable_by_key(|d| d.variable.id());
         assert_eq!(sln, vec![
-            Decision { variable: Variable(0), value: 0 },
-            Decision { variable: Variable(1), value: 0 },
-            Decision { variable: Variable(2), value: 0 },
-            Decision { variable: Variable(3), value: 0 },
-            Decision { variable: Variable(4), value: 1 },
-            Decision { variable: Variable(5), value: 1 },
-            Decision { variable: Variable(6), value: 0 }
+            Arc::new(Decision { variable: Variable(0), value: 0, state: None }),
+            Arc::new(Decision { variable: Variable(1), value: 0, state: None }),
+            Arc::new(Decision { variable: Variable(2), value: 0, state: None }),
+            Arc::new(Decision { variable: Variable(3), value: 0, state: None }),
+            Arc::new(Decision { variable: Variable(4), value: 1, state: None }),
+            Arc::new(Decision { variable: Variable(5), value: 1, state: None }),
+            Arc::new(Decision { variable: Variable(6), value: 0, state: None })
         ]);
     }
 
@@ -891,13 +898,13 @@ mod test_solver {
         let mut sln = solver.best_solution().unwrap();
         sln.sort_unstable_by_key(|d| d.variable.id());
         assert_eq!(sln, vec![
-            Decision { variable: Variable(0), value: 0 },
-            Decision { variable: Variable(1), value: 0 },
-            Decision { variable: Variable(2), value: 0 },
-            Decision { variable: Variable(3), value: 0 },
-            Decision { variable: Variable(4), value: 1 },
-            Decision { variable: Variable(5), value: 1 },
-            Decision { variable: Variable(6), value: 0 }
+            Arc::new(Decision { variable: Variable(0), value: 0, state: None }),
+            Arc::new(Decision { variable: Variable(1), value: 0 , state: None }),
+            Arc::new(Decision { variable: Variable(2), value: 0 , state: None }),
+            Arc::new(Decision { variable: Variable(3), value: 0 , state: None }),
+            Arc::new(Decision { variable: Variable(4), value: 1 , state: None }),
+            Arc::new(Decision { variable: Variable(5), value: 1 , state: None }),
+            Arc::new(Decision { variable: Variable(6), value: 0 , state: None })
         ]);
     }
 
@@ -924,7 +931,7 @@ mod test_solver {
             &mut fringe,
         );
 
-        let d1  = Decision{variable: Variable(0), value: 10};
+        let d1  = Arc::new(Decision{variable: Variable(0), value: 10, state: None});
         let sol = vec![d1];
 
         solver.set_primal(10, sol.clone());
@@ -1018,6 +1025,8 @@ mod test_solver {
 
     impl Problem for Knapsack {
         type State = KnapsackState;
+        type DecisionState = usize;
+
         fn nb_variables(&self) -> usize {
             self.profit.len()
         }
@@ -1027,7 +1036,7 @@ mod test_solver {
         fn initial_value(&self) -> isize {
             0
         }
-        fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+        fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
             let mut ret = *state;
             ret.depth  += 1;
             if dec.value == TAKE_IT { 
@@ -1035,7 +1044,7 @@ mod test_solver {
             }
             ret
         }
-        fn transition_cost(&self, _state: &Self::State, _: &Self::State, dec: Decision) -> isize {
+        fn transition_cost(&self, _state: &Self::State, _: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
             self.profit[dec.variable.id()] as isize * dec.value
         }
         fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -1046,24 +1055,25 @@ mod test_solver {
                 None
             }
         }
-        fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+        fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
         {
             if state.capacity >= self.weight[variable.id()] {
-                f.apply(Decision { variable, value: TAKE_IT });
-                f.apply(Decision { variable, value: LEAVE_IT_OUT });
+                f.apply(Arc::new(Decision { variable, value: TAKE_IT , state: None}));
+                f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT , state: None}));
             } else {
-                f.apply(Decision { variable, value: LEAVE_IT_OUT });
+                f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None}));
             }
         }
     }
     struct KPRelax<'a>{pb: &'a Knapsack}
     impl Relaxation for KPRelax<'_> {
         type State = KnapsackState;
+        type DecisionState = usize;
 
         fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
             states.max_by_key(|node| node.capacity).copied().unwrap()
         }
-        fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+        fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
             cost
         }
         fn fast_upper_bound(&self, state: &Self::State) -> isize {
@@ -1079,6 +1089,7 @@ mod test_solver {
     struct KPRanking;
     impl StateRanking for KPRanking {
         type State = KnapsackState;
+        type DecisionState = usize;
 
         fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
             a.capacity.cmp(&b.capacity)

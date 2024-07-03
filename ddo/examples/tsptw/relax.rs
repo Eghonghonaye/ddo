@@ -25,7 +25,7 @@ use smallbitset::Set256;
 
 use crate::{
     model::Tsptw,
-    state::{ElapsedTime, Position, TsptwState},
+    state::{ElapsedTime, Position, TsptwDecisionState, TsptwState},
 };
 use std::cell::RefCell;
 
@@ -165,6 +165,7 @@ impl RelaxHelper {
 
 impl Relaxation for TsptwRelax<'_> {
     type State = TsptwState;
+    type DecisionState = TsptwDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &TsptwState>) -> TsptwState {
         TsptwRelax::HELPER.with(|helper| {
@@ -189,7 +190,7 @@ impl Relaxation for TsptwRelax<'_> {
         })
     }
 
-    fn relax(&self, _: &TsptwState, _: &TsptwState, _: &TsptwState, _: ddo::Decision, cost: isize) -> isize {
+    fn relax(&self, _: &TsptwState, _: &TsptwState, _: &TsptwState, _: &ddo::Decision<TsptwDecisionState>, cost: isize) -> isize {
         cost
     }
 

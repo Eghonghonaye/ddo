@@ -54,12 +54,12 @@ impl Variable {
 /// This denotes a decision that was made during the search. It affects a given
 /// `value` to the specified `variable`. Any given `Decision` should be
 /// understood as ```[[ variable = value ]]````
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
-pub struct Decision {
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+pub struct Decision <T> {
     pub variable : Variable,
-    pub value    : isize
+    pub value    : isize,
+    pub state    : Option<T>
 }
-
 
 // ----------------------------------------------------------------------------
 // --- SUBPROBLEM -------------------------------------------------------------
@@ -72,14 +72,14 @@ pub struct Decision {
 /// of relaxed decision diagrams. If you are only discovering the API, rest 
 /// assured.. you don't need to implement any subproblem yourself.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct SubProblem<T> {
+pub struct SubProblem<T,X> {
     /// The root state of this sub problem
     pub state: Arc<T>,
     /// The root value of this sub problem
     pub value: isize,
     /// The path to traverse to reach this subproblem from the root
     /// of the original problem
-    pub path: Vec<Decision>,
+    pub path: Vec<Arc<Decision<X>>>,
     /// An upper bound on the objective reachable in this subproblem
     pub ub: isize,
     /// The depth of the subproblem with respect to the root problem

@@ -19,7 +19,7 @@
 
 use ddo::{Decision, Relaxation, Variable};
 use std::cmp::min;
-use crate::model::{State, Max2Sat};
+use crate::model::{DecisionState, Max2Sat, State};
 
 
 /// This structure encapsulates the relaxation of the MAX2SAT problem.
@@ -42,6 +42,7 @@ use crate::model::{State, Max2Sat};
 pub struct Max2SatRelax<'a>(pub &'a Max2Sat);
 impl Relaxation for Max2SatRelax<'_> {
     type State = State;
+    type DecisionState = DecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &State>) -> State {
         let states = states.collect::<Vec<&State>>();
@@ -75,7 +76,7 @@ impl Relaxation for Max2SatRelax<'_> {
             substates: benefits,
         }
     }
-    fn relax(&self, _: &State, dst: &State, relaxed: &State, _: Decision, cost: isize) -> isize {
+    fn relax(&self, _: &State, dst: &State, relaxed: &State, _: &Decision<Self::DecisionState>, cost: isize) -> isize {
         let mut relaxed_cost = cost;
         for v in 0..self.0.nb_vars {
             relaxed_cost += dst[Variable(v)].abs() - relaxed[Variable(v)].abs();

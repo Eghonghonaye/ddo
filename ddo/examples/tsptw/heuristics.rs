@@ -23,13 +23,14 @@
 
 use ddo::{StateRanking, WidthHeuristic, SubProblem};
 
-use crate::state::TsptwState;
+use crate::state::{TsptwDecisionState, TsptwState};
 
 #[derive(Debug, Copy, Clone)]
 pub struct TsptwRanking;
 
 impl StateRanking for TsptwRanking {
     type State = TsptwState;
+    type DecisionState = TsptwDecisionState;
 
     fn compare(&self, sa: &Self::State, sb: &Self::State) -> std::cmp::Ordering {
         sa.depth.cmp(&sb.depth)
@@ -45,8 +46,8 @@ impl TsptwWidth {
         TsptwWidth { nb_vars, factor }
     }
 }
-impl WidthHeuristic<TsptwState> for TsptwWidth {
-    fn max_width(&self, state: &SubProblem<TsptwState>) -> usize {
+impl WidthHeuristic<TsptwState,TsptwDecisionState> for TsptwWidth {
+    fn max_width(&self, state: &SubProblem<TsptwState,TsptwDecisionState>) -> usize {
         self.nb_vars * (state.depth + 1) * self.factor
     }
 }

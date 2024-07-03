@@ -45,6 +45,9 @@ pub struct TsptwState {
     pub depth: u16
 }
 
+#[derive(Clone, Hash, PartialEq, Eq)]
+pub struct TsptwDecisionState;
+
 /// This represents the postition of the salesman in his tour.
 #[derive(Clone, Hash, Eq, PartialEq)]
 pub enum Position {

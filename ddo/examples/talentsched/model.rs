@@ -20,6 +20,8 @@
 use std::vec;
 
 use ddo::*;
+use std::sync::Arc;
+
 use ordered_float::OrderedFloat;
 use smallbitset::Set64;
 
@@ -31,6 +33,9 @@ pub struct TalentSchedState {
     pub scenes: Set64,
     pub maybe_scenes: Set64,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct TalentSchedDecisionState;
 
 /// This structure describes a TalentSched instance
 #[derive(Debug, Clone)]
@@ -74,6 +79,7 @@ impl TalentSched {
 
 impl Problem for TalentSched {
     type State = TalentSchedState;
+    type DecisionState = TalentSchedDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.instance.nb_scenes
@@ -101,7 +107,7 @@ impl Problem for TalentSched {
         - (cost as isize)
     }
 
-    fn transition(&self, state: &Self::State, decision: ddo::Decision) -> Self::State {
+    fn transition(&self, state: &Self::State, decision: &ddo::Decision<Self::DecisionState>) -> Self::State {
         let mut ret = state.clone();
         
         ret.scenes.remove_inplace(decision.value as usize);
@@ -110,7 +116,7 @@ impl Problem for TalentSched {
         ret
     }
 
-    fn transition_cost(&self, state: &Self::State, _: &Self::State, decision: ddo::Decision) -> isize {
+    fn transition_cost(&self, state: &Self::State, _: &Self::State, decision: &ddo::Decision<Self::DecisionState>) -> isize {
         let scene = decision.value as usize;
 
         let pay = self.get_present(state).diff(self.actors[scene]);
@@ -132,17 +138,17 @@ impl Problem for TalentSched {
         }
     }
 
-    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback) {
+    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback<Self::DecisionState>) {
         let mut count = 0;
 
         for i in state.scenes.iter() {
-            f.apply(Decision { variable, value: i as isize });
+            f.apply(Arc::new(Decision { variable, value: i as isize, state: None }));
             count += 1;
         }
 
         if variable.id() + count < self.instance.nb_scenes {
             for i in state.maybe_scenes.iter() {
-                f.apply(Decision { variable, value: i as isize });
+                f.apply(Arc::new(Decision { variable, value: i as isize, state: None }));
                 count += 1;
             }
         }
@@ -162,6 +168,7 @@ impl TalentSchedRelax {
 
 impl Relaxation for TalentSchedRelax {
     type State = TalentSchedState;
+    type DecisionState = TalentSchedDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
         let mut merged = states.next().unwrap().clone();
@@ -182,7 +189,7 @@ impl Relaxation for TalentSchedRelax {
         _source: &Self::State,
         _dest: &Self::State,
         _new:  &Self::State,
-        _decision: Decision,
+        _decision: &Decision<Self::DecisionState>,
         cost: isize,
     ) -> isize {
         cost
@@ -234,6 +241,7 @@ impl Relaxation for TalentSchedRelax {
 pub struct TalentSchedRanking;
 impl StateRanking for TalentSchedRanking {
     type State = TalentSchedState;
+    type DecisionState = TalentSchedDecisionState;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
         let tot_a = a.scenes.len() + a.maybe_scenes.len();

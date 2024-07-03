@@ -2,9 +2,10 @@ use std::time::{Duration, Instant};
 
 use clap::Parser;
 use ddo::*;
-use model::{f, t};
+use model::{f, t, DecisionState};
 
 use crate::{heuristics::Max2SatRanking, model::{Max2Sat, v}, relax::Max2SatRelax, data::read_instance};
+use std::sync::Arc;
 
 mod errors;
 mod heuristics;
@@ -78,7 +79,7 @@ fn cutoff(timeout: Option<u64>) -> Box<dyn Cutoff + Send + Sync> {
         Box::new(NoCutoff)
     }
 }
-fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State> + Send + Sync> {
+fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State,P::DecisionState> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {
@@ -86,7 +87,7 @@ fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::S
     }
 }
 
-fn solution_cost(pb: &Max2Sat, solution: &Option<Vec<Decision>>) -> isize {
+fn solution_cost(pb: &Max2Sat, solution: &Option<Vec<Arc<Decision<DecisionState>>>>) -> isize {
     if let Some(sol) = solution {
         let n = pb.nb_vars;
         let mut model = vec![0; n];

@@ -6,3 +6,4 @@
 /examples/target
 launch.json
 /py_ddo/.env
+*.profraw

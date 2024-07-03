@@ -33,6 +33,8 @@ use smallbitset::Set256;
 use clap::Parser;
 use ddo::*;
 
+use std::sync::Arc;
+
 /// This is a type alias. We've decided to opt for a bitset size of 256 bits 
 /// (which is large but in the event where we would like an even larger bitset,
 /// this type makes the example future proof)
@@ -49,6 +51,9 @@ pub struct GolombState {
     number_of_marks: usize, // the number of marks
     last_mark: isize, // location of last mark
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub struct GolombDecisionState;
 
 /// Instance of the Golomb problem.
 pub struct Golomb {
@@ -69,20 +74,21 @@ impl Golomb {
 impl Problem for Golomb {
 
     type State = GolombState;
+    type DecisionState = GolombDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.n
     }
 
     // create the edges (decisions) from the given state
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback) {
+    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>) {
         let n2 = self.n * self.n;
         let next_mark = state.last_mark as usize+ 1;
         for i in next_mark..n2 {
             if state.marks.iter().any(|j| state.distances.contains(i - j)) {
                 continue; // this distance is already present, invalid mark at it (all different)
             } else {
-                f.apply(Decision { variable, value: i as isize});
+                f.apply(Arc::new(Decision { variable, value: i as isize, state : None}));
             }
         }
     }
@@ -103,7 +109,7 @@ impl Problem for Golomb {
     }
 
     // compute the next state from the current state and the decision
-    fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+    fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
         let mut ret = *state;
         let l = dec.value as usize; // the new mark
         ret.marks.add_inplace(l); // add the new mark
@@ -117,7 +123,7 @@ impl Problem for Golomb {
     }
 
     // compute the cost of the decision from the given state
-    fn transition_cost(&self, state: &Self::State, _: &Self::State, dec: Decision) -> isize {
+    fn transition_cost(&self, state: &Self::State, _: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
         // distance between the new mark and the previous one
         -(dec.value - state.last_mark) // put a minus to turn objective into maximization (ddo requirement)
     }
@@ -137,6 +143,7 @@ impl Problem for Golomb {
 pub struct GolombRelax<'a>{pub pb: &'a Golomb}
 impl Relaxation for GolombRelax<'_> {
     type State = GolombState;
+    type DecisionState = GolombDecisionState;
 
     // take the intersection of the marks and distances sets
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
@@ -160,7 +167,7 @@ impl Relaxation for GolombRelax<'_> {
         }
     }
 
-    fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+    fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
         cost
     }
 
@@ -180,6 +187,7 @@ impl Relaxation for GolombRelax<'_> {
 pub struct GolombRanking;
 impl StateRanking for GolombRanking {
     type State = GolombState;
+    type DecisionState = GolombDecisionState;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
         a.last_mark.cmp(&b.last_mark) // sort by last mark
@@ -215,7 +223,7 @@ struct Args {
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
 /// in the overall problem.
-fn max_width<T>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T> + Send + Sync> {
+fn max_width<T,X>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T,X> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {

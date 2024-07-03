@@ -54,7 +54,7 @@ struct Args {
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
 /// in the overall problem.
-fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State> + Send + Sync> {
+fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State,P::DecisionState> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {
@@ -125,7 +125,7 @@ fn main() {
             runways[runway].1.push((arrival, aircraft));
             runways.sort_unstable();
 
-            cur = problem.transition(&cur, decision);
+            cur = problem.transition(&cur, &decision);
         }
         
         for runway in runways {

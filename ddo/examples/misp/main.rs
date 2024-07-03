@@ -25,6 +25,7 @@ use std::{cell::RefCell, path::Path, fs::File, io::{BufReader, BufRead}, num::Pa
 use bit_set::BitSet;
 use clap::Parser;
 use ddo::*;
+use std::sync::Arc;
 use regex::Regex;
 
 #[cfg(test)]
@@ -55,12 +56,15 @@ const YES: isize = 1;
 /// A constant to mean leave the node out of the independent set.
 const NO: isize = 0;
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct MispDecision;
 /// The Misp class implements the 'Problem' trait. This means Misp is the definition
 /// of the DP model. That DP model is pretty straightforward, still you might want
 /// to check the implementation of the branching heuristic (next_variable method)
 /// since it does interesting stuffs. 
 impl Problem for Misp {
     type State = BitSet;
+    type DecisionState = MispDecision;
 
     fn nb_variables(&self) -> usize {
         self.nb_vars
@@ -74,7 +78,7 @@ impl Problem for Misp {
         0
     }
 
-    fn transition(&self, state: &Self::State, decision: Decision) -> Self::State {
+    fn transition(&self, state: &Self::State, decision: &Decision<Self::DecisionState>) -> Self::State {
         let mut res = state.clone();
         res.remove(decision.variable.id());
         if decision.value == YES {
@@ -84,7 +88,7 @@ impl Problem for Misp {
         res
     }
 
-    fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: Decision) -> isize {
+    fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: &Decision<Self::DecisionState>) -> isize {
         if decision.value == NO {
             0
         } else {
@@ -92,12 +96,12 @@ impl Problem for Misp {
         }
     }
 
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback) {
+    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>) {
         if state.contains(variable.id()) {
-            f.apply(Decision{variable, value: YES});
-            f.apply(Decision{variable, value: NO });
+            f.apply(Arc::new(Decision{variable, value: YES, state : None}));
+            f.apply(Arc::new(Decision{variable, value: NO, state : None}));
         } else {
-            f.apply(Decision{variable, value: NO });
+            f.apply(Arc::new(Decision{variable, value: NO, state : None}));
         }
     }
 
@@ -168,6 +172,7 @@ impl Problem for Misp {
 pub struct MispRelax<'a>{pb: &'a Misp}
 impl Relaxation for MispRelax<'_> {
     type State = BitSet;
+    type DecisionState = MispDecision;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
         let mut state = BitSet::with_capacity(self.pb.nb_variables());
@@ -182,7 +187,7 @@ impl Relaxation for MispRelax<'_> {
         _source: &Self::State,
         _dest: &Self::State,
         _new: &Self::State,
-        _decision: Decision,
+        _decision: &Decision<Self::DecisionState>,
         cost: isize,
     ) -> isize {
         cost
@@ -201,6 +206,7 @@ impl Relaxation for MispRelax<'_> {
 pub struct MispRanking;
 impl StateRanking for MispRanking {
     type State = BitSet;
+    type DecisionState = MispDecision;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
         a.len().cmp(&b.len())
@@ -319,7 +325,7 @@ fn read_instance<P: AsRef<Path>>(fname: P) -> Result<Misp, Error> {
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
 /// in the overall problem.
-fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State> + Send + Sync> {
+fn max_width<P: Problem>(p: &P, w: Option<usize>) -> Box<dyn WidthHeuristic<P::State,P::DecisionState> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {

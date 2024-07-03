@@ -20,6 +20,7 @@
 use std::{vec, collections::BTreeMap};
 
 use ddo::*;
+use std::sync::Arc;
 
 use crate::dp::LcsDp;
 
@@ -29,6 +30,9 @@ pub struct LcsState {
     /// The current position in each string
     pub position: Vec<usize>,
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct LcsDecisionState;
 
 /// This structure describes a Lcs instance
 #[derive(Debug)]
@@ -91,6 +95,7 @@ impl Lcs {
 
 impl Problem for Lcs {
     type State = LcsState;
+    type DecisionState = LcsDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.string_length[0]
@@ -106,7 +111,7 @@ impl Problem for Lcs {
         0
     }
 
-    fn transition(&self, state: &Self::State, decision: ddo::Decision) -> Self::State {
+    fn transition(&self, state: &Self::State, decision: &ddo::Decision<Self::DecisionState>) -> Self::State {
         let mut position = self.string_length.clone();
 
         if decision.value != GO_TO_END_OF_STRINGS {
@@ -120,7 +125,7 @@ impl Problem for Lcs {
         LcsState { position }
     }
 
-    fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: ddo::Decision) -> isize {
+    fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: &ddo::Decision<Self::DecisionState>) -> isize {
         match decision.value {
             GO_TO_END_OF_STRINGS => 0,
             _ => 1,
@@ -136,7 +141,7 @@ impl Problem for Lcs {
         }
     }
 
-    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback) {
+    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback<Self::DecisionState>) {
         let mut found_char = false;
 
         for char in 0..self.n_chars {
@@ -150,12 +155,12 @@ impl Problem for Lcs {
 
             if valid {
                 found_char = true;
-                f.apply(Decision { variable, value: char as isize });
+                f.apply(Arc::new(Decision { variable, value: char as isize, state : None }));
             }
         }
 
         if !found_char {
-            f.apply(Decision { variable, value: GO_TO_END_OF_STRINGS });
+            f.apply(Arc::new(Decision { variable, value: GO_TO_END_OF_STRINGS, state : None }));
         }
     }
 
@@ -178,6 +183,7 @@ impl <'a> LcsRelax<'a> {
 
 impl Relaxation for LcsRelax<'_> {
     type State = LcsState;
+    type DecisionState = LcsDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
         let mut position = self.pb.string_length.clone();
@@ -196,7 +202,7 @@ impl Relaxation for LcsRelax<'_> {
         _source: &Self::State,
         _dest: &Self::State,
         _new:  &Self::State,
-        _decision: Decision,
+        _decision: &Decision<Self::DecisionState>,
         cost: isize,
     ) -> isize {
         cost
@@ -226,6 +232,7 @@ impl Relaxation for LcsRelax<'_> {
 pub struct LcsRanking;
 impl StateRanking for LcsRanking {
     type State = LcsState;
+    type DecisionState = LcsDecisionState;
 
     // try to favor states that are at earlier positions
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {

@@ -66,19 +66,23 @@ struct Node<T> {
     flags: NodeFlags,
     /// The number of decisions that have been made since the problem root
     depth: usize,
+    /// List of edges that appear on some path to the node
+    some: Vec<EdgeId>,
+    /// List of edges that appear on all paths to the node
+    all: Vec<EdgeId>,
 }
 
 /// Materializes one edge a.k.a arc from the decision diagram. It logically 
 /// connects two nodes and annotates the link with a decision and a cost.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct Edge {
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct Edge<T> {
     /// The identifier of the node at the ∗∗source∗∗ of this edge.
     from: NodeId,
     /// The identifier of the node at the ∗∗destination∗∗ of this edge.
     to: NodeId,
     /// This is the decision label associated to this edge. It gives the 
     /// information "what variable" is assigned to "what value".
-    decision: Decision,
+    decision: Arc<Decision<T>>,
     /// This is the transition cost of making this decision from the state
     /// associated with the source node of this edge.
     cost: isize,
@@ -112,9 +116,10 @@ struct Layer {
 /// - Relaxed: either the last exact layer of the frontier cut-set can be chosen
 ///            within the CompilationInput
 #[derive(Debug, Clone)]
-pub struct Mdd<T, const CUTSET_TYPE: CutsetType>
+pub struct Mdd<T, X, const CUTSET_TYPE: CutsetType>
 where
     T: Eq + PartialEq + Hash + Clone,
+    X: Eq + PartialEq + Hash + Clone,
 {
     /// This vector stores the information about the structure of all the layers
     /// in this decision diagram
@@ -125,7 +130,7 @@ where
     nodes: Vec<Node<T>>,
     /// This vector stores the information about all edges connecting the nodes 
     /// of the decision diagram.
-    edges: Vec<Edge>,
+    edges: Vec<Edge<X>>,
     /// This vector stores the information about all edge lists constituting 
     /// linked lists between edges
     edgelists: Vec<EdgesList>,
@@ -146,7 +151,7 @@ where
 
     /// Keeps track of the decisions that have been taken to reach the root
     /// of this DD, starting from the problem root.
-    path_to_root: Vec<Decision>,
+    path_to_root: Vec<Arc<Decision<X>>>,
     /// The identifier of the last exact layer (should this dd be inexact)
     lel: Option<LayerId>,
     /// The cut-set of the decision diagram (only maintained for relaxed dd)
@@ -184,11 +189,13 @@ macro_rules! get {
 }
 
 /// This macro performs an action for each edge of a given node in the dd
+/// // TODO: Confirm functionality here, I cloned edge instead of the copy via derefenecing it was doing before.
+/// // How does that change behaviour?
 macro_rules! foreach {
     (edge of $id:expr, $dd:expr, $action:expr) => {
         let mut list = get!(node $id, $dd).inbound;
         while let EdgesList::Cons{head, tail} = *get!(edgelist list, $dd) {
-            let edge = *get!(edge head, $dd);
+            let edge = get!(edge head, $dd).clone();
             $action(edge);
             list = tail;
         }
@@ -219,22 +226,25 @@ macro_rules! append_edge_to {
     };
 }
 
-impl<T, const CUTSET_TYPE: CutsetType> Default for Mdd<T, {CUTSET_TYPE}>
+impl<T, X, const CUTSET_TYPE: CutsetType> Default for Mdd<T, X,{CUTSET_TYPE}>
 where
     T: Eq + PartialEq + Hash + Clone,
+    X: Eq + PartialEq + Hash + Clone,
 {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T, const CUTSET_TYPE: CutsetType> DecisionDiagram for Mdd<T, {CUTSET_TYPE}>
+impl<T, X, const CUTSET_TYPE: CutsetType> DecisionDiagram for Mdd<T, X, {CUTSET_TYPE}>
 where
     T: Eq + PartialEq + Hash + Clone,
+    X: Eq + PartialEq + Hash + Clone,
 {
     type State = T;
+    type DecisionState = X;
 
-    fn compile(&mut self, input: &CompilationInput<Self::State>) -> Result<Completion, Reason> {
+    fn compile(&mut self, input: &CompilationInput<Self::State,Self::DecisionState>) -> Result<Completion, Reason> {
         self._compile(input)
     }
 
@@ -246,7 +256,7 @@ where
         self._best_value()
     }
 
-    fn best_solution(&self) -> Option<Solution> {
+    fn best_solution(&self) -> Option<Solution<X>> {
         self._best_solution()
     }
 
@@ -254,20 +264,21 @@ where
         self._best_exact_value()
     }
 
-    fn best_exact_solution(&self) -> Option<Solution> {
+    fn best_exact_solution(&self) -> Option<Solution<X>> {
         self._best_exact_solution()
     }
 
     fn drain_cutset<F>(&mut self, func: F)
     where
-        F: FnMut(SubProblem<Self::State>) {
+        F: FnMut(SubProblem<Self::State,Self::DecisionState>) {
         self._drain_cutset(func)
     }
 }
 
-impl<T, const CUTSET_TYPE: CutsetType> Mdd<T, {CUTSET_TYPE}>
+impl<T, X, const CUTSET_TYPE: CutsetType> Mdd<T, X, {CUTSET_TYPE}>
 where
     T: Eq + PartialEq + Hash + Clone,
+    X: Eq + PartialEq + Hash + Clone,
 {
     pub fn new() -> Self {
         Self {
@@ -310,7 +321,7 @@ where
         self.best_node.map(|id| get!(node id, self).value_top)
     }
 
-    fn _best_solution(&self) -> Option<Vec<Decision>> {
+    fn _best_solution(&self) -> Option<Vec<Arc<Decision<X>>>> {
         self.best_node.map(|id| self._best_path(id))
     }
 
@@ -318,31 +329,31 @@ where
         self.best_exact_node.map(|id| get!(node id, self).value_top)
     }
 
-    fn _best_exact_solution(&self) -> Option<Vec<Decision>> {
+    fn _best_exact_solution(&self) -> Option<Vec<Arc<Decision<X>>>> {
         self.best_exact_node.map(|id| self._best_path(id))
     }
 
-    fn _best_path(&self, id: NodeId) -> Vec<Decision> {
+    fn _best_path(&self, id: NodeId) -> Vec<Arc<Decision<X>>> {
         Self::_best_path_partial_borrow(id, &self.path_to_root, &self.nodes, &self.edges)
     }
 
     fn _best_path_partial_borrow(
         id: NodeId,
-        root_pa: &[Decision],
+        root_pa: &[Arc<Decision<X>>],
         nodes: &[Node<T>],
-        edges: &[Edge],
-    ) -> Vec<Decision> {
+        edges: &[Edge<X>],
+    ) -> Vec<Arc<Decision<X>>> {
         let mut sol = root_pa.to_owned();
         let mut edge_id = nodes[id.0].best;
         while let Some(eid) = edge_id {
-            let edge = edges[eid.0];
+            let edge = edges[eid.0].clone();
             sol.push(edge.decision);
             edge_id = nodes[edge.from.0].best;
         }
         sol
     }
 
-    fn _compile(&mut self, input: &CompilationInput<T>) -> Result<Completion, Reason> {
+    fn _compile(&mut self, input: &CompilationInput<T,X>) -> Result<Completion, Reason> {
         self._clear();
         self._initialize(input);
         
@@ -380,7 +391,7 @@ where
         })
     }
 
-    fn _initialize(&mut self, input: &CompilationInput<T>) {
+    fn _initialize(&mut self, input: &CompilationInput<T,X>) {
         self.path_to_root.extend_from_slice(&input.residual.path);
         self.edgelists.push(EdgesList::Nil);
 
@@ -396,6 +407,8 @@ where
             theta: None,
             flags: NodeFlags::new_exact(), 
             depth: input.residual.depth,
+            some: vec![],
+            all: vec![]
         };
 
         self.nodes.push(root_node);
@@ -404,7 +417,7 @@ where
         self.curr_depth = input.residual.depth;
     }
 
-    fn _finalize(&mut self, input: &CompilationInput<T>) {
+    fn _finalize(&mut self, input: &CompilationInput<T,X>) {
         self._finalize_layers();
         self._find_best_node();
         self._finalize_exact(input);
@@ -416,7 +429,7 @@ where
 
     fn _drain_cutset<F>(&mut self, mut func: F)
     where
-        F: FnMut(SubProblem<T>),
+        F: FnMut(SubProblem<T,X>),
     {
         if let Some(best_value) = self.best_value() {
             for id in self.cutset.drain(..) {
@@ -445,7 +458,7 @@ where
     }
 
     #[allow(clippy::redundant_closure_call)]
-    fn _compute_local_bounds(&mut self, input: &CompilationInput<T>) {
+    fn _compute_local_bounds(&mut self, input: &CompilationInput<T,X>) {
         if self.lel.unwrap().0 < self.layers.len() && input.comp_type == CompilationType::Relaxed {
             // initialize last layer
             let Layer { from, to } = *get!(layer LayerId(self.layers.len()-1), self);
@@ -462,7 +475,7 @@ where
                     let node = get!(node id, self);
                     let value = node.value_bot;
                     if node.flags.is_marked() {
-                        foreach!(edge of id, self, |edge: Edge| {
+                        foreach!(edge of id, self, |edge: Edge<X>| {
                             let using_edge = value.saturating_add(edge.cost);
                             let parent = get!(mut node edge.from, self);
                             parent.flags.set_marked(true);
@@ -475,7 +488,7 @@ where
     }
     
     #[allow(clippy::redundant_closure_call)]
-    fn _compute_thresholds(&mut self, input: &CompilationInput<T>) {
+    fn _compute_thresholds(&mut self, input: &CompilationInput<T,X>) {
         if input.comp_type == CompilationType::Relaxed || self.is_exact {
             let mut best_known = input.best_lb;
 
@@ -520,7 +533,7 @@ where
                     }
                     // only propagate if you have an actual threshold
                     if let Some(my_theta) = node.theta {
-                        foreach!(edge of id, self, |edge: Edge| {
+                        foreach!(edge of id, self, |edge: Edge<X>| {
                             let parent = get!(mut node edge.from, self);
                             let theta  = parent.theta.unwrap_or(isize::MAX); 
                             parent.theta = Some(theta.min(my_theta.saturating_sub(edge.cost)));
@@ -531,7 +544,7 @@ where
         }
     }
 
-    fn _maybe_update_cache(node: &Node<T>, input: &CompilationInput<T>) {
+    fn _maybe_update_cache(node: &Node<T>, input: &CompilationInput<T,X>) {
         // A node can only be added to the cache if it belongs to the cutset or is above it
         if let Some(theta) = node.theta {
             if node.flags.is_above_cutset() {
@@ -544,7 +557,7 @@ where
         }
     }
 
-    fn _finalize_cutset(&mut self, input: &CompilationInput<T>) {
+    fn _finalize_cutset(&mut self, input: &CompilationInput<T,X>) {
         if self.lel.is_none() {
             self.lel = Some(LayerId(self.layers.len())); // all nodes of the DD are above cutset
         }
@@ -593,7 +606,7 @@ where
                 if node.flags.is_exact() {
                     node.flags.set_above_cutset(true);
                 } else {
-                    foreach!(edge of id, self, |edge: Edge| {
+                    foreach!(edge of id, self, |edge: Edge<X>| {
                         let parent = get!(mut node edge.from, self);
                         if parent.flags.is_exact() && !parent.flags.is_cutset() {
                             self.cutset.push(edge.from);
@@ -631,7 +644,7 @@ where
             .max_by_key(|id| get!(node id, self).value_top);
     }
 
-    fn _finalize_exact(&mut self, input: &CompilationInput<T>) {
+    fn _finalize_exact(&mut self, input: &CompilationInput<T,X>) {
         self.is_exact = self.lel.is_none();
         self.has_exact_best_path = matches!(input.comp_type, CompilationType::Relaxed) && self._has_exact_best_path(self.best_node);
 
@@ -654,7 +667,7 @@ where
         }
     }
 
-    fn _move_to_next_layer(&mut self, input: &CompilationInput<T>, curr_l: &mut Vec<NodeId>) -> bool {
+    fn _move_to_next_layer(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) -> bool {
         self.prev_l.clear();
 
         for id in curr_l.drain(..) {
@@ -686,7 +699,7 @@ where
         }
     }
 
-    fn _filter_with_dominance(&mut self, input: &CompilationInput<T>, curr_l: &mut Vec<NodeId>) {
+    fn _filter_with_dominance(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) {
         curr_l.sort_unstable_by(|a,b| input.dominance.cmp(get!(node a, self).state.as_ref(), get!(node a, self).value_top, get!(node b, self).state.as_ref(), get!(node b, self).value_top).reverse());
         curr_l.retain(|id| {
             let node = get!(mut node id, self);
@@ -704,7 +717,7 @@ where
         });
     }
     
-    fn _filter_with_cache(&mut self, input: &CompilationInput<T>, curr_l: &mut Vec<NodeId>) {
+    fn _filter_with_cache(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) {
         curr_l.retain(|id| {
             let node = get!(mut node id, self);
             let threshold = input.cache.get_threshold(node.state.as_ref(), node.depth);
@@ -725,12 +738,12 @@ where
     fn _branch_on(
         &mut self,
         from_id: NodeId,
-        decision: Decision,
-        problem: &dyn Problem<State = T>,
+        decision: Arc<Decision<X>>, //TODO why do I only take the type by refernece? matched definitions of functions transition and transiton_cost in dp.rs but why
+        problem: &dyn Problem<State = T, DecisionState = X>,
     ) {
         let state = get!(node from_id, self).state.as_ref();
-        let next_state = Arc::new(problem.transition(state, decision));
-        let cost = problem.transition_cost(state, next_state.as_ref(), decision);
+        let next_state = Arc::new(problem.transition(state, decision.as_ref()));
+        let cost = problem.transition_cost(state, next_state.as_ref(), decision.as_ref());
 
         match self.next_l.entry(next_state.clone()) {
             Entry::Vacant(e) => {
@@ -751,11 +764,13 @@ where
                     theta: None,
                     flags,
                     depth: parent.depth + 1,
+                    some: vec![],
+                    all: vec![]
                 });
                 append_edge_to!(self, Edge {
                     from: from_id,
                     to  : node_id,
-                    decision,
+                    decision : decision.clone(),
                     cost,
                 });
                 e.insert(node_id);
@@ -765,7 +780,7 @@ where
                 append_edge_to!(self, Edge {
                     from: from_id,
                     to  : node_id,
-                    decision,
+                    decision : decision.clone(),
                     cost,
                 });
             }
@@ -773,7 +788,7 @@ where
     }
 
 
-    fn _squash_if_needed(&mut self, input: &CompilationInput<T>, curr_l: &mut Vec<NodeId>) {
+    fn _squash_if_needed(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) {
         match input.comp_type {
             CompilationType::Exact => { /* do nothing: you want to explore the complete DD */ }
             CompilationType::Restricted => {
@@ -796,7 +811,7 @@ where
         }
     }
 
-    fn _restrict(&mut self, input: &CompilationInput<T>, curr_l: &mut Vec<NodeId>) {
+    fn _restrict(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) {
         curr_l.sort_unstable_by(|a, b| {
             get!(node a, self).value_top
                 .cmp(&get!(node b, self).value_top)
@@ -812,7 +827,7 @@ where
     }
 
     #[allow(clippy::redundant_closure_call)]
-    fn _relax(&mut self, input: &CompilationInput<T>, curr_l: &mut Vec<NodeId>) {
+    fn _relax(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) {
         curr_l.sort_unstable_by(|a, b| {
             get!(node a, self).value_top
                 .cmp(&get!(node b, self).value_top)
@@ -839,6 +854,8 @@ where
                 theta: None,
                 flags: NodeFlags::new_relaxed(),
                 depth: get!(node merge[0], self).depth,
+                some: vec![],
+                all: vec![]
             });
             node_id
         });
@@ -848,15 +865,15 @@ where
         for drop_id in merge {
             get!(mut node drop_id, self).flags.set_deleted(true);
 
-            foreach!(edge of drop_id, self, |edge: Edge| {
+            foreach!(edge of drop_id, self, |edge: Edge<X>| {
                 let src   = get!(node edge.from, self).state.as_ref();
                 let dst   = get!(node edge.to,   self).state.as_ref();
-                let rcost = input.relaxation.relax(src, dst, merged.as_ref(), edge.decision, edge.cost);
+                let rcost = input.relaxation.relax(src, dst, merged.as_ref(), edge.decision.as_ref(), edge.cost);
 
                 append_edge_to!(self, Edge {
                     from: edge.from,
                     to: merged_id,
-                    decision: edge.decision,
+                    decision: edge.decision.clone(),
                     cost: rcost
                 });
             });
@@ -906,8 +923,9 @@ pub struct VizConfig {
     pub group_merged: bool,
 }
 
-impl <T, const CUTSET_TYPE: CutsetType> Mdd<T, {CUTSET_TYPE}> 
-where T: Debug + Eq + PartialEq + Hash + Clone {
+impl <T,X, const CUTSET_TYPE: CutsetType> Mdd<T, X,{CUTSET_TYPE}> 
+where T: Debug + Eq + PartialEq + Hash + Clone,
+      X: Debug + Eq + PartialEq + Hash + Clone {
 
     /// This is the method you will want to use in order to create the output image you would like.
     /// Note: the output is going to be a string of (not compiled) 'dot'. This makes it easier for
@@ -966,10 +984,10 @@ where T: Debug + Eq + PartialEq + Hash + Clone {
     /// Creates a string representation of the edges incident to one node
     fn edges_of(&self, id: usize) -> String {
         let mut out = String::new();
-        foreach!(edge of NodeId(id), self, |edge: Edge| {
-            let Edge{from, to, decision, cost} = edge;
+        foreach!(edge of NodeId(id), self, |edge: Edge<X>| {
+            let Edge{from, to, decision, cost} = edge.clone(); //TODO is this clone expensive?
             let best = get!(node NodeId(id), self).best;
-            let best = best.map(|eid| *get!(edge eid, self));
+            let best = best.map(|eid| get!(edge eid, self).clone());
             out.push_str(&Self::edge(from.0, to.0, decision, cost, Some(edge) == best));
         });
         out
@@ -997,7 +1015,7 @@ where T: Debug + Eq + PartialEq + Hash + Clone {
         out
     }
     /// Creates a string representation of one edge
-    fn edge(from: usize, to: usize, decision: Decision, cost: isize, is_best: bool) -> String {
+    fn edge(from: usize, to: usize, decision: Arc<Decision<X>>, cost: isize, is_best: bool) -> String {
         let width = if is_best { 3 } else { 1 };
         let variable = decision.variable.0;
         let value = decision.value;
@@ -1023,7 +1041,7 @@ where T: Debug + Eq + PartialEq + Hash + Clone {
     /// Determines the group of a node based on the last branching decision leading to it
     fn node_group(&self, node: &Node<T>) -> String {
         if let Some(eid) = node.best {
-            let edge = self.edges[eid.0];
+            let edge = self.edges[eid.0].clone();
             format!("{}", edge.decision.variable.0)
         } else {
             "root".to_string()
@@ -1100,13 +1118,13 @@ mod test_default_mdd {
 
     use crate::{Variable, DecisionDiagram, SubProblem, CompilationInput, Problem, Decision, Relaxation, StateRanking, NoCutoff, CompilationType, Cutoff, Reason, DecisionCallback, EmptyCache, SimpleCache, Cache, LAST_EXACT_LAYER, Mdd, FRONTIER, VizConfigBuilder, Threshold, EmptyDominanceChecker};
 
-    type DefaultMDD<State>    = DefaultMDDLEL<State>;
-    type DefaultMDDLEL<State> = Mdd<State, {LAST_EXACT_LAYER}>;
-    type DefaultMDDFC<State>  = Mdd<State, {FRONTIER}>;
+    type DefaultMDD<State, DecisionState>    = DefaultMDDLEL<State, DecisionState>;
+    type DefaultMDDLEL<State, DecisionState> = Mdd<State, DecisionState, {LAST_EXACT_LAYER}>;
+    type DefaultMDDFC<State, DecisionState>  = Mdd<State, DecisionState, {FRONTIER}>;
 
     #[test]
     fn by_default_the_mdd_type_is_exact() {
-        let mdd = Mdd::<usize, {LAST_EXACT_LAYER}>::new();
+        let mdd = Mdd::<usize, usize, {LAST_EXACT_LAYER}>::new();
 
         assert!(mdd.is_exact());
     }
@@ -1126,7 +1144,7 @@ mod test_default_mdd {
             residual: &SubProblem { 
                 state: Arc::new(DummyState{depth: 1, value: 42}), 
                 value: 42, 
-                path:  vec![Decision{variable: Variable(0), value: 42}], 
+                path:  vec![Arc::new(Decision{variable: Variable(0), value: 42, state:None})], 
                 ub:    isize::MAX,
                 depth: 1,
             },
@@ -1136,15 +1154,15 @@ mod test_default_mdd {
 
         let mut mdd = DefaultMDD::new();
         assert!(mdd.compile(&input).is_ok());
-        assert_eq!(mdd.path_to_root, vec![Decision{variable: Variable(0), value: 42}]);
+        assert_eq!(mdd.path_to_root, vec![Arc::new(Decision{variable: Variable(0), value: 42, state:None})]);
 
         input.comp_type = CompilationType::Relaxed;
         assert!(mdd.compile(&input).is_ok());
-        assert_eq!(mdd.path_to_root, vec![Decision{variable: Variable(0), value: 42}]);
+        assert_eq!(mdd.path_to_root, vec![Arc::new(Decision{variable: Variable(0), value: 42, state:None})]);
 
         input.comp_type = CompilationType::Restricted;
         assert!(mdd.compile(&input).is_ok());
-        assert_eq!(mdd.path_to_root, vec![Decision{variable: Variable(0), value: 42}]);
+        assert_eq!(mdd.path_to_root, vec![Arc::new(Decision{variable: Variable(0), value: 42, state:None})]);
     }
     
     // In an exact setup, the dummy problem would be 3*3*3 = 9 large at the bottom level
@@ -1177,9 +1195,9 @@ mod test_default_mdd {
         assert_eq!(mdd.best_value(), Some(6));
         assert_eq!(mdd.best_solution().unwrap(),
                    vec![
-                       Decision{variable: Variable(2), value: 2},
-                       Decision{variable: Variable(1), value: 2},
-                       Decision{variable: Variable(0), value: 2},
+                    Arc::new(Decision{variable: Variable(2), value: 2, state:None}),
+                    Arc::new(Decision{variable: Variable(1), value: 2, state:None}),
+                    Arc::new(Decision{variable: Variable(0), value: 2, state:None}),
                    ]
         );
     }
@@ -1213,9 +1231,9 @@ mod test_default_mdd {
         assert_eq!(mdd.best_value().unwrap(), 6);
         assert_eq!(mdd.best_solution().unwrap(),
                    vec![
-                       Decision{variable: Variable(2), value: 2},
-                       Decision{variable: Variable(1), value: 2},
-                       Decision{variable: Variable(0), value: 2},
+                       Arc::new(Decision{variable: Variable(2), value: 2, state:None}),
+                       Arc::new(Decision{variable: Variable(1), value: 2, state:None}),
+                       Arc::new(Decision{variable: Variable(0), value: 2, state:None}),
                    ]
         );
     }
@@ -1429,9 +1447,9 @@ mod test_default_mdd {
         assert_eq!(mdd.best_value().unwrap(), 24);
         assert_eq!(mdd.best_solution().unwrap(),
                    vec![
-                       Decision{variable: Variable(2), value: 2},
-                       Decision{variable: Variable(1), value: 0}, // that's a relaxed edge
-                       Decision{variable: Variable(0), value: 2},
+                       Arc::new(Decision{variable: Variable(2), value: 2, state:None}),
+                       Arc::new(Decision{variable: Variable(1), value: 0, state:None}), // that's a relaxed edge
+                       Arc::new(Decision{variable: Variable(0), value: 2, state:None}),
                    ]
         );
     }
@@ -2078,6 +2096,7 @@ mod test_default_mdd {
     struct LocBoundsAndThresholdsExamplePb;
     impl Problem for LocBoundsAndThresholdsExamplePb {
         type State = char;
+        type DecisionState = usize;
         fn nb_variables (&self) -> usize {  4  }
         fn initial_state(&self) -> char  { 'r' }
         fn initial_value(&self) -> isize {  0  }
@@ -2098,7 +2117,7 @@ mod test_default_mdd {
                 _   => None,
             }
         }
-        fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback) {
+        fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>) {
             /* do nothing, just consider that all domains are empty */
             (match *state {
                 'r' => vec![10, 7],
@@ -2115,10 +2134,10 @@ mod test_default_mdd {
             })
             .iter()
             .copied()
-            .for_each(&mut |value| f.apply(Decision{variable, value}))
+            .for_each(&mut |value| f.apply(Arc::new(Decision{variable, value, state: None})))
         }
 
-        fn transition(&self, state: &char, d: Decision) -> char {
+        fn transition(&self, state: &char, d: &Decision<Self::DecisionState>) -> char {
             match (*state, d.value) {
                 ('r', 10) => 'a',
                 ('r',  7) => 'b',
@@ -2134,7 +2153,7 @@ mod test_default_mdd {
             }
         }
 
-        fn transition_cost(&self, _: &char, _: &Self::State, d: Decision) -> isize {
+        fn transition_cost(&self, _: &char, _: &Self::State, d: &Decision<Self::DecisionState>) -> isize {
             d.value
         }
     }
@@ -2143,11 +2162,12 @@ mod test_default_mdd {
     struct LocBoundsAndThresholdsExampleRelax;
     impl Relaxation for LocBoundsAndThresholdsExampleRelax {
         type State = char;
+        type DecisionState = usize;
         fn merge(&self, _: &mut dyn Iterator<Item=&char>) -> char {
             'M'
         }
 
-        fn relax(&self, _: &char, _: &char, _: &char, _: Decision, cost: isize) -> isize {
+        fn relax(&self, _: &char, _: &char, _: &char, _: &Decision<Self::DecisionState>, cost: isize) -> isize {
             cost
         }
 
@@ -2172,6 +2192,7 @@ mod test_default_mdd {
     struct CmpChar;
     impl StateRanking for CmpChar {
         type State = char;
+        type DecisionState = usize;
         fn compare(&self, a: &char, b: &char) -> Ordering {
             a.cmp(b)
         }
@@ -2552,10 +2573,16 @@ mod test_default_mdd {
         depth: usize,
     }
 
+    #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
+    struct DummyDecisionState {
+        value: isize,
+    }
+
     #[derive(Copy, Clone)]
     struct DummyProblem;
     impl Problem for DummyProblem {
         type State = DummyState;
+        type DecisionState = DummyDecisionState;
 
         fn nb_variables(&self)  -> usize { 3 }
         fn initial_value(&self) -> isize { 0 }
@@ -2566,14 +2593,14 @@ mod test_default_mdd {
             }
         }
 
-        fn transition(&self, state: &Self::State, decision: crate::Decision) -> Self::State {
+        fn transition(&self, state: &Self::State, decision: &crate::Decision<Self::DecisionState>) -> Self::State {
             DummyState {
                 value: state.value + decision.value,
                 depth: 1 + state.depth
             }
         }
 
-        fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: crate::Decision) -> isize {
+        fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: &crate::Decision<Self::DecisionState>) -> isize {
             decision.value
         }
 
@@ -2586,9 +2613,9 @@ mod test_default_mdd {
             }
         }
 
-        fn for_each_in_domain(&self, var: crate::Variable, _: &Self::State, f: &mut dyn DecisionCallback) {
+        fn for_each_in_domain(&self, var: crate::Variable, _: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>) {
             for d in 0..=2 {
-                f.apply(Decision {variable: var, value: d})
+                f.apply(Arc::new(Decision {variable: var, value: d, state: None}))
             }
         }
     }
@@ -2597,6 +2624,7 @@ mod test_default_mdd {
     struct DummyInfeasibleProblem;
     impl Problem for DummyInfeasibleProblem {
         type State = DummyState;
+        type DecisionState = DummyDecisionState;
 
         fn nb_variables(&self)  -> usize { 3 }
         fn initial_value(&self) -> isize { 0 }
@@ -2607,14 +2635,14 @@ mod test_default_mdd {
             }
         }
 
-        fn transition(&self, state: &Self::State, decision: crate::Decision) -> Self::State {
+        fn transition(&self, state: &Self::State, decision: &crate::Decision<Self::DecisionState>) -> Self::State {
             DummyState {
                 value: state.value + decision.value,
                 depth: 1 + state.depth
             }
         }
 
-        fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: crate::Decision) -> isize {
+        fn transition_cost(&self, _: &Self::State, _: &Self::State, decision: &crate::Decision<Self::DecisionState>) -> isize {
             decision.value
         }
 
@@ -2627,7 +2655,7 @@ mod test_default_mdd {
             }
         }
 
-        fn for_each_in_domain(&self, _: crate::Variable, _: &Self::State, _: &mut dyn DecisionCallback) {
+        fn for_each_in_domain(&self, _: crate::Variable, _: &Self::State, _: &mut dyn DecisionCallback<Self::DecisionState>) {
             /* do nothing, just consider that all domains are empty */
         }
     }
@@ -2636,6 +2664,7 @@ mod test_default_mdd {
     struct DummyRelax;
     impl Relaxation for DummyRelax {
         type State = DummyState;
+        type DecisionState = DummyDecisionState;
 
         fn merge(&self, s: &mut dyn Iterator<Item=&Self::State>) -> Self::State {
             s.next().map(|s| {
@@ -2645,7 +2674,7 @@ mod test_default_mdd {
                 }
             }).unwrap()
         }
-        fn relax(&self, _: &Self::State, _: &Self::State, _: &Self::State, _: Decision, _: isize) -> isize {
+        fn relax(&self, _: &Self::State, _: &Self::State, _: &Self::State, _: &Decision<Self::DecisionState>, _: isize) -> isize {
             20
         }
         fn fast_upper_bound(&self, state: &Self::State) -> isize {
@@ -2657,6 +2686,7 @@ mod test_default_mdd {
     struct DummyRanking;
     impl StateRanking for DummyRanking {
         type State = DummyState;
+        type DecisionState = DummyDecisionState;
 
         fn compare(&self, a: &Self::State, b: &Self::State) -> Ordering {
             a.value.cmp(&b.value).reverse()

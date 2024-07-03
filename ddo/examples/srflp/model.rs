@@ -22,8 +22,9 @@
 
 use ddo::{Problem, Variable, Decision};
 use smallbitset::Set64;
+use std::sync::Arc;
 
-use crate::{io_utils::SrflpInstance, state::SrflpState};
+use crate::{io_utils::SrflpInstance, state::{SrflpDecisionState, SrflpState}};
 
 /// This is the structure encapsulating the Srflp problem.
 #[derive(Debug, Clone)]
@@ -62,6 +63,7 @@ impl Srflp {
 
 impl Problem for Srflp {
     type State = SrflpState;
+    type DecisionState = SrflpDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.instance.nb_departments
@@ -75,24 +77,24 @@ impl Problem for Srflp {
         0
     }
 
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback) {
+    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback<Self::DecisionState>) {
         let mut complete_arrangement = self.nb_variables() - state.depth;
 
         for i in state.must_place.iter() {
             complete_arrangement -= 1;
-            f.apply(Decision { variable, value: i as isize })
+            f.apply(Arc::new(Decision { variable, value: i as isize, state: None }))
         }
 
         if complete_arrangement > 0 {
             if let Some(maybe_visit) = &state.maybe_place {
                 for i in maybe_visit.iter() {
-                    f.apply(Decision { variable, value: i as isize })
+                    f.apply(Arc::new(Decision { variable, value: i as isize, state: None }))
                 }
             }
         }
     }
 
-    fn transition(&self, state: &SrflpState, d: Decision) -> SrflpState {
+    fn transition(&self, state: &SrflpState, d: &Decision<SrflpDecisionState>) -> SrflpState {
         let d = d.value as usize;
 
         // if it is a true move
@@ -129,7 +131,7 @@ impl Problem for Srflp {
         }
     }
 
-    fn transition_cost(&self, state: &SrflpState, _: &Self::State, d: Decision) -> isize {
+    fn transition_cost(&self, state: &SrflpState, _: &Self::State, d: &Decision<SrflpDecisionState>) -> isize {
         let d = d.value as usize;
 
         let mut cut = 0;

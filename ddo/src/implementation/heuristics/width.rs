@@ -35,8 +35,8 @@ use crate::{WidthHeuristic, SubProblem};
 /// # use std::sync::Arc;
 /// let heuristic = FixedWidth(100); // assume a fixed width of 100
 /// 
-/// // assume the exsitence of whatever subroblem you like..
-/// let subproblem = SubProblem {state: Arc::new('a'), value: 42, ub: 100, depth: 0, path: vec![]};
+/// // assume the exsitence of whatever subproblem you like..
+/// let subproblem = SubProblem::<char,char> {state: Arc::new('a'), value: 42, ub: 100, depth: 0, path: vec![]};
 /// // still, the heuristic always return 100.
 /// assert_eq!(100, heuristic.max_width(&subproblem));
 /// ```
@@ -67,6 +67,8 @@ use crate::{WidthHeuristic, SubProblem};
 /// # 
 /// # impl Problem for Knapsack {
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
+/// #
 /// #     fn nb_variables(&self) -> usize {
 /// #         self.profit.len()
 /// #     }
@@ -76,7 +78,7 @@ use crate::{WidthHeuristic, SubProblem};
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -84,7 +86,7 @@ use crate::{WidthHeuristic, SubProblem};
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -95,24 +97,25 @@ use crate::{WidthHeuristic, SubProblem};
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// # }
 /// # struct KPRelax<'a>{pb: &'a Knapsack}
 /// # impl Relaxation for KPRelax<'_> {
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// # 
 /// #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 /// #         states.max_by_key(|node| node.capacity).copied().unwrap()
 /// #     }
-/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 /// #         cost
 /// #     }
 /// # }
@@ -120,6 +123,7 @@ use crate::{WidthHeuristic, SubProblem};
 /// # struct KPRanking;
 /// # impl StateRanking for KPRanking {
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     
 /// #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 /// #         a.capacity.cmp(&b.capacity)
@@ -164,8 +168,8 @@ use crate::{WidthHeuristic, SubProblem};
 /// ```
 #[derive(Debug, Copy, Clone)]
 pub struct FixedWidth(pub usize);
-impl <X> WidthHeuristic<X> for FixedWidth {
-    fn max_width(&self, _: &SubProblem<X>) -> usize {
+impl <X,T> WidthHeuristic<X,T> for FixedWidth {
+    fn max_width(&self, _: &SubProblem<X,T>) -> usize {
         self.0
     }
 }
@@ -205,6 +209,7 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// # 
 /// impl Problem for Knapsack {
 ///      type State = KnapsackState;
+///      type DecisionState = char;
 ///      fn nb_variables(&self) -> usize {
 ///          5
 ///      }
@@ -215,7 +220,7 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -223,7 +228,7 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -234,13 +239,13 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// }
@@ -258,9 +263,9 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// #    depth: 3,
 ///     // three decisions have already been made. There only remain variables 0 and 2
 ///     path: vec![
-///         Decision{variable: Variable(1), value: 1},
-///         Decision{variable: Variable(3), value: 1},
-///         Decision{variable: Variable(4), value: 1},
+///         Arc::new(Decision::<char>{variable: Variable(1), value: 1, state: None}),
+///         Arc::new(Decision::<char>{variable: Variable(3), value: 1, state: None}),
+///         Arc::new(Decision::<char>{variable: Variable(4), value: 1, state: None}),
 ///     ]
 /// };
 /// assert_eq!(2, heuristic.max_width(&subproblem));
@@ -295,6 +300,7 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// impl Problem for Knapsack {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn nb_variables(&self) -> usize {
 /// #         self.profit.len()
 /// #     }
@@ -304,7 +310,7 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -312,7 +318,7 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -323,13 +329,12 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None}));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None}));
 /// #         }
 /// #     }
 /// }
@@ -337,10 +342,11 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// impl Relaxation for KPRelax<'_> {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 /// #         states.max_by_key(|node| node.capacity).copied().unwrap()
 /// #     }
-/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 /// #         cost
 /// #     }
 /// }
@@ -349,6 +355,7 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// impl StateRanking for KPRanking {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 /// #         a.capacity.cmp(&b.capacity)
 /// #     }
@@ -395,8 +402,8 @@ impl <X> WidthHeuristic<X> for FixedWidth {
 /// ```
 #[derive(Default, Debug, Copy, Clone)]
 pub struct NbUnassignedWidth(pub usize);
-impl <X> WidthHeuristic<X> for NbUnassignedWidth {
-    fn max_width(&self, x: &SubProblem<X>) -> usize {
+impl <X,T> WidthHeuristic<X,T> for NbUnassignedWidth {
+    fn max_width(&self, x: &SubProblem<X,T>) -> usize {
         self.0 - x.path.len()
     }
 }
@@ -444,6 +451,7 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// # 
 /// impl Problem for Knapsack {
 ///      type State = KnapsackState;
+///      type DecisionState = char;
 ///      fn nb_variables(&self) -> usize {
 ///          5
 ///      }
@@ -454,7 +462,7 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -462,7 +470,7 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -473,13 +481,13 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// }
@@ -497,9 +505,9 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// #    depth: 3,
 ///     // three decisions have already been made. There only remain variables 0 and 2
 ///     path: vec![
-///         Decision{variable: Variable(1), value: 1},
-///         Decision{variable: Variable(3), value: 1},
-///         Decision{variable: Variable(4), value: 1},
+///         Arc::new(Decision::<char>{variable: Variable(1), value: 1, state: None}),
+///         Arc::new(Decision::<char>{variable: Variable(3), value: 1, state: None}),
+///         Arc::new(Decision::<char>{variable: Variable(4), value: 1, state: None}),
 ///     ]
 /// };
 /// assert_eq!(10, heuristic.max_width(&subproblem));
@@ -534,6 +542,7 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// impl Problem for Knapsack {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn nb_variables(&self) -> usize {
 /// #         self.profit.len()
 /// #     }
@@ -543,7 +552,7 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -551,7 +560,7 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -562,13 +571,13 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// }
@@ -576,10 +585,11 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// impl Relaxation for KPRelax<'_> {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 /// #         states.max_by_key(|node| node.capacity).copied().unwrap()
 /// #     }
-/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 /// #         cost
 /// #     }
 /// }
@@ -588,6 +598,7 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 /// impl StateRanking for KPRanking {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 /// #         a.capacity.cmp(&b.capacity)
 /// #     }
@@ -635,8 +646,8 @@ impl <X> WidthHeuristic<X> for NbUnassignedWidth {
 #[derive(Debug, Clone, Copy)]
 pub struct Times<X>(pub usize, pub X);
 
-impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
-    fn max_width(&self, x: &SubProblem<S>) -> usize {
+impl <S, T, X: WidthHeuristic<S,T>> WidthHeuristic<S,T> for Times<X> {
+    fn max_width(&self, x: &SubProblem<S,T>) -> usize {
         1.max(self.0 * self.1.max_width(x))
     }
 }
@@ -684,6 +695,7 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// # 
 /// impl Problem for Knapsack {
 ///      type State = KnapsackState;
+///      type DecisionState = char;
 ///      fn nb_variables(&self) -> usize {
 ///          5
 ///      }
@@ -694,7 +706,7 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -702,7 +714,7 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -713,13 +725,13 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// }
@@ -737,9 +749,9 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// #    depth: 3,
 ///     // three decisions have already been made. There only remain variables 0 and 2
 ///     path: vec![
-///         Decision{variable: Variable(1), value: 1},
-///         Decision{variable: Variable(3), value: 1},
-///         Decision{variable: Variable(4), value: 1},
+///         Arc::new(Decision::<char>{variable: Variable(1), value: 1, state: None}),
+///         Arc::new(Decision::<char>{variable: Variable(3), value: 1, state: None}),
+///         Arc::new(Decision::<char>{variable: Variable(4), value: 1, state: None}),
 ///     ]
 /// };
 /// assert_eq!(1, heuristic.max_width(&subproblem));
@@ -774,6 +786,7 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// impl Problem for Knapsack {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn nb_variables(&self) -> usize {
 /// #         self.profit.len()
 /// #     }
@@ -783,7 +796,7 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -791,7 +804,7 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -802,13 +815,13 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None}));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None}));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None}));
 /// #         }
 /// #     }
 /// }
@@ -816,10 +829,11 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// impl Relaxation for KPRelax<'_> {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 /// #         states.max_by_key(|node| node.capacity).copied().unwrap()
 /// #     }
-/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 /// #         cost
 /// #     }
 /// }
@@ -828,6 +842,7 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 /// impl StateRanking for KPRanking {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 /// #         a.capacity.cmp(&b.capacity)
 /// #     }
@@ -874,8 +889,8 @@ impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for Times<X> {
 #[derive(Debug, Clone, Copy)]
 pub struct DivBy<X>(pub usize, pub X);
 
-impl <S, X: WidthHeuristic<S>> WidthHeuristic<S> for DivBy<X> {
-    fn max_width(&self, x: &SubProblem<S>) -> usize {
+impl <S, T, X: WidthHeuristic<S,T>> WidthHeuristic<S,T> for DivBy<X> {
+    fn max_width(&self, x: &SubProblem<S,T>) -> usize {
         1.max(self.1.max_width(x) / self.0)
     }
 }
@@ -891,11 +906,11 @@ mod test_nbunassigned {
     fn non_empty() {
         // assume a problem with 5 variables
         let heu = NbUnassignedWidth(5); 
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
-            path : vec![Decision{variable: Variable(0), value: 4}],
+            path : vec![Arc::new(Decision{variable: Variable(0), value: 4, state: None})],
             depth: 1,
         };
         assert_eq!(4, heu.max_width(&sub));
@@ -903,7 +918,7 @@ mod test_nbunassigned {
     #[test]
     fn all() {
         let heu = NbUnassignedWidth(5); 
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
@@ -916,17 +931,17 @@ mod test_nbunassigned {
     fn empty() {
         // assume a problem with 5 variables
         let heu = NbUnassignedWidth(5); 
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
             // all vars are assigned max width is 0
             path : vec![
-                Decision{variable: Variable(0), value: 0},
-                Decision{variable: Variable(1), value: 1},
-                Decision{variable: Variable(2), value: 2},
-                Decision{variable: Variable(3), value: 3},
-                Decision{variable: Variable(4), value: 4},
+                Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
+                Arc::new(Decision{variable: Variable(1), value: 1, state: None}),
+                Arc::new(Decision{variable: Variable(2), value: 2, state: None}),
+                Arc::new(Decision{variable: Variable(3), value: 3, state: None}),
+                Arc::new(Decision{variable: Variable(4), value: 4, state: None}),
                 ],
             depth: 5,
         };
@@ -942,12 +957,12 @@ mod test_fixedwidth {
     #[test]
     fn non_empty() {
         let heu = FixedWidth(5); 
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
             path : vec![
-                Decision{variable: Variable(0), value: 0},
+                Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
                 ],
             depth: 1,
         };
@@ -956,7 +971,7 @@ mod test_fixedwidth {
     #[test]
     fn all() {
         let heu = FixedWidth(5); 
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
@@ -968,17 +983,17 @@ mod test_fixedwidth {
     #[test]
     fn empty() {
         let heu = FixedWidth(5); 
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
             // all vars are assigned max width is 0
             path : vec![
-                Decision{variable: Variable(0), value: 0},
-                Decision{variable: Variable(1), value: 1},
-                Decision{variable: Variable(2), value: 2},
-                Decision{variable: Variable(3), value: 3},
-                Decision{variable: Variable(4), value: 4},
+                Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
+                Arc::new(Decision{variable: Variable(1), value: 1, state: None}),
+                Arc::new(Decision{variable: Variable(2), value: 2, state: None}),
+                Arc::new(Decision{variable: Variable(3), value: 3, state: None}),
+                Arc::new(Decision{variable: Variable(4), value: 4, state: None}),
                 ],
             depth: 5,
         };
@@ -994,17 +1009,17 @@ mod test_adapters {
     #[test]
     fn test_times() {
         let heu = FixedWidth(5); 
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
             // all vars are assigned max width is 0
             path : vec![
-                Decision{variable: Variable(0), value: 0},
-                Decision{variable: Variable(1), value: 1},
-                Decision{variable: Variable(2), value: 2},
-                Decision{variable: Variable(3), value: 3},
-                Decision{variable: Variable(4), value: 4},
+                Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
+                Arc::new(Decision{variable: Variable(1), value: 1, state: None}),
+                Arc::new(Decision{variable: Variable(2), value: 2, state: None}),
+                Arc::new(Decision{variable: Variable(3), value: 3, state: None}),
+                Arc::new(Decision{variable: Variable(4), value: 4, state: None}),
                 ],
             depth: 5,
         };
@@ -1015,17 +1030,17 @@ mod test_adapters {
     }
     #[test]
     fn test_div_by() {
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
             // all vars are assigned max width is 0
             path : vec![
-                Decision{variable: Variable(0), value: 0},
-                Decision{variable: Variable(1), value: 1},
-                Decision{variable: Variable(2), value: 2},
-                Decision{variable: Variable(3), value: 3},
-                Decision{variable: Variable(4), value: 4},
+                Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
+                Arc::new(Decision{variable: Variable(1), value: 1, state: None}),
+                Arc::new(Decision{variable: Variable(2), value: 2, state: None}),
+                Arc::new(Decision{variable: Variable(3), value: 3, state: None}),
+                Arc::new(Decision{variable: Variable(4), value: 4, state: None}),
                 ],
             depth: 5,
         };
@@ -1036,17 +1051,17 @@ mod test_adapters {
 
     #[test]
     fn wrappers_never_return_a_zero_maxwidth() {
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
             // all vars are assigned max width is 0
             path : vec![
-                Decision{variable: Variable(0), value: 0},
-                Decision{variable: Variable(1), value: 1},
-                Decision{variable: Variable(2), value: 2},
-                Decision{variable: Variable(3), value: 3},
-                Decision{variable: Variable(4), value: 4},
+                Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
+                Arc::new(Decision{variable: Variable(1), value: 1, state: None}),
+                Arc::new(Decision{variable: Variable(2), value: 2, state: None}),
+                Arc::new(Decision{variable: Variable(3), value: 3, state: None}),
+                Arc::new(Decision{variable: Variable(4), value: 4, state: None}),
                 ],
             depth: 5,
         };
@@ -1056,17 +1071,17 @@ mod test_adapters {
 
     #[test] #[should_panic]
     fn test_div_by_panics_when_div_by_zero() {
-        let sub = SubProblem {
+        let sub = SubProblem::<char,char> {
             state: Arc::new('a'),
             value: 10,
             ub   : 100,
             // all vars are assigned max width is 0
             path : vec![
-                Decision{variable: Variable(0), value: 0},
-                Decision{variable: Variable(1), value: 1},
-                Decision{variable: Variable(2), value: 2},
-                Decision{variable: Variable(3), value: 3},
-                Decision{variable: Variable(4), value: 4},
+                Arc::new(Decision{variable: Variable(0), value: 0, state: None}),
+                Arc::new(Decision{variable: Variable(1), value: 1, state: None}),
+                Arc::new(Decision{variable: Variable(2), value: 2, state: None}),
+                Arc::new(Decision{variable: Variable(3), value: 3, state: None}),
+                Arc::new(Decision{variable: Variable(4), value: 4, state: None}),
                 ],
             depth: 5,
         };

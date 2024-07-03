@@ -48,6 +48,7 @@ use crate::{SubProblemRanking, SubProblem};
 /// struct KPRanking;
 /// impl StateRanking for KPRanking {
 ///     type State = KnapsackState;
+///     type DecisionState = char;
 ///     
 ///     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 ///         a.capacity.cmp(&b.capacity)
@@ -75,8 +76,8 @@ impl <X:SubProblemRanking> CompareSubProblem<X> {
         Self(x)
     }
 }
-impl <X:SubProblemRanking> Compare<SubProblem<X::State>> for CompareSubProblem<X> {
-    fn compare(&self, l: &SubProblem<X::State>, r: &SubProblem<X::State>) -> Ordering {
+impl <X:SubProblemRanking> Compare<SubProblem<X::State,X::DecisionState>> for CompareSubProblem<X> {
+    fn compare(&self, l: &SubProblem<X::State,X::DecisionState>, r: &SubProblem<X::State,X::DecisionState>) -> Ordering {
         self.0.compare(l, r)
     }
 }
@@ -91,6 +92,7 @@ mod test {
     struct CharRanking;
     impl StateRanking for CharRanking {
         type State = char;
+        type DecisionState = char;
 
         fn compare(&self, a: &Self::State, b: &Self::State) -> Ordering {
             a.cmp(b)
@@ -98,8 +100,9 @@ mod test {
     }
     impl SubProblemRanking for CharRanking {
         type State = char;
+        type DecisionState = char;
 
-        fn compare(&self, a: &SubProblem<char>, b: &SubProblem<char>) -> Ordering {
+        fn compare(&self, a: &SubProblem<char,char>, b: &SubProblem<char,char>) -> Ordering {
             <Self as StateRanking>::compare(self, a.state.deref(), b.state.deref())
         }
     }

@@ -19,7 +19,7 @@
 
 use std::cmp::Ordering;
 use ddo::*;
-use crate::model::State;
+use crate::model::{DecisionState, State};
 
 
 /// In addition to a problem definition and a relaxation (DP model and Relax), ddo requires
@@ -30,6 +30,7 @@ use crate::model::State;
 pub struct Max2SatRanking;
 impl StateRanking for Max2SatRanking {
     type State = State;
+    type DecisionState = DecisionState;
     fn compare(&self, x: &State, y: &State) -> Ordering {
         let xrank = x.rank();
         let yrank = y.rank();

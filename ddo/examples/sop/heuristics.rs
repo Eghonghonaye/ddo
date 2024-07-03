@@ -19,13 +19,14 @@
 
 use ddo::{StateRanking, WidthHeuristic, SubProblem};
 
-use crate::state::SopState;
+use crate::state::{SopDecisionState, SopState};
 
 #[derive(Debug, Copy, Clone)]
 pub struct SopRanking;
 
 impl StateRanking for SopRanking {
     type State = SopState;
+    type DecisionState = SopDecisionState;
 
     fn compare(&self, sa: &Self::State, sb: &Self::State) -> std::cmp::Ordering {
         sa.depth.cmp(&sb.depth)
@@ -41,8 +42,8 @@ impl SopWidth {
         SopWidth { nb_vars, factor }
     }
 }
-impl WidthHeuristic<SopState> for SopWidth {
-    fn max_width(&self, state: &SubProblem<SopState>) -> usize {
+impl WidthHeuristic<SopState,SopDecisionState> for SopWidth {
+    fn max_width(&self, state: &SubProblem<SopState,SopDecisionState>) -> usize {
         self.nb_vars * (state.depth as usize + 1) * self.factor
     }
 }

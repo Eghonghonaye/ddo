@@ -24,7 +24,7 @@ use std::cell::RefCell;
 
 use ddo::{Relaxation, Problem};
 
-use crate::{model::Sop, state::{Previous, SopState}, BitSet};
+use crate::{model::Sop, state::{Previous, SopDecisionState, SopState}, BitSet};
 
 #[derive(Clone)]
 pub struct SopRelax<'a> {
@@ -108,6 +108,7 @@ impl RelaxHelper {
 
 impl Relaxation for SopRelax<'_> {
     type State = SopState;
+    type DecisionState = SopDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &SopState>) -> SopState {
         SopRelax::HELPER.with(|helper| {
@@ -130,7 +131,7 @@ impl Relaxation for SopRelax<'_> {
         })
     }
 
-    fn relax(&self, _: &SopState, _: &SopState, _: &SopState, _: ddo::Decision, cost: isize) -> isize {
+    fn relax(&self, _: &SopState, _: &SopState, _: &SopState, _: &ddo::Decision<SopDecisionState>, cost: isize) -> isize {
         cost
     }
 

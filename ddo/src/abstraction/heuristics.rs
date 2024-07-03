@@ -58,9 +58,9 @@ use crate::SubProblem;
 ///    width be constant across all compiled DDs whereas `NbUnassigned` lets
 ///    the maximum width vary depending on the number of problem variables 
 ///    which have already been decided upon.
-pub trait WidthHeuristic<State> {
+pub trait WidthHeuristic<State,DecisionState> {
     /// Estimates a good maximum width for an MDD rooted in the given state
-    fn max_width(&self, state: &SubProblem<State>) -> usize;
+    fn max_width(&self, state: &SubProblem<State,DecisionState>) -> usize;
 }
 
 /// A state ranking is an heuristic that imposes a partial order on states.
@@ -75,6 +75,7 @@ pub trait StateRanking {
     /// As is the case for `Problem` and `Relaxation`, a `StateRanking` must 
     /// tell the kind of states it is able to operate on.
     type State;
+    type DecisionState;
 
     /// This method compares two states and determines which is the most 
     /// desirable to keep. In this ordering, 
@@ -89,11 +90,12 @@ pub trait SubProblemRanking {
     /// As is the case for `Problem` and `Relaxation`, a `SubProblemRanking` 
     /// must tell the kind of states it is able to operate on.
     type State;
+    type DecisionState;
 
     /// This method compares two sub-problems and determines which is the one 
     /// that needs to be popped off the fringe first. In this ordering, greater
     /// means more likely to be popped first.
-    fn compare(&self, a: &SubProblem<Self::State>, b: &SubProblem<Self::State>) -> Ordering;
+    fn compare(&self, a: &SubProblem<Self::State,Self::DecisionState>, b: &SubProblem<Self::State,Self::DecisionState>) -> Ordering;
 }
 
 /// This trait encapsulates a criterion (external to the solver) which imposes

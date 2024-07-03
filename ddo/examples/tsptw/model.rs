@@ -21,9 +21,10 @@
 //! of the TSP+TW. (Implementation of the `Problem` trait).
 
 use ddo::{Problem, Variable, Decision};
+use std::sync::Arc;
 use smallbitset::Set256;
 
-use crate::{instance::TsptwInstance, state::{ElapsedTime, Position, TsptwState}};
+use crate::{instance::TsptwInstance, state::{ElapsedTime, Position, TsptwDecisionState, TsptwState}};
 
 
 /// This is the structure encapsulating the Tsptw problem.
@@ -49,6 +50,7 @@ impl Tsptw {
 
 impl Problem for Tsptw {
     type State = TsptwState;
+    type DecisionState = TsptwDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.instance.nb_nodes as usize
@@ -62,13 +64,13 @@ impl Problem for Tsptw {
         0
     }
     
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback) {
+    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback<Self::DecisionState>) {
         // When we are at the end of the tour, the only possible destination is
         // to go back to the depot. Any state that violates this constraint is
         // de facto infeasible.
         if state.depth as usize == self.nb_variables() - 1 {
             if self.can_move_to(state, 0) {
-                f.apply(Decision { variable, value: 0 })
+                f.apply(Arc::new(Decision { variable, value: 0, state: None }))
             }
             return;
         }
@@ -79,20 +81,20 @@ impl Problem for Tsptw {
             }
         }
         for i in state.must_visit.iter() {
-            f.apply(Decision { variable, value: i as isize })
+            f.apply(Arc::new(Decision { variable, value: i as isize, state: None }))
         }
 
         // Add those that can possibly be visited
         if let Some(maybe_visit) = &state.maybe_visit {
             for i in maybe_visit.iter() {
                 if self.can_move_to(state, i) {
-                    f.apply(Decision { variable, value: i as isize })
+                    f.apply(Arc::new(Decision { variable, value: i as isize, state: None }))
                 }
             }
         }
     }
 
-    fn transition(&self, state: &TsptwState, d: Decision) -> TsptwState {
+    fn transition(&self, state: &TsptwState, d: &Decision<TsptwDecisionState>) -> TsptwState {
         // if it is a true move
         let mut remaining = state.must_visit;
         remaining.remove_inplace(d.value as usize);
@@ -113,7 +115,7 @@ impl Problem for Tsptw {
         }
     }
 
-    fn transition_cost(&self, state: &TsptwState, _: &Self::State, d: Decision) -> isize {
+    fn transition_cost(&self, state: &TsptwState, _: &Self::State, d: &Decision<Self::DecisionState>) -> isize {
         // Tsptw is a minimization problem but the solver works with a 
         // maximization perspective. So we have to negate the min if we want to
         // yield a lower bound.

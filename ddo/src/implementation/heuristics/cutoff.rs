@@ -56,6 +56,7 @@ use crate::Cutoff;
 /// impl Problem for Knapsack {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn nb_variables(&self) -> usize {
 /// #         self.profit.len()
 /// #     }
@@ -65,7 +66,7 @@ use crate::Cutoff;
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -73,7 +74,7 @@ use crate::Cutoff;
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _next: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -84,13 +85,13 @@ use crate::Cutoff;
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// }
@@ -98,10 +99,11 @@ use crate::Cutoff;
 /// impl Relaxation for KPRelax<'_> {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 /// #         states.max_by_key(|node| node.capacity).copied().unwrap()
 /// #     }
-/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 /// #         cost
 /// #     }
 /// }
@@ -110,6 +112,7 @@ use crate::Cutoff;
 /// impl StateRanking for KPRanking {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 /// #         a.capacity.cmp(&b.capacity)
 /// #     }
@@ -195,6 +198,7 @@ impl Cutoff for NoCutoff {
 /// impl Problem for Knapsack {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn nb_variables(&self) -> usize {
 /// #         self.profit.len()
 /// #     }
@@ -204,7 +208,7 @@ impl Cutoff for NoCutoff {
 /// #     fn initial_value(&self) -> isize {
 /// #         0
 /// #     }
-/// #     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
+/// #     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
 /// #         let mut ret = state.clone();
 /// #         ret.depth  += 1;
 /// #         if dec.value == TAKE_IT { 
@@ -212,7 +216,7 @@ impl Cutoff for NoCutoff {
 /// #         }
 /// #         ret
 /// #     }
-/// #     fn transition_cost(&self, _state: &Self::State, _: &Self::State, dec: Decision) -> isize {
+/// #     fn transition_cost(&self, _state: &Self::State, _: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
 /// #         self.profit[dec.variable.id()] as isize * dec.value
 /// #     }
 /// #     fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
@@ -223,13 +227,13 @@ impl Cutoff for NoCutoff {
 /// #             None
 /// #         }
 /// #     }
-/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
+/// #     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
 /// #     {
 /// #         if state.capacity >= self.weight[variable.id()] {
-/// #             f.apply(Decision { variable, value: TAKE_IT });
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: TAKE_IT, state: None }));
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         } else {
-/// #             f.apply(Decision { variable, value: LEAVE_IT_OUT });
+/// #             f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state: None }));
 /// #         }
 /// #     }
 /// }
@@ -237,10 +241,11 @@ impl Cutoff for NoCutoff {
 /// impl Relaxation for KPRelax<'_> {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
 /// #         states.max_by_key(|node| node.capacity).copied().unwrap()
 /// #     }
-/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+/// #     fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
 /// #         cost
 /// #     }
 /// }
@@ -249,6 +254,7 @@ impl Cutoff for NoCutoff {
 /// impl StateRanking for KPRanking {
 ///       // details omitted in this example
 /// #     type State = KnapsackState;
+/// #     type DecisionState = char;
 /// #     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
 /// #         a.capacity.cmp(&b.capacity)
 /// #     }

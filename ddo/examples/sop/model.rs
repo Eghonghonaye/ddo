@@ -21,8 +21,9 @@
 //! of the SOP. (Implementation of the `Problem` trait).
 
 use ddo::{Problem, Variable, Decision, DecisionCallback};
+use std::sync::Arc;
 
-use crate::{io_utils::SopInstance, state::{SopState, Previous}, BitSet};
+use crate::{io_utils::SopInstance, state::{Previous, SopDecisionState, SopState}, BitSet};
 
 /// This is the structure encapsulating the Sop problem.
 #[derive(Debug, Clone)]
@@ -65,6 +66,7 @@ impl Sop {
 
 impl Problem for Sop {
     type State = SopState;
+    type DecisionState = SopDecisionState;
 
     fn nb_variables(&self) -> usize {
         // -1 because we always start from the first job
@@ -79,15 +81,15 @@ impl Problem for Sop {
         0
     }
 
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback) {
+    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>) {
         // When we are at the end of the schedule, the only possible destination is
         // to go to the last job.
         if state.depth as usize == self.nb_variables() - 1 {
-            f.apply(Decision { variable, value: (self.instance.nb_jobs - 1) as isize });
+            f.apply(Arc::new(Decision { variable, value: (self.instance.nb_jobs - 1) as isize, state: None }));
         } else {
             for i in state.must_schedule.iter() {
                 if self.can_schedule(state, i) {
-                    f.apply(Decision { variable, value: i as isize })
+                    f.apply(Arc::new(Decision { variable, value: i as isize, state: None }))
                 }
             }
     
@@ -95,14 +97,14 @@ impl Problem for Sop {
             if let Some(maybe_visit) = &state.maybe_schedule {
                 for i in maybe_visit.iter() {
                     if self.can_schedule(state, i) {
-                        f.apply(Decision { variable, value: i as isize })
+                        f.apply(Arc::new(Decision { variable, value: i as isize, state: None }))
                     }
                 }
             }
         }
     }
 
-    fn transition(&self, state: &SopState, d: Decision) -> SopState {
+    fn transition(&self, state: &SopState, d: &Decision<SopDecisionState>) -> SopState {
         let job = d.value as usize;
 
         let mut next = *state;
@@ -118,7 +120,7 @@ impl Problem for Sop {
         next
     }
 
-    fn transition_cost(&self, state: &SopState, _: &Self::State, d: Decision) -> isize {
+    fn transition_cost(&self, state: &SopState, _: &Self::State, d: &Decision<SopDecisionState>) -> isize {
         // Sop is a minimization problem but the solver works with a 
         // maximization perspective. So we have to negate the cost.
 

@@ -38,6 +38,9 @@ pub struct SopState {
     pub depth: usize
 }
 
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+pub struct SopDecisionState;
+
 /// This represents the last job in the current sequence
 #[derive(Debug, Clone, Copy, Hash, Eq, PartialEq)]
 pub enum Previous {

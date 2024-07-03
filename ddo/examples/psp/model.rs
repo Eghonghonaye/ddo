@@ -24,6 +24,7 @@
 use std::{vec, collections::BinaryHeap};
 
 use ddo::*;
+use std::sync::Arc;
 use smallbitset::Set32;
 
 use crate::ub_utils::all_mst;
@@ -38,6 +39,8 @@ pub struct PspState {
     /// The time at which the previous demand for each item had been filled
     pub prev_demands: Vec<isize>,
 }
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PspDecisionState; 
 
 /// A constant to tell your machine wont do anything
 pub const IDLE: isize = -1;
@@ -55,6 +58,7 @@ pub struct Psp {
 
 impl Problem for Psp {
     type State = PspState;
+    type DecisionState = PspDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.horizon
@@ -77,7 +81,7 @@ impl Problem for Psp {
         0
     }
 
-    fn transition(&self, state: &Self::State, decision: ddo::Decision) -> Self::State {
+    fn transition(&self, state: &Self::State, decision: &ddo::Decision<Self::DecisionState>) -> Self::State {
         let mut ret = state.clone();
         ret.time -= 1;
 
@@ -90,7 +94,7 @@ impl Problem for Psp {
         ret
     }
 
-    fn transition_cost(&self, state: &Self::State, _: &Self::State, decision: ddo::Decision) -> isize {
+    fn transition_cost(&self, state: &Self::State, _: &Self::State, decision: &ddo::Decision<Self::DecisionState>) -> isize {
         if decision.value == IDLE {
             0
         } else {
@@ -118,7 +122,7 @@ impl Problem for Psp {
         }
     }
 
-    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback) {
+    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback<Self::DecisionState>) {
         let t = variable.id() as isize;
         let dom = (0..self.n_items).filter(|i| state.prev_demands[*i] >= t).collect::<Vec<usize>>();
         let rem_demands = (0..self.n_items).filter(|i| state.prev_demands[*i] >= 0).map(|i| self.rem_demands[i][state.prev_demands[i] as usize]).sum::<isize>();
@@ -128,11 +132,11 @@ impl Problem for Psp {
         }
 
         for i in dom.iter() {
-            f.apply(Decision {variable, value: *i as isize});
+            f.apply(Arc::new(Decision {variable, value: *i as isize, state : None}));
         }
 
         if rem_demands < t + 1 {
-            f.apply(Decision {variable, value: IDLE});
+            f.apply(Arc::new(Decision {variable, value: IDLE, state: None}));
         }
     }
 }
@@ -166,6 +170,7 @@ impl <'a> PspRelax<'a> {
 
 impl Relaxation for PspRelax<'_> {
     type State = PspState;
+    type DecisionState = PspDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
         let mut time = self.pb.horizon;
@@ -186,7 +191,7 @@ impl Relaxation for PspRelax<'_> {
         _source: &Self::State,
         _dest: &Self::State,
         _new:  &Self::State,
-        _decision: Decision,
+        _decision: &Decision<Self::DecisionState>,
         cost: isize,
     ) -> isize {
         cost
@@ -224,6 +229,7 @@ impl Relaxation for PspRelax<'_> {
 pub struct PspRanking;
 impl StateRanking for PspRanking {
     type State = PspState;
+    type DecisionState = PspDecisionState;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
         let tot_a = a.prev_demands.iter().sum::<isize>();

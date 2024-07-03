@@ -24,10 +24,14 @@
 use std::{vec, collections::HashSet};
 
 use ddo::*;
+use std::sync::Arc;
 
 use crate::io_utils::AlpInstance;
 
 const DUMMY: isize = -1;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct AlpDecisionState;
 
 /// The state of the DP model
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -108,6 +112,7 @@ impl Alp {
 
 impl Problem for Alp {
     type State = AlpState;
+    type DecisionState = AlpDecisionState;
 
     fn nb_variables(&self) -> usize {
         self.instance.nb_aircrafts
@@ -130,7 +135,7 @@ impl Problem for Alp {
         0
     }
 
-    fn transition(&self, state: &Self::State, decision: ddo::Decision) -> Self::State {
+    fn transition(&self, state: &Self::State, decision: &ddo::Decision<AlpDecisionState>) -> Self::State {
         if decision.value == DUMMY {
             state.clone()
         } else {
@@ -148,7 +153,7 @@ impl Problem for Alp {
         }
     }
 
-    fn transition_cost(&self, state: &Self::State, _: &Self::State, decision: ddo::Decision) -> isize {
+    fn transition_cost(&self, state: &Self::State, _: &Self::State, decision: &ddo::Decision<Self::DecisionState>) -> isize {
         if decision.value == DUMMY {
             0
         } else {
@@ -167,7 +172,7 @@ impl Problem for Alp {
         }
     }
 
-    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback) {
+    fn for_each_in_domain(&self, variable: ddo::Variable, state: &Self::State, f: &mut dyn ddo::DecisionCallback<Self::DecisionState>) {
         let mut tot_rem = 0;
         let mut used = HashSet::new();
         let mut decisions = vec![];
@@ -199,9 +204,9 @@ impl Problem for Alp {
         }
 
         if tot_rem == 0 {
-            f.apply(Decision {variable, value: DUMMY });
+            f.apply(Arc::new(Decision {variable, value: DUMMY, state: None }));
         } else {
-            decisions.iter().for_each(|d| f.apply(Decision { variable, value: *d }));
+            decisions.iter().for_each(|d| f.apply(Arc::new(Decision { variable, value: *d, state : None })));
         }
     }
 }
@@ -220,6 +225,7 @@ impl AlpRelax {
 
 impl Relaxation for AlpRelax {
     type State = AlpState;
+    type DecisionState = AlpDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
         let mut rem = vec![usize::MAX; self.pb.instance.nb_classes];
@@ -241,7 +247,7 @@ impl Relaxation for AlpRelax {
         _source: &Self::State,
         _dest: &Self::State,
         _new:  &Self::State,
-        _decision: Decision,
+        _decision: &Decision<Self::DecisionState>,
         cost: isize,
     ) -> isize {
         cost
@@ -260,6 +266,7 @@ impl Relaxation for AlpRelax {
 pub struct AlpRanking;
 impl StateRanking for AlpRanking {
     type State = AlpState;
+    type DecisionState = AlpDecisionState;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
         let tot_a = a.info.iter().map(|i| i.prev_time).sum::<isize>();

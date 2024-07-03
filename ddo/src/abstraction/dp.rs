@@ -25,6 +25,7 @@
 //! `Problem` and `Relaxation`.
 
 use crate::{Variable, Decision};
+use std::sync::Arc;
 
 /// This trait defines the "contract" of what defines an optimization problem
 /// solvable with the branch-and-bound with DD paradigm. An implementation of
@@ -35,6 +36,7 @@ pub trait Problem {
     /// The DP model of the problem manipulates a state which is user-defined.
     /// Any type implementing Problem must thus specify the type of its state.
     type State;
+    type DecisionState;
     /// Any problem bears on a number of variable $x_0, x_1, x_2, ... , x_{n-1}$
     /// This method returns the value of the number $n$
     fn nb_variables(&self) -> usize;
@@ -44,10 +46,10 @@ pub trait Problem {
     fn initial_value(&self) -> isize;
     /// This method is an implementation of the transition function mentioned
     /// in the mathematical model of a DP formulation for some problem.
-    fn transition(&self, state: &Self::State, decision: Decision) -> Self::State;
+    fn transition(&self, state: &Self::State, decision: &Decision<Self::DecisionState>) -> Self::State;
     /// This method is an implementation of the transition cost function mentioned
     /// in the mathematical model of a DP formulation for some problem.
-    fn transition_cost(&self, source: &Self::State, dest: &Self::State, decision: Decision) -> isize;
+    fn transition_cost(&self, source: &Self::State, dest: &Self::State, decision: &Decision<Self::DecisionState>) -> isize;
     /// Any problem needs to be able to specify an ordering on the variables
     /// in order to decide which variable should be assigned next. This choice
     /// is an **heuristic** choice. The variable ordering does not need to be
@@ -59,7 +61,7 @@ pub trait Problem {
     /// This method calls the function `f` for any value in the domain of 
     /// variable `var` when in state `state`.  The function `f` is a function
     /// (callback, closure, ..) that accepts one decision.
-    fn for_each_in_domain(&self, var: Variable, state: &Self::State, f: &mut dyn DecisionCallback);
+    fn for_each_in_domain(&self, var: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>);
     /// This method returns false iff this node can be moved forward to the next
     /// layer without making any decision about the variable `_var`.
     /// When that is the case, a default decision is to be assumed about the 
@@ -78,6 +80,7 @@ pub trait Relaxation {
     /// Similar to the DP model of the problem it relaxes, a relaxation operates
     /// on a set of states (the same as the problem). 
     type State;
+    type DecisionState;
 
     /// This method implements the merge operation: it combines several `states`
     /// and yields a new state which is supposed to stand for all the other
@@ -95,7 +98,7 @@ pub trait Relaxation {
         source: &Self::State,
         dest: &Self::State,
         new: &Self::State,
-        decision: Decision,
+        decision: &Decision<Self::DecisionState>,
         cost: isize,
     ) -> isize;
 
@@ -109,14 +112,14 @@ pub trait Relaxation {
 /// This trait basically defines a callback which is passed on to the problem
 /// so as to let it efficiently enumerate the domain values of some given 
 /// variable.
-pub trait DecisionCallback {
+pub trait DecisionCallback <T>{
     /// executes the callback using the given decision
-    fn apply(&mut self, decision: Decision);
+    fn apply(&mut self, decision: Arc<Decision<T>>);
 }
 /// The simplest and most natural callback implementation is to simply use
 /// a closure.
-impl <X: FnMut(Decision)> DecisionCallback for X {
-    fn apply(&mut self, decision: Decision) {
+impl <T,X: FnMut(Arc<Decision<T>>)> DecisionCallback<T> for X {
+    fn apply(&mut self, decision: Arc<Decision<T>>) {
         self(decision)
     }
 }
@@ -124,6 +127,7 @@ impl <X: FnMut(Decision)> DecisionCallback for X {
 #[cfg(test)]
 mod tests {
     use crate::{Relaxation, DecisionCallback, Decision, Problem};
+    use std::sync::Arc;
     
     #[test]
     fn by_default_fast_upperbound_yields_positive_max() {
@@ -137,14 +141,14 @@ mod tests {
     }
 
     #[test]
-    fn any_closure_is_a_decision_callback() {
+    fn any_closure_is_a_decision_callback<>() {
         let mut changed = false;
         let chg = &mut changed;
-        let closure: &mut dyn DecisionCallback = &mut |_: Decision| {
+        let closure: &mut dyn DecisionCallback<<DummyProblem as Problem>::DecisionState> = &mut |_: Arc<Decision<<DummyProblem as Problem>::DecisionState>>| {
             *chg = true;
         };
 
-        closure.apply(Decision{variable: crate::Variable(0), value: 4});
+        closure.apply(Arc::new(Decision{variable: crate::Variable(0), value: 4, state: None}));
         
         assert!(changed);
     }
@@ -152,6 +156,7 @@ mod tests {
     struct DummyProblem;
     impl Problem for DummyProblem {
         type State = char;
+        type DecisionState = u8;
 
         fn nb_variables(&self) -> usize {
             todo!()
@@ -162,23 +167,24 @@ mod tests {
         fn initial_value(&self) -> isize {
             todo!()
         }
-        fn transition(&self, _: &Self::State, _: Decision) -> Self::State {
+        fn transition(&self, _: &Self::State, _: &Decision<Self::DecisionState>) -> Self::State {
             todo!()
         }
-        fn transition_cost(&self, _: &Self::State, _: &Self::State, _: Decision) -> isize {
+        fn transition_cost(&self, _: &Self::State, _: &Self::State, _: &Decision<Self::DecisionState>) -> isize {
             todo!()
         }
         fn next_variable(&self, _: usize, _: &mut dyn Iterator<Item = &Self::State>)
             -> Option<crate::Variable> {
             todo!()
         }
-        fn for_each_in_domain(&self, _: crate::Variable, _: &Self::State, _: &mut dyn DecisionCallback) {
+        fn for_each_in_domain(&self, _: crate::Variable, _: &Self::State, _: &mut dyn DecisionCallback<Self::DecisionState>) {
             todo!()
         }
     }
     struct DummyRelax;
     impl Relaxation for DummyRelax {
         type State = char;
+        type DecisionState = u8;
 
         fn merge(&self, _states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
             todo!()
@@ -189,7 +195,7 @@ mod tests {
             _source: &Self::State,
             _dest: &Self::State,
             _new: &Self::State,
-            _decision: crate::Decision,
+            _decision: &crate::Decision<Self::DecisionState>,
             _cost: isize,
         ) -> isize {
             todo!()

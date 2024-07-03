@@ -29,6 +29,7 @@ use heuristics::{TsptwWidth, TsptwRanking};
 use instance::TsptwInstance;
 use model::Tsptw;
 use relax::TsptwRelax;
+use state::TsptwDecisionState;
 
 mod instance;
 mod state;
@@ -100,7 +101,7 @@ fn main() {
 
     print_solution(&instance, nb_vars, outcome, &lb, &ub, duration, solution);
 }
-fn print_solution(name: &str, n: usize, completion: Completion, lb: &str, ub: &str, duration: Duration, solution: Option<Solution>) {
+fn print_solution(name: &str, n: usize, completion: Completion, lb: &str, ub: &str, duration: Duration, solution: Option<Solution<TsptwDecisionState>>) {
     println!("instance : {name}");
     println!("status   : {}", status(completion));
     println!("lower bnd: {lb}");
@@ -128,7 +129,7 @@ fn status(completion: Completion) -> &'static str {
        "Timeout"
    }
 }
-fn solution_to_string(nb_vars: usize, solution: Option<Solution>) -> String {
+fn solution_to_string(nb_vars: usize, solution: Option<Solution<TsptwDecisionState>>) -> String {
     match solution {
         None   => "No feasible solution found".to_string(),
         Some(s)=> {

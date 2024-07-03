@@ -26,6 +26,8 @@ use ddo::{Relaxation, Decision, Problem};
 use ordered_float::OrderedFloat;
 use smallbitset::Set64;
 
+use crate::state::SrflpDecisionState;
+
 use super::{model::Srflp, state::SrflpState};
 
 #[derive(Clone)]
@@ -40,6 +42,7 @@ impl <'a> SrflpRelax<'a> {
 
 impl Relaxation for SrflpRelax<'_> {
     type State = SrflpState;
+    type DecisionState = SrflpDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &SrflpState>) -> SrflpState {
         let mut depth = 0;
@@ -86,7 +89,7 @@ impl Relaxation for SrflpRelax<'_> {
         _: &Self::State,
         _: &Self::State,
         _: &Self::State,
-        _: Decision,
+        _: &Decision<Self::DecisionState>,
         cost: isize,
     ) -> isize
     {

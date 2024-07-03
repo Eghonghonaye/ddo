@@ -19,6 +19,8 @@
 
 use ddo::{StateRanking, WidthHeuristic, SubProblem};
 
+use crate::state::SrflpDecisionState;
+
 use super::state::SrflpState;
 
 #[derive(Debug, Copy, Clone)]
@@ -26,6 +28,7 @@ pub struct SrflpRanking;
 
 impl StateRanking for SrflpRanking {
     type State = SrflpState;
+    type DecisionState = SrflpDecisionState;
 
     fn compare(&self, sa: &Self::State, sb: &Self::State) -> std::cmp::Ordering {
         sa.depth.cmp(&sb.depth)
@@ -41,8 +44,8 @@ impl SrflpWidth {
         SrflpWidth { nb_vars, factor }
     }
 }
-impl WidthHeuristic<SrflpState> for SrflpWidth {
-    fn max_width(&self, _state: &SubProblem<SrflpState>) -> usize {
+impl WidthHeuristic<SrflpState,SrflpDecisionState> for SrflpWidth {
+    fn max_width(&self, _state: &SubProblem<SrflpState,SrflpDecisionState>) -> usize {
         self.nb_vars * self.factor
     }
 }

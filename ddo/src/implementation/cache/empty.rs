@@ -30,25 +30,27 @@ use crate::*;
 
 /// Dummy implementation of Cache with no information stored at all.
 #[derive(Debug, Clone, Copy)]
-pub struct EmptyCache<T> {
+pub struct EmptyCache<T,X> {
     phantom: PhantomData<T>,
+    phantom_decision: PhantomData<X>
 }
-impl <T> Default for EmptyCache<T> {
+impl <T,X> Default for EmptyCache<T,X> {
     fn default() -> Self {
-        EmptyCache { phantom: Default::default() }
+        EmptyCache { phantom: Default::default(),phantom_decision: Default::default() }
     }
 }
-impl <T> EmptyCache<T> {
+impl <T,X> EmptyCache<T,X> {
     pub fn new() -> Self {
         Default::default()
     }
 }
 
-impl<T> Cache for EmptyCache<T> {
+impl<T,X> Cache for EmptyCache<T,X> {
     type State = T;
+    type DecisionState = X;
 
     #[inline(always)]
-    fn initialize(&mut self, _: &dyn Problem<State = Self::State>) {}
+    fn initialize(&mut self, _: &dyn Problem<State = Self::State,DecisionState = Self::DecisionState>) {}
 
     #[inline(always)]
     fn get_threshold(&self, _: &T, _: usize) -> Option<Threshold> {
@@ -65,7 +67,7 @@ impl<T> Cache for EmptyCache<T> {
     fn clear(&self) {}
 
     #[inline(always)]
-    fn must_explore(&self, _: &SubProblem<Self::State>) -> bool {
+    fn must_explore(&self, _: &SubProblem<Self::State,Self::DecisionState>) -> bool {
         true
     }
 }

@@ -21,7 +21,7 @@ use std::cmp::Ordering;
 
 use ddo::*;
 
-use crate::model::{Mcp, McpState};
+use crate::model::{Mcp, McpDecisionState, McpState};
 
 #[derive(Debug, Clone)]
 pub struct McpRelax<'a> {
@@ -107,12 +107,13 @@ impl <'a> McpRelax<'a> {
 }
 impl Relaxation for McpRelax<'_> {
     type State = McpState;
+    type DecisionState = McpDecisionState;
 
     fn merge(&self, states: &mut dyn Iterator<Item=&McpState>) -> McpState {
         let states = states.collect::<Vec<&McpState>>();
         self.merge_states(&states)
     }
-    fn relax(&self, _: &McpState, dst: &McpState, mrg: &McpState, _: Decision, c: isize) -> isize {
+    fn relax(&self, _: &McpState, dst: &McpState, mrg: &McpState, _: &Decision<McpDecisionState>, c: isize) -> isize {
         let mut relaxed_cost = c;
         for v in 0..self.pb.nb_variables() {
             relaxed_cost += self.difference_of_abs_benefit(Variable(v), dst, mrg);

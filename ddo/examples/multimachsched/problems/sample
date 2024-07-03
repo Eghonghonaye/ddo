@@ -1,0 +1,41 @@
+// operations
+
+v: o: op(1,1);
+v: o: op(1,2);
+v: o: op(2,1);
+v: o: op(2,2);
+
+// machines
+v: m: m(1);
+v: m: m(2);
+
+// assignments
+c: assign(op(1,1),m(1));
+c: assign(op(1,2),m(2));
+c: assign(op(2,1),m(1));
+c: assign(op(2,2),m(2));
+
+// constraints
+c: processing(op(1,1),10);
+c: processing(op(1,2),15);
+c: processing(op(2,1),20);
+c: processing(op(2,2),25);
+
+
+c: setup(op(1,1),op(1,2),10);
+c: setup(op(2,1),op(2,2),10);
+
+
+c: deadline(op(1,2),30);
+
+
+c: release(op(1,1),0);
+c: release(op(1,2),0);
+c: release(op(2,1),0);
+c: release(op(2,2),0);
+
+
+c: precedence(op(1,1),op(1,2));
+c: precedence(op(2,1),op(2,2));
+
+// 

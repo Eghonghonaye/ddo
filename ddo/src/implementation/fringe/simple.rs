@@ -33,7 +33,7 @@ use crate::*;
 /// `SimpleFringe`.
 /// 
 pub struct SimpleFringe<O: SubProblemRanking> {
-    heap: BinaryHeap<SubProblem<O::State>, CompareSubProblem<O>>
+    heap: BinaryHeap<SubProblem<O::State,O::DecisionState>, CompareSubProblem<O>>
 }
 impl <O> SimpleFringe<O> where O: SubProblemRanking {
     /// This creates a new simple fringe which uses a custom fringe order.
@@ -43,12 +43,13 @@ impl <O> SimpleFringe<O> where O: SubProblemRanking {
 }
 impl <O> Fringe for SimpleFringe<O> where O: SubProblemRanking {
     type State = O::State;
+    type DecisionState = O::DecisionState;
     
-    fn push(&mut self, node: SubProblem<Self::State>) {
+    fn push(&mut self, node: SubProblem<Self::State,Self::DecisionState>) {
         self.heap.push(node)
     }
 
-    fn pop(&mut self) -> Option<SubProblem<Self::State>> {
+    fn pop(&mut self) -> Option<SubProblem<Self::State,Self::DecisionState>> {
         self.heap.pop()
     }
 
@@ -72,6 +73,7 @@ mod test_simple_fringe {
     struct CharRanking;
     impl StateRanking for CharRanking {
         type State = char;
+        type DecisionState = char;
 
         fn compare(&self, a: &Self::State, b: &Self::State) -> Ordering {
             a.cmp(b)
