@@ -5,13 +5,15 @@ use crate::model::State;
 
 impl Satisfaction for Deadline{
     fn filter_set(&self,
-        _instance:&Instance,
+        instance:&Instance,
         state:&State,
         _op: &OpId,
         options:& mut BitVector){
-            for index in 0..options.capacity(){
-                if state.est[index] >= state.lst[index] || state.est[index] >= self.value || state.est[index] >= self.value {
+            println!("after deadline filter {:?}", options);
+            for index in 0..instance.nops{
+                if state.est[index] > state.lst[index] || state.est[index] > self.value  {
                         options.remove(index);
+                        println!("after deadline filter {:?}", options);
                     } 
             } 
 

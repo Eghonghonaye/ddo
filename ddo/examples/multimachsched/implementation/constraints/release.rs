@@ -5,13 +5,15 @@ use crate::model::State;
 
 impl Satisfaction for Release{
     fn filter_set(&self,
-        _instance:&Instance,
+        instance:&Instance,
         state:&State,
         _op: &OpId,
         options:& mut BitVector){
-            for index in 0..options.capacity(){
-                if state.est[index] <= self.value {
+            println!("before release filter {:?}", options);
+            for index in 0..instance.nops{
+                if state.est[index] < self.value {
                         options.remove(index);
+                        println!("after release filter {:?}", options);
                     } 
             } 
         // options.retain(|operation| state.est[operation.as_usize()] >= self.value);

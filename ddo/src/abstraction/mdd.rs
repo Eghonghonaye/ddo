@@ -82,6 +82,14 @@ pub trait DecisionDiagram {
     /// compilation input (compilation type, and root subproblem)
     fn compile(&mut self, input: &CompilationInput<Self::State,Self::DecisionState>) 
         -> Result<Completion, Reason>;
+
+    /// Optional function that implements refinement. Can be populated in DD implementations
+    /// that build incremental refinement solvers
+    /// 
+    fn refine(&mut self, _input: &CompilationInput<Self::State,Self::DecisionState> ) -> Result<Completion, Reason>  {
+        Ok(Completion{is_exact: bool::default(), best_value: None})
+    }
+
     /// Returns true iff the DD which has been compiled is an exact DD.
     fn is_exact(&self) -> bool;
     /// Returns the optimal value of the objective function or None when no 

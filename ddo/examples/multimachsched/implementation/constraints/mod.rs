@@ -6,3 +6,4 @@ pub mod processing;
 pub mod release;
 pub mod setup;
 pub mod assign;
+pub mod norepeat;

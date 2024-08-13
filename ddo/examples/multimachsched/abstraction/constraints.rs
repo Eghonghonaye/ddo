@@ -1,6 +1,6 @@
 // traits of all constraints
 
-use crate::abstraction::instance::{Instance,Operation,Machine,OpId};
+use crate::abstraction::instance::{Instance,Machine,OpId};
 use crate::bitvector::BitVector;
 use crate::model::State;
 use std::rc::Rc;
@@ -12,7 +12,8 @@ pub enum Constraint{
     ReleaseCons(Release),
     PrecedenceCons(Precedence),
     ProcessingCons(Processing),
-    AssignCons(Assign)
+    AssignCons(Assign),
+    NoRepeatCons(NoRepeat)
 }
 
 // impl Constraint {
@@ -33,7 +34,7 @@ pub trait Satisfaction {
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Deadline {
-    pub op_a: Rc<Operation>,
+    pub op_a: OpId,
     pub value: usize
 }
 
@@ -47,32 +48,37 @@ pub enum SetupType{
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Setup {
-    pub op_a: Rc<Operation>,
-    pub op_b: Rc<Operation>,
+    pub op_a: OpId,
+    pub op_b: OpId,
     pub value: usize,
     pub setup_type: SetupType
 }
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Assign {
-    pub op_a: Rc<Operation>,
+    pub op_a: OpId,
     pub mach: Rc<Machine>
 }
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Release {
-    pub op_a: Rc<Operation>,
+    pub op_a: OpId,
     pub value: usize
 }
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Precedence {
-    pub op_a: Rc<Operation>,
-    pub op_b: Rc<Operation>
+    pub op_a: OpId,
+    pub op_b: OpId
 }
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Processing {
-    pub op_a: Rc<Operation>,
+    pub op_a: OpId,
     pub value: usize
+}
+
+#[derive(Clone, PartialEq, Eq)]
+pub struct NoRepeat{
+    pub op_a: OpId
 }

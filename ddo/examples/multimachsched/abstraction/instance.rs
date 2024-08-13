@@ -56,6 +56,18 @@ impl Operation{
                 deadline: usize::MAX,
                 machine: MId::max()}
     }
+    pub fn assign_machine(& mut self, mid: MId) {
+        self.machine = mid;
+    }
+    pub fn set_release(& mut self, val: usize) {
+        self.release = val;
+    }
+    pub fn set_processing(& mut self, val: usize) {
+        self.processing = val;
+    }
+    pub fn set_deadline(& mut self, val: usize) {
+        self.deadline = val;
+    }
 }
 
 
@@ -75,7 +87,7 @@ pub struct Instance {
     pub njobs : u16,
     pub nops :usize,
     pub nmachs : usize,
-    pub ops: HashMap<OpId, Rc<Operation>>,
+    pub ops: HashMap<OpId, Operation>,
     pub machs: HashMap<MId, Rc<Machine>>,
     pub constraints: HashMap<OpId,Vec<Constraint>>
 }

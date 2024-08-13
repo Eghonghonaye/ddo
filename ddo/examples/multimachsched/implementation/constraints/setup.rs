@@ -8,8 +8,8 @@ impl Setup{
         _instance: &Instance, 
         state: &State, 
         op: &OpId) -> bool{
-            if self.op_b.id == *op{
-                if state.est[self.op_b.id.as_usize()] >= state.lst[self.op_a.id.as_usize()] + self.value{
+            if self.op_b == *op{
+                if state.est[self.op_b.as_usize()] > state.lst[self.op_a.as_usize()] + self.value{
                     return false;
                 }
             }  
@@ -23,9 +23,11 @@ impl Satisfaction for Setup{
         state:&State,
         _op: &OpId,
         options:& mut BitVector){
-            for index in 0..options.capacity(){
+            println!("before setup filter {:?}", options);
+            for index in 0..instance.nops{
                 if !self.feasible(instance,state,&OpId::new(index)) {
                         options.remove(index);
+                        println!("after setup filter {:?}", options);
                     } 
             } 
         // options.retain(|op| self.feasible(instance,state,&op) == true);

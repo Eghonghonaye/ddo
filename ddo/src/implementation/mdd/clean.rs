@@ -14,17 +14,18 @@ use crate::{NodeFlags, Decision, CutsetType, CompilationInput, Completion, Reaso
 
 /// The identifier of a node: it indicates the position of the referenced node 
 /// in the ’nodes’ vector of the mdd structure.
+/// TODO This is currently broken by splitting nodes in the refinement portions
 #[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 struct NodeId(usize);
 
 /// The identifier of an edge: it indicates the position of the referenced edge 
 /// in the ’edges’ vector of the mdd structure.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 struct EdgeId(usize);
 
 /// The identifier of an edge list: it indicates the position of an edge list
 /// in the ’edgelists’ vector of the mdd structure.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq)]
 struct EdgesListId(usize);
 
 /// The identifier of a layer: it indicates the position of the referenced layer 
@@ -48,9 +49,12 @@ struct Node<T> {
     /// The identifier of the last edge on the longest path between the problem 
     /// root and this node if it exists.
     best: Option<EdgeId>,
-    /// The identifier of the latest edge having been added to the adjacency
+    /// The identifier of the latest edge having been added to the input adjacency
     /// list of this node. (Edges, by themselves form a kind of linked structure)
     inbound: EdgesListId,
+    /// The identifier of the latest edge having been added to the output adjacency
+    /// list of this node. (Edges, by themselves form a kind of linked structure)
+    outbound: EdgesListId,
     // The rough upper bound associated to this node
     rub: isize,
     /// A threshold value to be stored in the cache that conditions the
@@ -89,10 +93,36 @@ struct Edge<T> {
 }
 
 /// Represents a 'node' in the linked list that forms the adjacent edges list for a node 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum EdgesList {
     Cons {head: EdgeId, tail: EdgesListId},
     Nil
+}
+
+struct EdgesListIter<'a>{
+    content: &'a Vec<EdgesList>,
+    current: EdgesList,
+}
+
+impl EdgesList{
+    fn iter(self,vector:&Vec<EdgesList>) -> EdgesListIter{ //non-consuming?
+        EdgesListIter {
+            content: vector,
+            current: self
+        }
+    }
+}
+
+impl<'a> Iterator for EdgesListIter<'a>{
+    type Item = EdgesList;
+    fn next(&mut self) -> Option<EdgesList> {
+        match self.current{
+            EdgesList::Nil => return None,
+            EdgesList::Cons{head, tail} => {
+                                self.current = self.content[tail.0];
+                                return Some(EdgesList::Cons{head,tail})}
+        }
+    }
 }
 
 /// Represents a 'layer' in the decision diagram
@@ -100,6 +130,7 @@ enum EdgesList {
 struct Layer {
     from: usize,
     to: usize,
+    size: usize,
 }
 
 /// The decision diagram in itself. This structure essentially keeps track
@@ -131,9 +162,12 @@ where
     /// This vector stores the information about all edges connecting the nodes 
     /// of the decision diagram.
     edges: Vec<Edge<X>>,
-    /// This vector stores the information about all edge lists constituting 
+    /// This vector stores the information about all incoming edge lists constituting 
     /// linked lists between edges
-    edgelists: Vec<EdgesList>,
+    in_edgelists: Vec<EdgesList>,
+    /// This vector stores the information about all outgoing edge lists constituting 
+    /// linked lists between edges
+    out_edgelists: Vec<EdgesList>,
     
     /// Contains the nodes of the layer which is currently being expanded.
     /// This collection is only used during the unrolling of transition relation,
@@ -182,19 +216,21 @@ macro_rules! get {
     (mut node     $id:expr, $dd:expr) => {&mut $dd.nodes   [$id.0]};
     (    edge     $id:expr, $dd:expr) => {&    $dd.edges   [$id.0]};
     (mut edge     $id:expr, $dd:expr) => {&mut $dd.edges   [$id.0]};
-    (    edgelist $id:expr, $dd:expr) => {&    $dd.edgelists[$id.0]};
-    (mut edgelist $id:expr, $dd:expr) => {&mut $dd.edgelists[$id.0]};
+    (    in_edgelist $id:expr, $dd:expr) => {&    $dd.in_edgelists[$id.0]};
+    (mut in_edgelist $id:expr, $dd:expr) => {&mut $dd.in_edgelists[$id.0]};
+    (    out_edgelist $id:expr, $dd:expr) => {&    $dd.out_edgelists[$id.0]};
+    (mut out_edgelist $id:expr, $dd:expr) => {&mut $dd.out_edgelists[$id.0]};
     (    layer    $id:expr, $dd:expr) => {&    $dd.layers  [$id.0]};
     (mut layer    $id:expr, $dd:expr) => {&mut $dd.layers  [$id.0]};
 }
 
-/// This macro performs an action for each edge of a given node in the dd
+/// This macro performs an action for each incoming edge of a given node in the dd
 /// // TODO: Confirm functionality here, I cloned edge instead of the copy via derefenecing it was doing before.
 /// // How does that change behaviour?
 macro_rules! foreach {
     (edge of $id:expr, $dd:expr, $action:expr) => {
         let mut list = get!(node $id, $dd).inbound;
-        while let EdgesList::Cons{head, tail} = *get!(edgelist list, $dd) {
+        while let EdgesList::Cons{head, tail} = *get!(in_edgelist list, $dd) {
             let edge = get!(edge head, $dd).clone();
             $action(edge);
             list = tail;
@@ -206,13 +242,15 @@ macro_rules! foreach {
 macro_rules! append_edge_to {
     ($dd:expr, $edge:expr) => {
         let new_eid = EdgeId($dd.edges.len());
-        let lst_id  = EdgesListId($dd.edgelists.len());
+        let lst_id  = EdgesListId($dd.in_edgelists.len());
         $dd.edges.push($edge);
-        $dd.edgelists.push(EdgesList::Cons { head: new_eid, tail: get!(node $edge.to, $dd).inbound });
+        $dd.in_edgelists.push(EdgesList::Cons { head: new_eid, tail: get!(node $edge.to, $dd).inbound });
+        $dd.out_edgelists.push(EdgesList::Cons { head: new_eid, tail: get!(node $edge.from, $dd).outbound });
         
-        let parent = get!(node $edge.from, $dd);
+        let parent = get!(mut node $edge.from, $dd);
         let parent_exact = parent.flags.is_exact();
         let value = parent.value_top.saturating_add($edge.cost);
+        parent.outbound = lst_id;
         
         let node = get!(mut node $edge.to, $dd);
         let exact = parent_exact & node.flags.is_exact();
@@ -222,6 +260,93 @@ macro_rules! append_edge_to {
         if value >= node.value_top {
             node.best = Some(new_eid);
             node.value_top = value;
+        }
+    };
+}
+
+/// This macro detaches an edge to the list of edges adjacent to a given node
+//TODO verify functionality
+macro_rules! detach_edge_from {
+    ($dd:expr, $node_id:expr, $edgeslist:expr) => {
+        let node = get!(mut node $node_id, $dd);
+        let mut prev_id = node.inbound;
+        let mut curr_id = node.inbound;
+        
+        // detach from inbound list
+        let mut list_end:bool  = false;
+        while !list_end{
+            let curr = get!(in_edgelist curr_id, $dd);
+            match curr{
+                EdgesList::Cons{head:_curr_head, tail:curr_tail} => {    
+                     
+                            if *curr == $edgeslist  { 
+                                //TODO  disconnect curr by making tail NIL : currently breaks on some mutability P but likely can live with it cause noone points to curr anymore
+                                // {$dd.in_edgelists[curr_id.0] =  EdgesList::Cons{head:*curr_head,tail:NIL};}
+
+                                if curr_id == node.inbound {// if i am at start
+                                    node.inbound = *curr_tail;
+                                    // $dd.in_edgelists[curr_id.0] = EdgesList::Cons{head:*curr_head,tail:NIL};
+                                }
+                                else if *curr_tail == NIL{ // if i am at the end
+                                    node.inbound = NIL;
+                                }
+                                else {// if i am in the middle 
+                                    // $dd.in_edgelists[curr_id.0] =  EdgesList::Cons{head:*curr_head,tail:NIL};
+                                    // *curr_tail = NIL;
+                                    let prev = get!(in_edgelist prev_id, $dd);
+                                    match prev {
+                                        EdgesList::Cons{head:prev_head, tail:_prev_tail} => $dd.in_edgelists[prev_id.0] = EdgesList::Cons{head:*prev_head,tail:*curr_tail},
+                                        _ => {}
+                                    }
+                                }
+                                break;
+                            }
+                            prev_id = curr_id;
+                            curr_id = *curr_tail;
+                        },
+                EdgesList::Nil => {
+                                list_end = true;
+                    }
+            }           
+        }
+
+
+        // detach from outbound list
+        list_end  = false;
+        while !list_end{
+            let curr = get!(out_edgelist curr_id, $dd);
+            match curr{
+                EdgesList::Cons{head:_curr_head, tail:curr_tail} => {    
+                     
+                            if *curr == $edgeslist  { 
+                                //TODO  disconnect curr by making tail NIL : currently breaks on some mutability P but likely can live with it cause noone points to curr anymore
+                                // {$dd.in_edgelists[curr_id.0] =  EdgesList::Cons{head:*curr_head,tail:NIL};}
+
+                                if curr_id == node.outbound {// if i am at start
+                                    node.outbound = *curr_tail;
+                                    // $dd.in_edgelists[curr_id.0] = EdgesList::Cons{head:*curr_head,tail:NIL};
+                                }
+                                else if *curr_tail == NIL{ // if i am at the end
+                                    node.outbound = NIL;
+                                }
+                                else {// if i am in the middle 
+                                    // $dd.in_edgelists[curr_id.0] =  EdgesList::Cons{head:*curr_head,tail:NIL};
+                                    // *curr_tail = NIL;
+                                    let prev = get!(out_edgelist prev_id, $dd);
+                                    match prev {
+                                        EdgesList::Cons{head:prev_head, tail:_prev_tail} => $dd.out_edgelists[prev_id.0] = EdgesList::Cons{head:*prev_head,tail:*curr_tail},
+                                        _ => {}
+                                    }
+                                }
+                                break;
+                            }
+                            prev_id = curr_id;
+                            curr_id = *curr_tail;
+                        },
+                EdgesList::Nil => {
+                                list_end = true;
+                    }
+            }           
         }
     };
 }
@@ -246,6 +371,10 @@ where
 
     fn compile(&mut self, input: &CompilationInput<Self::State,Self::DecisionState>) -> Result<Completion, Reason> {
         self._compile(input)
+    }
+
+    fn refine(&mut self, input: &CompilationInput<Self::State,Self::DecisionState>) -> Result<Completion, Reason> {
+        self._refine(input)
     }
 
     fn is_exact(&self) -> bool {
@@ -285,7 +414,8 @@ where
             layers: vec![],
             nodes: vec![],
             edges: vec![],
-            edgelists: vec![],
+            in_edgelists: vec![],
+            out_edgelists: vec![],
             //
             prev_l: vec![],
             next_l: Default::default(),
@@ -301,11 +431,23 @@ where
         }
     }
     
+    /// refinement starts from an existing diagram so unlike _clear we don't clear all properties 
+    /// onl those that will be reset by refinement
+    fn _clear_for_refine(&mut self) {
+        self.cutset.clear();
+        self.lel = None;
+        self.best_node = None;
+        self.best_exact_node = None;
+        self.is_exact = true;
+        self.has_exact_best_path = false;
+    }
+
     fn _clear(&mut self) {
         self.layers.clear();
         self.nodes.clear();
         self.edges.clear();
-        self.edgelists.clear();
+        self.in_edgelists.clear();
+        self.out_edgelists.clear();
         self.prev_l.clear();
         self.next_l.clear();
         self.path_to_root.clear();
@@ -391,9 +533,55 @@ where
         })
     }
 
+    fn _refine(&mut self, input: &CompilationInput<T,X> ) -> Result<Completion, Reason> {
+        // clear parts of diagram reset by refinement
+        self._clear_for_refine();
+
+        // intialise diagram but without emptying nodes and edges etc
+        // only enough that we start analysis from top to bottom
+        self.curr_depth = input.residual.depth;
+        let root_node_id = NodeId(0);
+        self.next_l.clear();
+        self.next_l.insert(input.residual.state.clone(), root_node_id);
+
+
+        // go layer by layer
+        // is this always ordered that way? we need to do top to bottom traversal
+        let mut curr_layer_id = 0;
+        while curr_layer_id < self.layers.len() {
+
+            if input.cutoff.must_stop() {
+                return Err(Reason::CutoffOccurred);
+            }
+
+            let mut layer = *get!(layer LayerId(curr_layer_id), self);
+            // adjust layer from and to
+            if curr_layer_id > 0 {layer.from = get!(layer LayerId(curr_layer_id-1), self).to} else {};
+            layer.to = layer.from + layer.size;
+
+            let mut curr_l = (layer.from..layer.to).map(|x| NodeId(x)).collect();
+            if !self._refine_curr_layer(input, &mut curr_l, &mut layer) {
+                break;
+            }
+
+            // update node parameters?
+
+            curr_layer_id += 1;
+            self.curr_depth += 1;
+        }
+
+        self._finalize_for_refine(input);
+
+        Ok(Completion { 
+            is_exact: self.is_exact(), 
+            best_value: self.best_node.map(|n| get!(node n, self).value_top) 
+        })
+    }
+
     fn _initialize(&mut self, input: &CompilationInput<T,X>) {
         self.path_to_root.extend_from_slice(&input.residual.path);
-        self.edgelists.push(EdgesList::Nil);
+        self.in_edgelists.push(EdgesList::Nil);
+        self.out_edgelists.push(EdgesList::Nil);
 
         let root_node_id = NodeId(0);
         
@@ -403,6 +591,7 @@ where
             value_bot: isize::MIN, 
             best: None, 
             inbound: NIL, 
+            outbound: NIL,
             rub: isize::MAX, 
             theta: None,
             flags: NodeFlags::new_exact(), 
@@ -413,12 +602,22 @@ where
 
         self.nodes.push(root_node);
         self.next_l.insert(input.residual.state.clone(), root_node_id);
-        self.edgelists.push(EdgesList::Nil);
+        //TODO why are we pushing Nil twice? Line 507 above and here too
+        self.in_edgelists.push(EdgesList::Nil);
+        self.out_edgelists.push(EdgesList::Nil);
         self.curr_depth = input.residual.depth;
     }
 
     fn _finalize(&mut self, input: &CompilationInput<T,X>) {
         self._finalize_layers();
+        self._find_best_node();
+        self._finalize_exact(input);
+        self._finalize_cutset(input);
+        self._compute_local_bounds(input);
+        self._compute_thresholds(input);
+    }
+
+    fn _finalize_for_refine(&mut self, input: &CompilationInput<T,X>) {
         self._find_best_node();
         self._finalize_exact(input);
         self._finalize_cutset(input);
@@ -461,7 +660,7 @@ where
     fn _compute_local_bounds(&mut self, input: &CompilationInput<T,X>) {
         if self.lel.unwrap().0 < self.layers.len() && input.comp_type == CompilationType::Relaxed {
             // initialize last layer
-            let Layer { from, to } = *get!(layer LayerId(self.layers.len()-1), self);
+            let Layer { from, to, size: _ } = *get!(layer LayerId(self.layers.len()-1), self);
             for node in &mut self.nodes[from..to] {
                 node.value_bot = 0;
                 node.flags.set_marked(true);
@@ -469,7 +668,7 @@ where
 
             // traverse bottom-up
             // note: cache requires that all nodes have an associated locb. not only those below cutset
-            for Layer{from, to} in self.layers.iter().rev().copied() {
+            for Layer{from, to, size:_} in self.layers.iter().rev().copied() {
                 for id in from..to {
                     let id = NodeId(id);
                     let node = get!(node id, self);
@@ -503,7 +702,7 @@ where
                 }
             }
 
-            for Layer{from, to} in self.layers.iter().rev().copied() {
+            for Layer{from, to, size:_} in self.layers.iter().rev().copied() {
                 for id in from..to {
                     let id = NodeId(id);
                     let node = get!(mut node id, self);
@@ -578,7 +777,7 @@ where
 
     fn _compute_last_exact_layer_cutset(&mut self, lel: LayerId) {
         if lel.0 < self.layers.len() {
-            let Layer { from, to } = *get!(layer lel, self);
+            let Layer { from, to, size : _ } = *get!(layer lel, self);
             for (id, node) in self.nodes.iter_mut().enumerate().skip(from).take(to-from) {
                 self.cutset.push(NodeId(id));
                 node.flags.add(NodeFlags::F_CUTSET | NodeFlags::F_ABOVE_CUTSET);
@@ -586,7 +785,7 @@ where
         }
 
         // traverse bottom up to set the above cutset for all nodes in layers above LEL
-        for Layer{from, to} in self.layers.iter().take(lel.0).rev().copied() {
+        for Layer{from, to, size:_} in self.layers.iter().take(lel.0).rev().copied() {
             for id in from..to {
                 let id = NodeId(id);
                 let node = get!(mut node id, self);
@@ -598,7 +797,7 @@ where
     #[allow(clippy::redundant_closure_call)]
     fn _compute_frontier_cutset(&mut self) {
         // traverse bottom-up
-        for Layer{from, to} in self.layers.iter().rev().copied() {
+        for Layer{from, to, size:_} in self.layers.iter().rev().copied() {
             for id in from..to {
                 let id = NodeId(id);
                 let node = get!(mut node id, self);
@@ -621,11 +820,11 @@ where
     fn _finalize_layers(&mut self) {
         if !self.next_l.is_empty() {
             if self.layers.is_empty() {
-                self.layers.push(Layer { from: 0, to: self.nodes.len() });
+                self.layers.push(Layer { from: 0, to: self.nodes.len(), size: self.nodes.len()});
             } else {
                 let id = LayerId(self.layers.len()-1);
                 let layer = get!(layer id, self);
-                self.layers.push(Layer { from: layer.to, to: self.nodes.len() });
+                self.layers.push(Layer { from: layer.to, to: self.nodes.len(), size: self.nodes.len() - layer.to});
             }
         }
     }
@@ -667,6 +866,26 @@ where
         }
     }
 
+    fn _refine_curr_layer(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>, curr_layer: &mut Layer) -> bool {
+
+        if curr_l.is_empty() {
+            // TODO I return false as soon as a layer is empty? The refinement process stops beacuse why? Does that mean infeasible then?
+            false
+        } else {
+            if !self.layers.is_empty() {
+                self._filter_with_cache(input, curr_l);
+            }
+            self._filter_constraints(input, curr_l);
+
+            self._filter_with_dominance(input, curr_l);
+
+            self._stretch_if_needed(input, curr_l, curr_layer);
+            
+            true
+
+        }
+    }
+
     fn _move_to_next_layer(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) -> bool {
         self.prev_l.clear();
 
@@ -678,7 +897,7 @@ where
         }
 
         if curr_l.is_empty() {
-            self.layers.push(Layer { from: 0, to: 0 });
+            self.layers.push(Layer { from: 0, to: 0, size: 0 });
             false
         } else {
             if !self.layers.is_empty() {
@@ -689,11 +908,11 @@ where
             self._squash_if_needed(input, curr_l);
             
             if self.layers.is_empty() {
-                self.layers.push(Layer { from: 0, to: self.nodes.len() });
+                self.layers.push(Layer { from: 0, to: self.nodes.len(), size: self.nodes.len()});
             } else {
                 let id = LayerId(self.layers.len()-1);
                 let layer = get!(layer id, self);
-                self.layers.push(Layer { from: layer.to, to: self.nodes.len() });
+                self.layers.push(Layer { from: layer.to, to: self.nodes.len(), size: self.nodes.len() - layer.to });
             }
             true
         }
@@ -735,6 +954,25 @@ where
         });
     }
 
+    //TODO we should actually compute this filter at the point of edge creation so we don't do this later. FIX!
+    fn _filter_constraints(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) {
+        for node_id in curr_l.iter() {
+            // let state = self.nodes[node_id.0].state.as_ref();
+            let state = get!(mut node node_id, self).state.clone(); //TODO cloning to satisfy borrow checker, look into
+            let outbound_decisions: Vec<(EdgesList,Arc<Decision<_>>)> = 
+                        self.out_edgelists[self.nodes[node_id.0].outbound.0].iter(&self.out_edgelists).filter_map(|x| match x {
+                            EdgesList::Cons{head, tail:_} => Some((x, self.edges[head.0].decision.clone())),
+                            _ => None}).collect();
+            for (e_list,e_dec) in outbound_decisions{
+                if input.problem.filter(&state,&e_dec){
+                    // delete this edge
+                    detach_edge_from!(self,node_id,e_list);
+                }
+            }
+        }
+        //TODO if outbound edges all detached, set node as deleted-- basically if outbound is nil? I think
+    }
+
     fn _branch_on(
         &mut self,
         from_id: NodeId,
@@ -759,6 +997,7 @@ where
                     //
                     best: None,
                     inbound: NIL,
+                    outbound: NIL,
                     //
                     rub: isize::MAX,
                     theta: None,
@@ -805,6 +1044,28 @@ where
             },
         }
     }
+
+    fn _stretch_if_needed(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>, curr_layer: &mut Layer) {
+        match input.comp_type{
+            CompilationType::Restricted => {  /* refinement does not build restrictions */ },
+
+            _ => {  /* for both exact and realaxed we just keep splitting and filtering */
+                println!("trying to stretch");
+                if curr_l.len() < input.max_width && self.layers.len() > 1 { /* we dont want to stretch the root of the subproblem */ 
+                   let mut fully_split = false;
+                   while curr_l.len() < input.max_width && !fully_split {
+                    // println!("in stretch with fully split {fully_split}");
+                    fully_split = self._split_layer(input,curr_l,curr_layer);
+                    if !fully_split{
+                        self._maybe_save_lel();
+                    }
+                   }
+                }
+            }
+        }
+    }
+
+
     fn _maybe_save_lel(&mut self) {
         if self.lel.is_none() {
             self.lel = Some(LayerId(self.layers.len()-1)); // lel was the previous layer
@@ -849,6 +1110,7 @@ where
                 value_bot: isize::MIN,
                 best: None,    // yet
                 inbound: NIL,  // yet
+                outbound: NIL,  // yet
                 //
                 rub: isize::MAX,
                 theta: None,
@@ -888,6 +1150,137 @@ where
             curr_l.push(merged_id);
         }
     }
+
+    fn _split_layer(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>,curr_layer: &mut Layer) -> bool {
+        // order vec node by ranking
+        //TODO assume same ranking as deciding to merge for now but make API for user to add specific ranking here
+        curr_l.sort_unstable_by(|a, b| {
+            get!(node a, self).value_top
+                .cmp(&get!(node b, self).value_top)
+                .then_with(|| input.ranking.compare(get!(node a, self).state.as_ref(), get!(node b, self).state.as_ref()))
+                .reverse()
+        }); // reverse because greater means more likely to be kept
+
+        // select worst node and split  
+        let mut index = curr_l.len();
+        // println!("index is {index}");
+        while index > 0 {
+             
+            let node_to_split_id = curr_l[index-1];
+            let node_to_split = get!(node node_to_split_id, self);
+            let inbound_start = self.in_edgelists[node_to_split.inbound.0];
+            let outbound_start = self.out_edgelists[node_to_split.outbound.0];
+            
+            // collect inbound and outbound edges from linked list structure
+            let inbound_edges = 
+                        inbound_start.iter(&self.in_edgelists).filter_map(|x| match x {
+                            EdgesList::Cons{head, tail:_} => Some((head.0, self.edges[head.0].decision.as_ref())),
+                            _ => None}).collect::<Vec<(usize,&Decision<X>)>>();
+            let outbound_edges = 
+                        outbound_start.iter(&self.out_edgelists).filter_map(|x| match x {
+                            EdgesList::Cons{head, tail:_} => Some(head),
+                            _ => None}).collect::<Vec<EdgeId>>();
+            
+            if inbound_edges.len() > 1 { 
+                println!("splitting node");
+                // split the node at that index
+                // TODO we expect an ietrator of inbound edges...other similar functions in dp.rs use a mutable iterator
+                // TODO how do we safely do this while making sure the split algorithm cannot modify already made decisons?
+                let split_states = self._split_node(node_to_split_id, input, &mut inbound_edges.into_iter());
+                let mut new_nodes = vec![];
+
+                for (state,edges_to_append) in split_states{
+                    // only add merged as new node
+                    let split_id = NodeId(self.nodes.len());
+                    new_nodes.push(split_id);
+                    self.nodes.insert(curr_layer.to,Node {
+                                state: state.clone(),
+                                value_top: isize::MIN,
+                                value_bot: isize::MIN,
+                                best: None,    // yet
+                                inbound: NIL,  // yet
+                                outbound: NIL,  // yet
+                                //
+                                rub: isize::MAX,
+                                theta: None,
+                                flags: NodeFlags::new_relaxed(),
+                                depth: get!(node node_to_split_id, self).depth,
+                                some: vec![],
+                                all: vec![]
+                            }); // insert node after last node in layer so node vector is still sequential for each layer
+                
+                            curr_layer.to += 1;
+                            curr_layer.size += 1;
+
+                    //TODO redirect edges inbound
+                    for edge_id in edges_to_append {
+                        let e = self.edges[edge_id].clone();
+                        append_edge_to!(self, Edge { 
+                            from: e.from, 
+                            to: split_id, 
+                            decision: e.decision.clone(), 
+                            cost: e.cost }); //TODO edge cost should change here
+                    }
+                        
+                    //TODO replicate all edges outbound - we need to recalculate the decision states because it change supon split, can probably also filter at this point
+                    for edge_id in &outbound_edges {
+                        let e = self.edges[edge_id.0].clone();
+                        append_edge_to!(self, Edge { 
+                            from: split_id, 
+                            to: e.to, 
+                            decision: e.decision.clone(), 
+                            cost: e.cost }); //TODO edge cost should change here
+                    }
+            
+                }
+                //TODO we should then delete all incoming and outgoing edges to the split node
+                // basically call this detach for all the edges coming into the node
+                for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
+                    detach_edge_from!(self,node_to_split_id,e_list);
+                }
+                
+                //Delete split node
+                get!(mut node node_to_split_id, self).flags.set_deleted(true);
+
+                curr_l.remove(index-1);
+                self.nodes[curr_l[index-1].0].flags.set_deleted(true);
+                curr_l.append(&mut new_nodes);
+                return false;
+            }
+            else{
+                index -= 1;
+            }
+        }
+        true  
+    }
+
+    fn _split_node(&self, node_to_split_id: NodeId, 
+            input: &CompilationInput<T,X>, 
+            inbound_edges: &mut dyn Iterator<Item = (usize,&Decision<X>)> ) -> Vec<(Arc<T>,Vec<usize>)>{
+        
+        // let mut new_nodes = vec![];
+        let mut after_split:Vec<(Arc<T>,Vec<usize>)> = vec![]; // this usize is actually an edge id
+        // let node_to_split = get!(mut node node_to_split_id, self);
+        let split_state = get!(node node_to_split_id, self).state.as_ref();
+        let split_state_edges = input.problem.split_state_edges(split_state,inbound_edges);
+
+        // create n_split new nodes and redirect edges
+        for cluster in &split_state_edges{
+            let mut new_states = vec![];
+            for edge_id in cluster {
+                // create states for each edge transition
+                let current_decision = self.edges[*edge_id].decision.as_ref();
+                let next_state = Arc::new(input.problem.transition(split_state, current_decision));
+                let cost = input.problem.transition_cost(split_state, next_state.as_ref(), current_decision); //TODO actually use this cost post split
+                new_states.push(next_state);
+            }
+
+            // merge them as they go to the same state actually
+            let merged = Arc::new(input.relaxation.merge(&mut new_states.iter().map(|x| x.as_ref())));
+            after_split.push((merged,cluster.clone()));
+        }
+        after_split
+}
 }
 
 // ############################################################################
@@ -947,7 +1340,7 @@ where T: Debug + Eq + PartialEq + Hash + Clone,
 
         // Show clusters if requested
         if config.show_deleted && config.group_merged {
-            for (i, Layer { from, to }) in self.layers.iter().copied().enumerate() {
+            for (i, Layer { from, to , size:_}) in self.layers.iter().copied().enumerate() {
                 let mut merged = vec![];
                 for id in from..to {
                     let id = NodeId(id);
@@ -996,7 +1389,7 @@ where T: Debug + Eq + PartialEq + Hash + Clone,
     /// all the nodes of the terminal layer.
     fn add_terminal_node(&self) -> String {
         let mut out = String::new();
-        let Layer{from, to} = self.layers.last().copied().unwrap();
+        let Layer{from, to, size:_} = self.layers.last().copied().unwrap();
         if from != to {
             let terminal = "\tterminal [shape=\"circle\", label=\"\", style=\"filled\", color=\"black\", group=\"terminal\"];\n";
             out.push_str(terminal);

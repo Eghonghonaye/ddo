@@ -9,8 +9,8 @@ impl Precedence{
         _instance: &Instance, 
         state: &State, 
         op: &OpId) -> bool{
-            if self.op_b.id == *op{
-                if !state.maybe_scheduled.contains(self.op_a.id.as_usize()){
+            if self.op_b == *op{
+                if !state.maybe_scheduled.contains(self.op_a.as_usize()){
                     return false;
                 }
             }  
@@ -25,9 +25,11 @@ impl Satisfaction for Precedence{
         state: &State, 
         _op: &OpId,
         options: &mut BitVector) {
-            for index in 0..options.capacity(){
+            println!("before precedence filter {:?}", options);
+            for index in 0..instance.nops{
                 if !self.feasible(instance,state,&OpId::new(index)){
                         options.remove(index);
+                        println!("after precedence filter {:?}", options);
                     } 
             } 
             // options.retain(|op| self.feasible(instance,state,&op) == true);

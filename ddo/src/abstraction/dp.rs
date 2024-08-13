@@ -70,7 +70,27 @@ pub trait Problem {
     fn is_impacted_by(&self, _var: Variable, _state: &Self::State) -> bool {
         true
     }
+    /// Given a state and an outgoing decision, this method should filter out infeasible decisions
+    /// This implements the filtering rules in an incementally refined decision diagram
+    /// The method returns true if the edge transition is infeasible and should be filtered out
+    /// Returns false otherwise
+    fn filter(&self, _state:&Self::State, _decision: &Decision<Self::DecisionState>) -> bool {
+        false
+    }
+
+    /// Given a state and all its incoming decisions, this method should split/ partition them
+    /// Decisions are passed as a tuple of an id and the decision
+    /// We expect a return of vectors of the id only forming each clusters 
+    /// This implements the splitting heuristic in an incementally refined decision diagram
+    /// 
+    /// This is also an optional trait as a default heuristic is implemented
+    /// TODO implement default heuristic
+    fn split_state_edges(&self, _state:&Self::State, _decisions:&mut dyn Iterator<Item = (usize,&Decision<Self::DecisionState>)>) -> Vec<Vec<usize>>
+    {
+        vec![]
+    }
 }
+
 
 /// A relaxation encapsulates the relaxation $\Gamma$ and $\oplus$ which are
 /// necessary when compiling relaxed DDs. These operators respectively relax

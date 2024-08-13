@@ -20,8 +20,10 @@
 //! This module provide the solver implementation.
 mod parallel;
 mod sequential;
+mod incremental;
 pub use parallel::*;
 pub use sequential::*;
+pub use incremental::*;
 
 use crate::{DefaultMDDLEL, EmptyCache, SimpleCache, DefaultMDDFC, Pooled};
 
@@ -45,3 +47,5 @@ pub type SeqNoCachingSolverPooled<'a, State, DecisionState>= SequentialSolver<'a
 pub type SeqCachingSolverLel<'a, State, DecisionState>   = SequentialSolver<'a, State, DecisionState, DefaultMDDLEL<State, DecisionState>, SimpleCache<State, DecisionState>>;
 pub type SeqCachingSolverFc<'a, State, DecisionState>    = SequentialSolver<'a, State, DecisionState, DefaultMDDFC<State, DecisionState>,  SimpleCache<State, DecisionState>>;
 pub type SeqCachingSolverPooled<'a, State, DecisionState>= SequentialSolver<'a, State, DecisionState, Pooled<State, DecisionState>,        SimpleCache<State, DecisionState>>;
+
+pub type SeqIncrementalSolver<'a, State, DecisionState> = IncrementalSolver<'a, State, DecisionState, DefaultMDDLEL<State, DecisionState>, EmptyCache<State, DecisionState>>;

@@ -17,7 +17,8 @@ impl Satisfaction for Constraint{
             Constraint::ReleaseCons(cons) => cons.filter_set(instance,state,op,options),
             Constraint::PrecedenceCons(cons) => cons.filter_set(instance,state,op,options),
             Constraint::ProcessingCons(cons) => cons.filter_set(instance,state,op,options),
-            Constraint::AssignCons(cons) => cons.filter_set(instance,state,op,options)
+            Constraint::AssignCons(cons) => cons.filter_set(instance,state,op,options),
+            Constraint::NoRepeatCons(cons) => cons.filter_set(instance,state,op,options)
         }
     }
     fn filter_edge(&self) -> bool{
@@ -27,7 +28,8 @@ impl Satisfaction for Constraint{
             Constraint::ReleaseCons(cons) => cons.filter_edge(),
             Constraint::PrecedenceCons(cons) => cons.filter_edge(),
             Constraint::ProcessingCons(cons) => cons.filter_edge(),
-            Constraint::AssignCons(cons) => cons.filter_edge()
+            Constraint::AssignCons(cons) => cons.filter_edge(),
+            Constraint::NoRepeatCons(cons) => cons.filter_edge()
         }
 
     }
