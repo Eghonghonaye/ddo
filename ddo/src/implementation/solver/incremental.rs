@@ -1,29 +1,38 @@
 use std::clone::Clone;
-use std::{sync::Arc, hash::Hash};
+use std::{hash::Hash, sync::Arc};
 
-use crate::{Fringe, Decision, Problem, Relaxation, StateRanking, WidthHeuristic, Cutoff, SubProblem, DecisionDiagram, CompilationInput, CompilationType, Solver, Solution, Completion, Reason, Cache, EmptyCache, DefaultMDDLEL, DominanceChecker};
+use crate::{
+    Cache, CompilationInput, CompilationType, Completion, Cutoff, Decision, DecisionDiagram,
+    DefaultMappedLEL, DominanceChecker, EmptyCache, Fringe, Problem, Reason, Relaxation, Solution,
+    Solver, StateRanking, SubProblem, WidthHeuristic,
+};
 
-
-pub struct IncrementalSolver<'a, State, DecisionState, D = DefaultMDDLEL<State,DecisionState>, C = EmptyCache<State,DecisionState>,> 
-where D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
-      C: Cache<State = State,DecisionState = DecisionState> + Default,
+pub struct IncrementalSolver<
+    'a,
+    State,
+    DecisionState,
+    D = DefaultMappedLEL<State, DecisionState>,
+    C = EmptyCache<State, DecisionState>,
+> where
+    D: DecisionDiagram<State = State, DecisionState = DecisionState> + Default,
+    C: Cache<State = State, DecisionState = DecisionState> + Default,
 {
     /// A reference to the problem being solved with branch-and-bound MDD
-    problem: &'a (dyn Problem<State = State,DecisionState = DecisionState>),
+    problem: &'a (dyn Problem<State = State, DecisionState = DecisionState>),
     /// The relaxation used when a DD layer grows too large
-    relaxation: &'a (dyn Relaxation<State = State,DecisionState = DecisionState>),
+    relaxation: &'a (dyn Relaxation<State = State, DecisionState = DecisionState>),
     /// The ranking heuristic used to discriminate the most promising from
     /// the least promising states
-    value_ranking: &'a (dyn StateRanking<State = State,DecisionState = DecisionState>),
+    value_ranking: &'a (dyn StateRanking<State = State, DecisionState = DecisionState>),
     /// The ranking heuristic used to discriminate the nodes to split first
-    /// We aim to split nodes that will strengthen the relaxation first, can supply same 
-    /// ranking as value_ranking if you want but not necessary for this ranking to be based on 
+    /// We aim to split nodes that will strengthen the relaxation first, can supply same
+    /// ranking as value_ranking if you want but not necessary for this ranking to be based on
     /// contribution to objective
-    split_ranking: &'a (dyn StateRanking<State = State,DecisionState = DecisionState>),
+    split_ranking: &'a (dyn StateRanking<State = State, DecisionState = DecisionState>),
     /// The maximum width heuristic used to enforce a given maximum memory
     /// usage when compiling mdds
-    width_heu: &'a (dyn WidthHeuristic<State,DecisionState>),
-    /// A cutoff heuristic meant to decide when to stop the resolution of 
+    width_heu: &'a (dyn WidthHeuristic<State, DecisionState>),
+    /// A cutoff heuristic meant to decide when to stop the resolution of
     /// a given problem.
     cutoff: &'a (dyn Cutoff),
 
@@ -37,7 +46,7 @@ where D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
     /// any of the nodes remaining on the fringe. As a consequence, the
     /// exploration can be stopped as soon as a node with an ub <= current best
     /// lower bound is popped.
-    fringe: &'a mut (dyn Fringe<State = State,DecisionState = DecisionState>),
+    fringe: &'a mut (dyn Fringe<State = State, DecisionState = DecisionState>),
     /// This is a counter that tracks the number of nodes that have effectively
     /// been explored. That is, the number of nodes that have been popped from
     /// the fringe, and for which a restricted and relaxed mdd have been developed.
@@ -65,39 +74,41 @@ where D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
     dominance: &'a (dyn DominanceChecker<State = State>),
 }
 
-impl<'a, State, DecisionState, D, C>  IncrementalSolver<'a, State, DecisionState, D, C>
-where 
+impl<'a, State, DecisionState, D, C> IncrementalSolver<'a, State, DecisionState, D, C>
+where
     State: Eq + Hash + Clone,
     DecisionState: Eq + Hash + Clone,
-    D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
-    C: Cache<State = State,DecisionState = DecisionState> + Default,
+    D: DecisionDiagram<State = State, DecisionState = DecisionState> + Default,
+    C: Cache<State = State, DecisionState = DecisionState> + Default,
 {
     pub fn new(
-        problem: &'a (dyn Problem<State = State,DecisionState = DecisionState>),
-        relaxation: &'a (dyn Relaxation<State = State,DecisionState = DecisionState>),
-        ranking: &'a (dyn StateRanking<State = State,DecisionState = DecisionState>),
-        width: &'a (dyn WidthHeuristic<State,DecisionState>),
+        problem: &'a (dyn Problem<State = State, DecisionState = DecisionState>),
+        relaxation: &'a (dyn Relaxation<State = State, DecisionState = DecisionState>),
+        ranking: &'a (dyn StateRanking<State = State, DecisionState = DecisionState>),
+        width: &'a (dyn WidthHeuristic<State, DecisionState>),
         dominance: &'a (dyn DominanceChecker<State = State>),
-        cutoff: &'a (dyn Cutoff), 
-        fringe: &'a mut (dyn Fringe<State = State,DecisionState = DecisionState>),
+        cutoff: &'a (dyn Cutoff),
+        fringe: &'a mut (dyn Fringe<State = State, DecisionState = DecisionState>),
     ) -> Self {
-        Self::custom(problem, relaxation, ranking, width, dominance, cutoff, fringe)
+        Self::custom(
+            problem, relaxation, ranking, width, dominance, cutoff, fringe,
+        )
     }
 
     pub fn custom(
-        problem: &'a (dyn Problem<State = State,DecisionState = DecisionState>),
-        relaxation: &'a (dyn Relaxation<State = State,DecisionState = DecisionState>),
-        ranking: &'a (dyn StateRanking<State = State,DecisionState = DecisionState>),
-        width_heu: &'a (dyn WidthHeuristic<State,DecisionState>),
+        problem: &'a (dyn Problem<State = State, DecisionState = DecisionState>),
+        relaxation: &'a (dyn Relaxation<State = State, DecisionState = DecisionState>),
+        ranking: &'a (dyn StateRanking<State = State, DecisionState = DecisionState>),
+        width_heu: &'a (dyn WidthHeuristic<State, DecisionState>),
         dominance: &'a (dyn DominanceChecker<State = State>),
         cutoff: &'a (dyn Cutoff),
-        fringe: &'a mut (dyn Fringe<State = State,DecisionState = DecisionState>),
+        fringe: &'a mut (dyn Fringe<State = State, DecisionState = DecisionState>),
     ) -> Self {
         IncrementalSolver {
             problem,
             relaxation,
-            value_ranking:ranking,
-            split_ranking:ranking,
+            value_ranking: ranking,
+            split_ranking: ranking,
             width_heu,
             cutoff,
             //
@@ -114,7 +125,7 @@ where
             dominance,
         }
     }
-    
+
     fn initialize(&mut self) -> Result<Completion, Reason> {
         // create root
         let root = self.root_node();
@@ -136,14 +147,13 @@ where
         };
 
         // compile initial narrow width diagram
-        let completion = self.mdd.compile(&compilation)?;    
+        let completion = self.mdd.compile(&compilation)?;
 
         //FIXME should return soemthing that tells me whether the initial diagram was successfully compiled or not
-        Ok(completion)   
-
+        Ok(completion)
     }
 
-    fn root_node(&self) -> SubProblem<State,DecisionState> {
+    fn root_node(&self) -> SubProblem<State, DecisionState> {
         SubProblem {
             state: Arc::new(self.problem.initial_state()),
             value: self.problem.initial_value(),
@@ -178,23 +188,23 @@ where
     }
 }
 
-
-impl<'a, State, DecisionState, D, C> Solver<DecisionState> for IncrementalSolver<'a, State, DecisionState, D, C>
+impl<'a, State, DecisionState, D, C> Solver<DecisionState>
+    for IncrementalSolver<'a, State, DecisionState, D, C>
 where
     State: Eq + PartialEq + Hash + Clone,
     DecisionState: Eq + PartialEq + Hash + Clone,
-    D: DecisionDiagram<State = State,DecisionState = DecisionState> + Default,
-    C: Cache<State = State,DecisionState = DecisionState> + Default,
+    D: DecisionDiagram<State = State, DecisionState = DecisionState> + Default,
+    C: Cache<State = State, DecisionState = DecisionState> + Default,
 {
     /// This method orders the solver to search for the optimal solution among
     /// all possibilities. It returns a structure standing for the outcome of
-    /// the attempted maximization. Such a `Completion` may either be marked 
-    /// **exact** if the maximization has been carried out until optimality was 
-    /// proved. Or it can be inexact, in which case it means that the 
-    /// maximization process was stopped because of the satisfaction of some 
+    /// the attempted maximization. Such a `Completion` may either be marked
+    /// **exact** if the maximization has been carried out until optimality was
+    /// proved. Or it can be inexact, in which case it means that the
+    /// maximization process was stopped because of the satisfaction of some
     /// cutoff criterion.
     ///
-    /// Along with the `is_exact` exact flag, the completion provides an 
+    /// Along with the `is_exact` exact flag, the completion provides an
     /// optional `best_value` of the maximization problem. Four cases are thus
     /// to be distinguished:
     ///
@@ -206,26 +216,29 @@ where
     /// * When the `is_exact` flag is true, and no `best_value` is present: it
     ///   means that the problem admits no feasible solution (UNSAT).
     /// * When the `is_exact` flag is false and no `best_value` is present: it
-    ///   simply means that no feasible solution has been found before the 
+    ///   simply means that no feasible solution has been found before the
     ///   cutoff occurred.
     ///
-    /// 
-    /// 
-    fn maximize(&mut self) -> Completion{
+    ///
+    ///
+    fn maximize(&mut self) -> Completion {
         let outcome = self.initialize();
         if let Err(reason) = outcome {
-            self.abort_search(reason); 
+            self.abort_search(reason);
 
-            if let Some(sol) = self.best_sol.as_mut() { sol.sort_unstable_by_key(|d| d.variable.0) }
-            return Completion { is_exact: self.abort_proof.is_none(), best_value: self.best_sol.as_ref().map(|_| self.best_lb) };
+            if let Some(sol) = self.best_sol.as_mut() {
+                sol.sort_unstable_by_key(|d| d.variable.0)
+            }
+            return Completion {
+                is_exact: self.abort_proof.is_none(),
+                best_value: self.best_sol.as_ref().map(|_| self.best_lb),
+            };
         }
-
 
         let root = self.root_node();
         let mut width = self.width_heu.max_width(&root);
         self.maybe_update_best();
         loop {
-            
             // if self.mdd.is_exact(){
             //     println!("ended as exact");
             //     break;
@@ -259,13 +272,13 @@ where
             // handle error?
 
             if let Err(reason) = outcome {
-                self.abort_search(reason); 
+                self.abort_search(reason);
                 break;
             }
             println!("did not abort");
             self.maybe_update_best();
             println!("updated best");
-            if self.mdd.is_exact(){
+            if self.mdd.is_exact() {
                 println!("ended as exact");
                 break;
             }
@@ -274,21 +287,23 @@ where
 
         println!("out of loop");
 
-        if let Some(sol) = self.best_sol.as_mut() { sol.sort_unstable_by_key(|d| d.variable.0) }
-        Completion { is_exact: self.abort_proof.is_none(), best_value: self.best_sol.as_ref().map(|_| self.best_lb) }
-
+        if let Some(sol) = self.best_sol.as_mut() {
+            sol.sort_unstable_by_key(|d| d.variable.0)
+        }
+        Completion {
+            is_exact: self.abort_proof.is_none(),
+            best_value: self.best_sol.as_ref().map(|_| self.best_lb),
+        }
     }
-
 
     /// Returns the best solution that has been identified for this problem.
     /// /// This method returns the best solution to the optimization problem.
-    /// That is, it returns the vector of decision which maximizes the value 
+    /// That is, it returns the vector of decision which maximizes the value
     /// of the objective function (sum of transition costs + initial value).
     /// It returns `None` when the problem admits no feasible solution.
     fn best_solution(&self) -> Option<Vec<Arc<Decision<DecisionState>>>> {
         self.best_sol.clone()
     }
-
 
     /// Returns the value of the best solution that has been identified for
     /// this problem.
@@ -299,7 +314,6 @@ where
         self.best_sol.as_ref().map(|_sol| self.best_lb)
     }
 
-
     /// Returns the value of the best lower bound that has been identified for
     /// this problem.
     /// /// Returns the best lower bound that has been identified so far.
@@ -308,7 +322,6 @@ where
     fn best_lower_bound(&self) -> isize {
         self.best_lb
     }
-
 
     /// Returns the value of the best upper bound that has been identified for
     /// this problem.
@@ -319,12 +332,11 @@ where
         self.best_ub
     }
 
-
     /// Sets a primal (best known value and solution) of the problem.
     fn set_primal(&mut self, value: isize, solution: Solution<DecisionState>) {
         if value > self.best_lb {
             self.best_sol = Some(solution);
-            self.best_lb  = value;
+            self.best_lb = value;
         }
     }
 }

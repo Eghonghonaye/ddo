@@ -17,41 +17,46 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-//! This module provides an implementation of the mdd data structure. 
+//! This module provides an implementation of the mdd data structure.
 //! After this API revamping, I have decided to only include the VectorBased MDD
-//! (aka DefaultMDD). But if there is a need, I might decide to bring back the 
-//! flat and pooled MDD implementations as well in the future. 
-//! 
-//! # Note: 
-//! PooledMDD was the version working best on the Maximum Independent Set Problem 
+//! (aka DefaultMDD). But if there is a need, I might decide to bring back the
+//! flat and pooled MDD implementations as well in the future.
+//!
+//! # Note:
+//! PooledMDD was the version working best on the Maximum Independent Set Problem
 //! (MISP). If this is the problem you want to solve, you might want to stick with
 //! a previous version of ddo (<= 0.5.0).
-mod node_flags;
 mod clean;
-mod pooled;
 mod mapped;
+mod node_flags;
+mod pooled;
 
-pub use node_flags::*;
 pub use clean::*;
+pub use mapped::*;
+pub use node_flags::*;
 pub use pooled::*;
 
-use crate::{LAST_EXACT_LAYER, FRONTIER};
+use crate::{FRONTIER, LAST_EXACT_LAYER};
 
 /// By default, the mdd implementation which you will want to use is the vector based
 /// implementation. In most cases, it is faster than everything else I have tried.
 /// So having a alias calling it the "default" DD implementation seems to make sense.
-pub type DefaultMDD<T,X> = DefaultMDDLEL<T,X>;
+pub type DefaultMDD<T, X> = DefaultMDDLEL<T, X>;
 
 /// By default, the mdd implementation which you will want to use is the vector based
 /// implementation. In most cases, it is faster than everything else I have tried.
 /// So having a alias calling it the "default" DD implementation seems to make sense.
-/// 
+///
 /// This is the variant implementation that produces a last exact layer cutset when asked
-pub type DefaultMDDLEL<T,X> = Mdd<T,X, LAST_EXACT_LAYER>;
+pub type DefaultMDDLEL<T, X> = Mdd<T, X, LAST_EXACT_LAYER>;
 
 /// By default, the mdd implementation which you will want to use is the vector based
 /// implementation. In most cases, it is faster than everything else I have tried.
 /// So having a alias calling it the "default" DD implementation seems to make sense.
-/// 
+///
 /// This is the variant implementation that produces a frontier cut-set when asked
-pub type DefaultMDDFC<T,X> = Mdd<T, X,FRONTIER>;
+pub type DefaultMDDFC<T, X> = Mdd<T, X, FRONTIER>;
+
+pub type DefaultMapped<T, X> = DefaultMappedLEL<T, X>;
+
+pub type DefaultMappedLEL<T, X> = Mapped<T, X, LAST_EXACT_LAYER>;
