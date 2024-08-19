@@ -29,6 +29,7 @@
 mod node_flags;
 mod clean;
 mod pooled;
+mod mapped;
 
 pub use node_flags::*;
 pub use clean::*;

@@ -435,6 +435,7 @@ where
     /// onl those that will be reset by refinement
     fn _clear_for_refine(&mut self) {
         self.cutset.clear();
+        self.path_to_root.clear();
         self.lel = None;
         self.best_node = None;
         self.best_exact_node = None;
@@ -489,6 +490,7 @@ where
         let mut edge_id = nodes[id.0].best;
         while let Some(eid) = edge_id {
             let edge = edges[eid.0].clone();
+            println!("finding best path with edge from {:?} to {:?}", edge.from.0,edge.to.0);
             sol.push(edge.decision);
             edge_id = nodes[edge.from.0].best;
         }
@@ -539,11 +541,11 @@ where
 
         // intialise diagram but without emptying nodes and edges etc
         // only enough that we start analysis from top to bottom
+        self.path_to_root.extend_from_slice(&input.residual.path);
         self.curr_depth = input.residual.depth;
-        let root_node_id = NodeId(0);
+        // let root_node_id = NodeId(0);
         self.next_l.clear();
-        self.next_l.insert(input.residual.state.clone(), root_node_id);
-
+        // self.next_l.insert(input.residual.state.clone(), root_node_id);
 
         // go layer by layer
         // is this always ordered that way? we need to do top to bottom traversal
@@ -554,13 +556,7 @@ where
                 return Err(Reason::CutoffOccurred);
             }
 
-            let mut layer = *get!(layer LayerId(curr_layer_id), self);
-            // adjust layer from and to
-            if curr_layer_id > 0 {layer.from = get!(layer LayerId(curr_layer_id-1), self).to} else {};
-            layer.to = layer.from + layer.size;
-
-            let mut curr_l = (layer.from..layer.to).map(|x| NodeId(x)).collect();
-            if !self._refine_curr_layer(input, &mut curr_l, &mut layer) {
+            if !self._refine_curr_layer(input, curr_layer_id) {
                 break;
             }
 
@@ -570,7 +566,35 @@ where
             self.curr_depth += 1;
         }
 
+        //TODO DO this betterr!
+        // populate next_l as last layer
+        // fetch final layer nodes
+        let mut final_layer = *get!(layer LayerId(self.layers.len()-1), self);
+        // adjust layer from and to
+        if self.layers.len() > 0 {final_layer.from = get!(layer LayerId(self.layers.len()-2), self).to} else {};
+        final_layer.to = final_layer.from + final_layer.size;
+
+        //TODO only collect those that are not deleted 
+        let mut final_l = (final_layer.from..final_layer.to).filter_map(|x| {
+                                                            let id = NodeId(x);
+                                                            let node = get!(node id, self); 
+                                                            if !node.flags.is_deleted() { return Some(id)}
+                                                            else {return None }
+                                                                        }).collect::<Vec<_>>();
+        let all_final_l = (final_layer.from..final_layer.to).map(|x| NodeId(x)).collect::<Vec<_>>();
+
+        // println!("Final layer contents");
+        // for node_id in &all_final_l {
+        //     let node = get!(node node_id, self);
+        //     println!("node {:?} is exact {:?} at value {:?} and is deleted {:?}",node_id,node.flags.is_exact(),node.value_top,node.flags.is_deleted());
+        // }
+        for id in final_l.drain(..) {
+            let node = get!(mut node id, self);
+            self.next_l.insert(node.state.clone(),id);
+        }
+
         self._finalize_for_refine(input);
+        println!("prep return");
 
         Ok(Completion { 
             is_exact: self.is_exact(), 
@@ -615,14 +639,17 @@ where
         self._finalize_cutset(input);
         self._compute_local_bounds(input);
         self._compute_thresholds(input);
+        
     }
 
     fn _finalize_for_refine(&mut self, input: &CompilationInput<T,X>) {
         self._find_best_node();
+        println!("found best node");
         self._finalize_exact(input);
         self._finalize_cutset(input);
         self._compute_local_bounds(input);
         self._compute_thresholds(input);
+        println!("completed finalize");
     }
 
 
@@ -835,12 +862,20 @@ where
             .values()
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
+        println!("here");
+        if let Some(x) = self.best_node {println!("best node {:?} is exact {:?} at value {:?}",x,get!(node x, self).flags.is_exact(),get!(node x, self).value_top);};
+        // for node_id in self.next_l.values() {
+        //     let node = get!(node node_id, self);
+        //     println!("node {:?} is exact {:?} at value {:?} and is deleted {:?}",node_id,node.flags.is_exact(),node.value_top,node.flags.is_deleted());
+        // }
+        println!("here now");
         self.best_exact_node = self
             .next_l
             .values()
             .filter(|id| get!(node id, self).flags.is_exact())
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
+        println!("here done");
     }
 
     fn _finalize_exact(&mut self, input: &CompilationInput<T,X>) {
@@ -866,20 +901,36 @@ where
         }
     }
 
-    fn _refine_curr_layer(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>, curr_layer: &mut Layer) -> bool {
+    fn _refine_curr_layer(&mut self, input: &CompilationInput<T,X>, curr_layer_id: usize ) -> bool {
+        // fetch layer nodes
+        let prev_layer: Option<Layer> = {if curr_layer_id > 0 {Some(*get!(layer LayerId(curr_layer_id-1),self))} else {None}};
+        let curr_layer = get!(mut layer LayerId(curr_layer_id), self);
+        // adjust layer from and to
+        if let Some(x) = prev_layer{
+            curr_layer.from = x.to;
+        }
+        curr_layer.to = curr_layer.from + curr_layer.size;
+
+        //TODO only collect those that are not deleted 
+        let mut curr_l = (curr_layer.from..curr_layer.to).filter_map(|x| {
+                                                            let id = NodeId(x);
+                                                            let node = get!(node id, self); 
+                                                            if !node.flags.is_deleted() { return Some(id)}
+                                                            else {return None }
+                                                                        }).collect::<Vec<_>>();
 
         if curr_l.is_empty() {
             // TODO I return false as soon as a layer is empty? The refinement process stops beacuse why? Does that mean infeasible then?
             false
         } else {
             if !self.layers.is_empty() {
-                self._filter_with_cache(input, curr_l);
+                self._filter_with_cache(input, &mut curr_l);
             }
-            self._filter_constraints(input, curr_l);
+            self._filter_constraints(input, &mut curr_l);
 
-            self._filter_with_dominance(input, curr_l);
+            self._filter_with_dominance(input, &mut curr_l);
 
-            self._stretch_if_needed(input, curr_l, curr_layer);
+            self._stretch_if_needed(input, &mut curr_l, curr_layer_id);
             
             true
 
@@ -1045,20 +1096,25 @@ where
         }
     }
 
-    fn _stretch_if_needed(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>, curr_layer: &mut Layer) {
+    fn _stretch_if_needed(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>, curr_layer_id: usize) {
+
+        // let mut curr_layer = get!(mut layer LayerId(curr_layer_id), self);
+
         match input.comp_type{
             CompilationType::Restricted => {  /* refinement does not build restrictions */ },
 
             _ => {  /* for both exact and realaxed we just keep splitting and filtering */
                 println!("trying to stretch");
-                if curr_l.len() < input.max_width && self.layers.len() > 1 { /* we dont want to stretch the root of the subproblem */ 
-                   let mut fully_split = false;
-                   while curr_l.len() < input.max_width && !fully_split {
-                    // println!("in stretch with fully split {fully_split}");
-                    fully_split = self._split_layer(input,curr_l,curr_layer);
-                    if !fully_split{
-                        self._maybe_save_lel();
-                    }
+                if curr_l.len() < input.max_width && self.layers.len() > 1 { /* TODO: any checks here for root? we dont want to stretch the root of the subproblem */ 
+                    let mut fully_split = false;
+                    while curr_l.len() < input.max_width && !fully_split {
+                        // println!("in stretch with fully split {fully_split}");
+                        fully_split = self._split_layer(input,curr_l,curr_layer_id);
+                        if !fully_split && curr_layer_id > 0 {
+                            if self.lel.is_none() {
+                                self.lel = Some(LayerId(curr_layer_id-1)); // lel was the previous layer
+                            }
+                        }
                    }
                 }
             }
@@ -1151,7 +1207,8 @@ where
         }
     }
 
-    fn _split_layer(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>,curr_layer: &mut Layer) -> bool {
+    fn _split_layer(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>,curr_layer_id: usize) -> bool {
+        
         // order vec node by ranking
         //TODO assume same ranking as deciding to merge for now but make API for user to add specific ranking here
         curr_l.sort_unstable_by(|a, b| {
@@ -1165,7 +1222,7 @@ where
         let mut index = curr_l.len();
         // println!("index is {index}");
         while index > 0 {
-             
+            println!("splitting layer");
             let node_to_split_id = curr_l[index-1];
             let node_to_split = get!(node node_to_split_id, self);
             let inbound_start = self.in_edgelists[node_to_split.inbound.0];
@@ -1182,7 +1239,10 @@ where
                             _ => None}).collect::<Vec<EdgeId>>();
             
             if inbound_edges.len() > 1 { 
-                println!("splitting node");
+                // println!("splitting node {:?} with value {:?} which is exact {:?} with {:?} incoming edges",node_to_split_id,
+                //                                                                                         node_to_split.value_top,
+                //                                                                                         node_to_split.flags.is_exact(),
+                //                                                                                         inbound_edges.len());
                 // split the node at that index
                 // TODO we expect an ietrator of inbound edges...other similar functions in dp.rs use a mutable iterator
                 // TODO how do we safely do this while making sure the split algorithm cannot modify already made decisons?
@@ -1191,7 +1251,9 @@ where
 
                 for (state,edges_to_append) in split_states{
                     // only add merged as new node
-                    let split_id = NodeId(self.nodes.len());
+                    //TODO is this Id what i should be? If I insert, its id is different
+                    let curr_layer = get!(mut layer LayerId(curr_layer_id), self);
+                    let split_id = NodeId(curr_layer.to);
                     new_nodes.push(split_id);
                     self.nodes.insert(curr_layer.to,Node {
                                 state: state.clone(),
@@ -1203,7 +1265,7 @@ where
                                 //
                                 rub: isize::MAX,
                                 theta: None,
-                                flags: NodeFlags::new_relaxed(),
+                                flags: NodeFlags::new_exact(),
                                 depth: get!(node node_to_split_id, self).depth,
                                 some: vec![],
                                 all: vec![]
@@ -1211,6 +1273,15 @@ where
                 
                             curr_layer.to += 1;
                             curr_layer.size += 1;
+
+                    // set node to exact if node has one inbound edge and relaxed otherwise
+                    // exactness is further corrected by edge additon which check sparent exactness too
+                    // TODO: set correct exactness here
+                    //TODO fix the properties of this split node
+                    if edges_to_append.len() == 1{
+                        get!(mut node split_id, self).flags.set_exact(true);
+                    }
+                    
 
                     //TODO redirect edges inbound
                     for edge_id in edges_to_append {
@@ -1231,19 +1302,28 @@ where
                             decision: e.decision.clone(), 
                             cost: e.cost }); //TODO edge cost should change here
                     }
+                    
+                    
             
                 }
-                //TODO we should then delete all incoming and outgoing edges to the split node
-                // basically call this detach for all the edges coming into the node
-                for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
-                    detach_edge_from!(self,node_to_split_id,e_list);
-                }
+                // //TODO we should then delete all incoming and outgoing edges to the split node
+                // // basically call this detach for all the edges coming into the node
+                // for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
+                //     detach_edge_from!(self,node_to_split_id,e_list);
+                // }
                 
                 //Delete split node
                 get!(mut node node_to_split_id, self).flags.set_deleted(true);
 
+                println!("successfully split node {:?} to create",node_to_split_id);
+                for new_node_id in &new_nodes{
+                    let new_node = get!(mut node new_node_id, self);
+                    println!("new node {:?} with value {:?} which is exact {:?}",new_node_id,
+                                                                                new_node.value_top,
+                                                                                new_node.flags.is_exact());
+                }
+                // self.nodes[curr_l[index-1].0].flags.set_deleted(true);
                 curr_l.remove(index-1);
-                self.nodes[curr_l[index-1].0].flags.set_deleted(true);
                 curr_l.append(&mut new_nodes);
                 return false;
             }
@@ -1270,8 +1350,9 @@ where
             for edge_id in cluster {
                 // create states for each edge transition
                 let current_decision = self.edges[*edge_id].decision.as_ref();
-                let next_state = Arc::new(input.problem.transition(split_state, current_decision));
-                let cost = input.problem.transition_cost(split_state, next_state.as_ref(), current_decision); //TODO actually use this cost post split
+                let parent_state = get!(node (self.edges[*edge_id].from),self).state.as_ref();
+                let next_state = Arc::new(input.problem.transition(parent_state, current_decision));
+                let cost = input.problem.transition_cost(parent_state, next_state.as_ref(), current_decision); //TODO actually use this cost post split
                 new_states.push(next_state);
             }
 

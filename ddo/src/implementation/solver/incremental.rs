@@ -158,6 +158,24 @@ where
         self.fringe.clear();
         self.cache.clear();
     }
+
+    /// This private method updates the shared best known node and lower bound in
+    /// case the best value of the current `mdd` expansion improves the current
+    /// bounds.
+    fn maybe_update_best(&mut self) {
+        println!("in here");
+        let dd_best_value = self.mdd.best_exact_value().unwrap_or(isize::MIN);
+        if dd_best_value > self.best_lb {
+            self.best_lb = dd_best_value;
+            self.best_sol = self.mdd.best_exact_solution();
+        }
+        println!("in here 1");
+        let dd_upper_bound = self.mdd.best_value().unwrap_or(isize::MIN);
+        if dd_upper_bound < self.best_ub {
+            self.best_ub = dd_upper_bound;
+        }
+        println!("in here out");
+    }
 }
 
 
@@ -191,6 +209,8 @@ where
     ///   simply means that no feasible solution has been found before the 
     ///   cutoff occurred.
     ///
+    /// 
+    /// 
     fn maximize(&mut self) -> Completion{
         let outcome = self.initialize();
         if let Err(reason) = outcome {
@@ -201,13 +221,23 @@ where
         }
 
 
+        let root = self.root_node();
+        let mut width = self.width_heu.max_width(&root);
+        self.maybe_update_best();
         loop {
+            
+            // if self.mdd.is_exact(){
+            //     println!("ended as exact");
+            //     break;
+            // }
+
             // create starting point to create input object - for now always start at root
             println!("in loop");
-            let root = self.root_node();
             let best_lb = self.best_lb;
+            // increase width
+            width = width + 5;
 
-            let width = self.width_heu.max_width(&root);
+            // refine again
             let compilation = CompilationInput {
                 comp_type: CompilationType::Relaxed,
                 max_width: width,
@@ -223,6 +253,7 @@ where
             };
 
             let outcome = self.mdd.refine(&compilation);
+            println!("completd refinement");
 
             // breaking condition?
             // handle error?
@@ -231,7 +262,17 @@ where
                 self.abort_search(reason); 
                 break;
             }
+            println!("did not abort");
+            self.maybe_update_best();
+            println!("updated best");
+            if self.mdd.is_exact(){
+                println!("ended as exact");
+                break;
+            }
+            println!("end of loop");
         }
+
+        println!("out of loop");
 
         if let Some(sol) = self.best_sol.as_mut() { sol.sort_unstable_by_key(|d| d.variable.0) }
         Completion { is_exact: self.abort_proof.is_none(), best_value: self.best_sol.as_ref().map(|_| self.best_lb) }
