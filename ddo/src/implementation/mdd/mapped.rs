@@ -162,9 +162,6 @@ where
     T: Eq + PartialEq + Hash + Clone,
     X: Eq + PartialEq + Hash + Clone,
 {
-    /// This vector stores the information about the structure of all the layers
-    /// in this decision diagram
-    layers: Vec<Layer>,
     /// All the nodes composing this decision diagram. The vector comprises
     /// nodes from all layers in the DD. A nice property is that all nodes
     /// belonging to one same layer form a sequence in the ‘nodes‘ vector.
@@ -447,7 +444,6 @@ where
 {
     pub fn new() -> Self {
         Self {
-            layers: vec![],
             nodes: vec![],
             edges: vec![],
             in_edgelists: vec![],
@@ -480,7 +476,6 @@ where
     }
 
     fn _clear(&mut self) {
-        self.layers.clear();
         self.nodes.clear();
         self.edges.clear();
         self.in_edgelists.clear();
@@ -528,7 +523,7 @@ where
             let edge = edges[eid.0].clone();
             println!(
                 "finding best path with edge from {:?} to {:?}",
-                edge.from.0, edge.to.0
+                edge.from, edge.to
             );
             sol.push(edge.decision);
             edge_id = nodes[edge.from.0][edge.from.1].best;
@@ -594,7 +589,7 @@ where
         // go layer by layer
         // is this always ordered that way? we need to do top to bottom traversal
         let mut curr_layer_id = 0;
-        while curr_layer_id < self.layers.len() {
+        while curr_layer_id < self.nodes.len() {
             if input.cutoff.must_stop() {
                 return Err(Reason::CutoffOccurred);
             }
@@ -672,7 +667,6 @@ where
     }
 
     fn _finalize(&mut self, input: &CompilationInput<T, X>) {
-        // self._finalize_layers();
         self._find_best_node();
         self._finalize_exact(input);
         self._finalize_cutset(input);
@@ -722,9 +716,9 @@ where
 
     #[allow(clippy::redundant_closure_call)]
     fn _compute_local_bounds(&mut self, input: &CompilationInput<T, X>) {
-        if self.lel.unwrap().0 < self.layers.len() && input.comp_type == CompilationType::Relaxed {
+        if self.lel.unwrap().0 < self.nodes.len() && input.comp_type == CompilationType::Relaxed {
             // initialize last layer
-            let last_layer_id = LayerId(self.layers.len() - 1);
+            let last_layer_id = LayerId(self.nodes.len() - 1);
             let layer = get!(mut layer last_layer_id, self);
             for node in layer {
                 node.value_bot = 0;
@@ -829,7 +823,7 @@ where
 
     fn _finalize_cutset(&mut self, input: &CompilationInput<T, X>) {
         if self.lel.is_none() {
-            self.lel = Some(LayerId(self.layers.len())); // all nodes of the DD are above cutset
+            self.lel = Some(LayerId(self.nodes.len())); // all nodes of the DD are above cutset
         }
         if input.comp_type == CompilationType::Relaxed || self.is_exact {
             match CUTSET_TYPE {
@@ -847,7 +841,7 @@ where
     }
 
     fn _compute_last_exact_layer_cutset(&mut self, lel: LayerId) {
-        if lel.0 < self.layers.len() {
+        if lel.0 < self.nodes.len() {
             let layer = get!(mut layer lel, self);
             for (id, node) in layer.iter_mut().enumerate() {
                 self.cutset.push(NodeId(lel.0, id));
@@ -888,26 +882,6 @@ where
             }
         }
     }
-
-    // fn _finalize_layers(&mut self) {
-    //     if !self.next_l.is_empty() {
-    //         if self.layers.is_empty() {
-    //             self.layers.push(Layer {
-    //                 from: 0,
-    //                 to: self.nodes.len(),
-    //                 size: self.nodes.len(),
-    //             });
-    //         } else {
-    //             let id = LayerId(self.layers.len() - 1);
-    //             let layer = get!(layer id, self);
-    //             self.layers.push(Layer {
-    //                 from: layer.to,
-    //                 to: self.nodes.len(),
-    //                 size: self.nodes.len() - layer.to,
-    //             });
-    //         }
-    //     }
-    // }
 
     fn _find_best_node(&mut self) {
         self.best_node = self
@@ -986,7 +960,7 @@ where
             // TODO I return false as soon as a layer is empty? The refinement process stops beacuse why? Does that mean infeasible then?
             false
         } else {
-            if !self.layers.is_empty() {
+            if curr_layer_id == 0 {
                 self._filter_with_cache(input, &mut curr_l);
             }
             self._filter_constraints(input, &mut curr_l);
@@ -1014,19 +988,16 @@ where
         }
 
         if curr_l.is_empty() {
-            self.layers.push(Layer {
-                from: 0,
-                to: 0,
-                size: 0,
-            });
             false
         } else {
-            if !self.layers.is_empty() {
+            if self.nodes.len() == 1 {
                 self._filter_with_cache(input, curr_l);
             }
             self._filter_with_dominance(input, curr_l);
 
             self._squash_if_needed(input, curr_l);
+
+            self.nodes.push(vec![]);
             true
         }
     }
@@ -1177,13 +1148,15 @@ where
         match input.comp_type {
             CompilationType::Exact => { /* do nothing: you want to explore the complete DD */ }
             CompilationType::Restricted => {
-                if curr_l.len() > input.max_width {
+                if curr_l.len() > input.max_width && self.nodes.len() > 1 {
                     self._maybe_save_lel();
                     self._restrict(input, curr_l)
                 }
             }
             CompilationType::Relaxed => {
-                if curr_l.len() > input.max_width && self.layers.len() > 1 {
+                // TODO: self.nodes.len() is one ahead of self.layers.len() from clean.rs; why was it self.layers.len() > 1?
+                //       Because self.nodes.len() > 1 seems more correct, we don't stretch layer 0, but otherwise should be fine
+                if curr_l.len() > input.max_width && self.nodes.len() > 1 {
                     self._maybe_save_lel();
                     self._relax(input, curr_l)
                 }
@@ -1205,16 +1178,14 @@ where
             _ => {
                 /* for both exact and realaxed we just keep splitting and filtering */
                 println!("trying to stretch");
-                if curr_l.len() < input.max_width && self.layers.len() > 1 {
+                if curr_l.len() < input.max_width && curr_layer_id > 0 {
                     /* TODO: any checks here for root? we dont want to stretch the root of the subproblem */
                     let mut fully_split = false;
                     while curr_l.len() < input.max_width && !fully_split {
                         // println!("in stretch with fully split {fully_split}");
                         fully_split = self._split_layer(input, curr_l, curr_layer_id);
-                        if !fully_split && curr_layer_id > 0 {
-                            if self.lel.is_none() {
-                                self.lel = Some(LayerId(curr_layer_id - 1)); // lel was the previous layer
-                            }
+                        if !fully_split && self.lel.is_none() {
+                            self.lel = Some(LayerId(curr_layer_id - 1)); // lel was the previous layer
                         }
                     }
                 }
@@ -1223,8 +1194,9 @@ where
     }
 
     fn _maybe_save_lel(&mut self) {
+        let last_layer_id = self.nodes.len() - 1;
         if self.lel.is_none() {
-            self.lel = Some(LayerId(self.layers.len() - 1)); // lel was the previous layer
+            self.lel = Some(LayerId(last_layer_id - 1)); // lel was the previous layer
         }
     }
 
