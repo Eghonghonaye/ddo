@@ -20,16 +20,27 @@
 //! This example show how to implement a solver for the knapsack problem using ddo.
 //! It is a fairly simple example but  features most of the aspects you will want to
 //! copy when implementing your own solver.
-use std::{path::Path, fs::File, io::{BufReader, BufRead}, time::{Duration, Instant}, num::ParseIntError, sync::Arc};
+use std::cmp::Ordering;
+use std::fmt::{Debug, Formatter};
+use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::{
+    fs::File,
+    io::{BufRead, BufReader},
+    num::ParseIntError,
+    path::Path,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use clap::Parser;
 use ddo::*;
+use num_traits::ToPrimitive;
 use ordered_float::OrderedFloat;
 
 #[cfg(test)]
 mod tests;
 
-/// In our DP model, we consider a state that simply consists of the remaining 
+/// In our DP model, we consider a state that simply consists of the remaining
 /// capacity in the knapsack. Additionally, we also consider the *depth* (number
 /// of assigned variables) as part of the state since it useful when it comes to
 /// determine the next variable to branch on.
@@ -40,18 +51,18 @@ pub struct KnapsackState {
     depth: usize,
     /// the remaining capacity in the knapsack. That is the maximum load the sack
     /// can bear without cracking **given what is already in the sack**.
-    capacity: usize
+    capacity: usize,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct KnapsackDecisionState{
-    capacity: usize
+pub struct KnapsackDecisionState {
+    capacity: usize,
 }
 
 /// This structure represents a particular instance of the knapsack problem.
 /// This is the structure that will implement the knapsack model.
-/// 
-/// The problem definition is quite easy to understand: there is a knapsack having 
+///
+/// The problem definition is quite easy to understand: there is a knapsack having
 /// a maximum (weight) capacity, and a set of items to chose from. Each of these
 /// items having a weight and a profit, the goal is to select the best subset of
 /// the items to place them in the sack so as to maximize the profit.
@@ -64,14 +75,22 @@ pub struct Knapsack {
     weight: Vec<usize>,
     /// the order in which the items are considered
     order: Vec<usize>,
+    /// Whether we split edges by clustering,
+    clustering: u8,
 }
 
 impl Knapsack {
-    pub fn new(capacity: usize, profit: Vec<isize>, weight: Vec<usize>) -> Self {
+    pub fn new(capacity: usize, profit: Vec<isize>, weight: Vec<usize>, clustering: u8) -> Self {
         let mut order = (0..profit.len()).collect::<Vec<usize>>();
-        order.sort_unstable_by_key(|i| OrderedFloat(- profit[*i] as f64 / weight[*i] as f64));
+        order.sort_unstable_by_key(|i| OrderedFloat(-profit[*i] as f64 / weight[*i] as f64));
 
-        Knapsack { capacity, profit, weight, order }
+        Knapsack {
+            capacity,
+            profit,
+            weight,
+            order,
+            clustering,
+        }
     }
 }
 
@@ -87,7 +106,7 @@ const LEAVE_IT_OUT: isize = 0;
 /// This is how you implement the labeled transition system (LTS) semantics of
 /// a simple dynamic program solving the knapsack problem. The definition of
 /// each of the methods should be pretty clear and easy to grasp. Should you
-/// want more details on the role of each of these methods, then you are 
+/// want more details on the role of each of these methods, then you are
 /// encouraged to go checking the documentation of the `Problem` trait.
 impl Problem for Knapsack {
     type State = KnapsackState;
@@ -96,34 +115,60 @@ impl Problem for Knapsack {
     fn nb_variables(&self) -> usize {
         self.profit.len()
     }
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback<Self::DecisionState>)
-    {
+    fn for_each_in_domain(
+        &self,
+        variable: Variable,
+        state: &Self::State,
+        f: &mut dyn DecisionCallback<Self::DecisionState>,
+    ) {
         if state.capacity >= self.weight[variable.id()] {
-            f.apply(Arc::new(Decision { variable, 
-                value: TAKE_IT, 
-                state : Some(KnapsackDecisionState{capacity: state.capacity - self.weight[variable.id()]}) }));
+            f.apply(Arc::new(Decision {
+                variable,
+                value: TAKE_IT,
+                state: Some(KnapsackDecisionState {
+                    capacity: state.capacity - self.weight[variable.id()],
+                }),
+            }));
         }
-        f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT, state : Some(KnapsackDecisionState{capacity: state.capacity}) }));
+        f.apply(Arc::new(Decision {
+            variable,
+            value: LEAVE_IT_OUT,
+            state: Some(KnapsackDecisionState {
+                capacity: state.capacity,
+            }),
+        }));
     }
     fn initial_state(&self) -> Self::State {
-        KnapsackState{ depth: 0, capacity: self.capacity }
+        KnapsackState {
+            depth: 0,
+            capacity: self.capacity,
+        }
     }
     fn initial_value(&self) -> isize {
         0
     }
     fn transition(&self, state: &Self::State, dec: &Decision<Self::DecisionState>) -> Self::State {
         let mut ret = *state;
-        ret.depth  += 1;
-        if dec.value == TAKE_IT { 
-            ret.capacity -= self.weight[dec.variable.id()] 
+        ret.depth += 1;
+        if dec.value == TAKE_IT {
+            ret.capacity -= self.weight[dec.variable.id()]
         }
         ret
     }
-    fn transition_cost(&self, _state: &Self::State, _: &Self::State, dec: &Decision<Self::DecisionState>) -> isize {
+    fn transition_cost(
+        &self,
+        _state: &Self::State,
+        _: &Self::State,
+        dec: &Decision<Self::DecisionState>,
+    ) -> isize {
         self.profit[dec.variable.id()] * dec.value
     }
 
-    fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
+    fn next_variable(
+        &self,
+        depth: usize,
+        _: &mut dyn Iterator<Item = &Self::State>,
+    ) -> Option<Variable> {
         let n = self.nb_variables();
         if depth < n {
             Some(Variable(self.order[depth]))
@@ -132,61 +177,207 @@ impl Problem for Knapsack {
         }
     }
 
-    fn filter(&self, state:&Self::State, decision: &Decision<Self::DecisionState>) -> bool {
+    fn filter(&self, state: &Self::State, decision: &Decision<Self::DecisionState>) -> bool {
         self.weight[decision.variable.id()] > state.capacity
     }
 
-    fn split_state_edges(&self, _state:&Self::State, decisions:&mut dyn Iterator<Item = (usize,&Decision<Self::DecisionState>)>) -> Vec<Vec<usize>>
-    {
-        //TODO use split at mut logic of earlier, order, split at mut and them map into 2 vectors instead -- check keep merge art of code
+    fn split_state_edges(
+        &self,
+        _state: &Self::State,
+        decisions: &mut dyn Iterator<Item = (usize, &Decision<Self::DecisionState>)>,
+    ) -> Vec<Vec<usize>> {
+        if self.clustering >= 2 {
+            let all_decision_state_capacities = decisions
+                .map(|(id, d)| StateClusterHelper::new(id, d.state.unwrap()))
+                .collect::<Vec<_>>();
+            let clusters = ckmeans::ckmeans(
+                &all_decision_state_capacities,
+                u8::min(
+                    self.clustering,
+                    u8::try_from(all_decision_state_capacities.len()).unwrap_or(u8::MAX),
+                ),
+            )
+            .expect("clustering failed :'(");
+            let split_a = clusters[0].iter().map(|h| h.id).collect();
+            let split_b = clusters[1].iter().map(|h| h.id).collect();
 
-        let mut all_decisions = decisions.collect::<Vec<_>>();
-        //TODO confirm behaviour of ordering
-        all_decisions.sort_unstable_by(|(_a_id,a_dec),(_b_id,b_dec)| {
-            match a_dec.state {
-                Some(x) => {
-                    match b_dec.state {
-                        Some(y) => x.capacity.cmp(&y.capacity),
-                        None => x.capacity.cmp(&usize::MIN)
-                    }
+            // println!("Split edges by clustering into {split_a:?}, {split_b:?}");
+
+            vec![split_a, split_b]
+        } else {
+            //TODO use split at mut logic of earlier, order, split at mut and them map into 2 vectors instead -- check keep merge art of code
+
+            let mut all_decisions = decisions.collect::<Vec<_>>();
+            //TODO confirm behaviour of ordering
+            all_decisions.sort_unstable_by(|(_a_id, a_dec), (_b_id, b_dec)| match a_dec.state {
+                Some(x) => match b_dec.state {
+                    Some(y) => x.capacity.cmp(&y.capacity),
+                    None => x.capacity.cmp(&usize::MIN),
                 },
                 None => match b_dec.state {
                     Some(y) => y.capacity.cmp(&usize::MIN),
-                    None => usize::MIN.cmp(&usize::MIN)
-                }
-            }
+                    None => usize::MIN.cmp(&usize::MIN),
+                },
             }); //TODO: does reverse prioritise best or worst
-        let split_point = all_decisions.len() - 1;
-        let (a, b) = all_decisions.split_at_mut(split_point);
+            let split_point = all_decisions.len() - 1;
+            let (a, b) = all_decisions.split_at_mut(split_point);
 
-        let split_a = a.iter().map(|(x,y)| *x).collect();
-        let split_b = b.iter().map(|(x,y)| *x).collect();
+            let split_a = a.iter().map(|(x, y)| *x).collect();
+            let split_b = b.iter().map(|(x, y)| *x).collect();
 
-        vec![split_a,split_b]
-
+            vec![split_a, split_b]
+        }
     }
-
 }
 
-/// In addition to a dynamic programming (DP) model of the problem you want to solve, 
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
+pub struct StateClusterHelper {
+    pub id: usize,
+    pub state: KnapsackDecisionState,
+}
+
+impl StateClusterHelper {
+    fn new(id: usize, state: KnapsackDecisionState) -> Self {
+        StateClusterHelper { id, state }
+    }
+
+    fn from_capacity(capacity: usize) -> Self {
+        StateClusterHelper {
+            id: 0,
+            state: KnapsackDecisionState { capacity },
+        }
+    }
+}
+
+impl num_traits::Num for StateClusterHelper {
+    type FromStrRadixErr = ParseIntError;
+
+    fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
+        Ok(StateClusterHelper::from_capacity(usize::from_str_radix(
+            str, radix,
+        )?))
+    }
+}
+
+impl num_traits::identities::Zero for StateClusterHelper {
+    fn zero() -> Self {
+        StateClusterHelper::from_capacity(0)
+    }
+
+    fn is_zero(&self) -> bool {
+        self.state.capacity == 0
+    }
+}
+
+impl Add<Self> for StateClusterHelper {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let mut res = self.clone();
+        res.state.capacity += rhs.state.capacity;
+        res
+    }
+}
+
+impl num_traits::identities::One for StateClusterHelper {
+    fn one() -> Self {
+        StateClusterHelper::from_capacity(1)
+    }
+}
+
+impl Mul<Self> for StateClusterHelper {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let mut res = self.clone();
+        res.state.capacity *= rhs.state.capacity;
+        res
+    }
+}
+
+impl Sub<Self> for StateClusterHelper {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let mut res = self.clone();
+        res.state.capacity -= rhs.state.capacity;
+        res
+    }
+}
+
+impl Div<Self> for StateClusterHelper {
+    type Output = Self;
+
+    fn div(self, rhs: Self) -> Self::Output {
+        let mut res = self.clone();
+        res.state.capacity /= rhs.state.capacity;
+        res
+    }
+}
+
+impl Rem<Self> for StateClusterHelper {
+    type Output = Self;
+
+    fn rem(self, rhs: Self) -> Self::Output {
+        let mut res = self.clone();
+        res.state.capacity %= rhs.state.capacity;
+        res
+    }
+}
+
+impl num_traits::cast::NumCast for StateClusterHelper {
+    fn from<T: num_traits::cast::ToPrimitive>(n: T) -> Option<Self> {
+        n.to_usize().map(StateClusterHelper::from_capacity)
+    }
+}
+
+impl num_traits::cast::ToPrimitive for StateClusterHelper {
+    fn to_i64(&self) -> Option<i64> {
+        self.state.capacity.to_i64()
+    }
+
+    fn to_u64(&self) -> Option<u64> {
+        self.state.capacity.to_u64()
+    }
+}
+
+impl PartialOrd for StateClusterHelper {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        self.state.capacity.partial_cmp(&other.state.capacity)
+    }
+}
+
+impl num_traits::cast::FromPrimitive for StateClusterHelper {
+    fn from_i64(n: i64) -> Option<Self> {
+        usize::from_i64(n).map(StateClusterHelper::from_capacity)
+    }
+
+    fn from_u64(n: u64) -> Option<Self> {
+        usize::from_u64(n).map(StateClusterHelper::from_capacity)
+    }
+}
+
+/// In addition to a dynamic programming (DP) model of the problem you want to solve,
 /// the branch and bound with MDD algorithm (and thus ddo) requires that you provide
 /// an additional relaxation allowing to control the maximum amount of space used by
-/// the decision diagrams that are compiled. 
-/// 
-/// That relaxation requires two operations: one to merge several nodes into one 
+/// the decision diagrams that are compiled.
+///
+/// That relaxation requires two operations: one to merge several nodes into one
 /// merged node that acts as an over approximation of the other nodes. The second
-/// operation is used to possibly offset some weight that would otherwise be lost 
+/// operation is used to possibly offset some weight that would otherwise be lost
 /// to the arcs entering the newly created merged node.
-/// 
+///
 /// The role of this very simple structure is simply to provide an implementation
 /// of that relaxation.
-/// 
+///
 /// # Note:
 /// In addition to the aforementioned two operations, the KPRelax structure implements
-/// an optional `fast_upper_bound` method. Which one provides a useful bound to 
+/// an optional `fast_upper_bound` method. Which one provides a useful bound to
 /// prune some portions of the state-space as the decision diagrams are compiled.
 /// (aka rough upper bound pruning).
-pub struct KPRelax<'a>{pub pb: &'a Knapsack}
+pub struct KPRelax<'a> {
+    pub pb: &'a Knapsack,
+}
 impl Relaxation for KPRelax<'_> {
     type State = KnapsackState;
     type DecisionState = KnapsackDecisionState;
@@ -195,7 +386,14 @@ impl Relaxation for KPRelax<'_> {
         states.max_by_key(|node| node.capacity).copied().unwrap()
     }
 
-    fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: &Decision<Self::DecisionState>, cost: isize) -> isize {
+    fn relax(
+        &self,
+        _source: &Self::State,
+        _dest: &Self::State,
+        _merged: &Self::State,
+        _decision: &Decision<Self::DecisionState>,
+        cost: isize,
+    ) -> isize {
         cost
     }
 
@@ -287,12 +485,16 @@ struct Args {
     /// as many nodes in a layer as there are unassigned variables in the global problem.
     #[clap(short, long)]
     width: Option<usize>,
+    /// The number of clusters to find among edges when splitting a node. < 2 is off, 2+
+    /// means a node gets split in that many nodes. Uses ckmeans clustering.
+    #[clap(short, long, default_value = "0")]
+    clusters: u8,
 }
 
 /// This enumeration simply groups the kind of errors that might occur when parsing a
 /// knapsack instance from file. There can be io errors (file unavailable ?), format error
-/// (e.g. the file is not a knapsack instance but contains the text of your next paper), 
-/// or parse int errors (which are actually a variant of the format error since it tells 
+/// (e.g. the file is not a knapsack instance but contains the text of your next paper),
+/// or parse int errors (which are actually a variant of the format error since it tells
 /// you that the parser expected an integer number but got ... something else).
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -309,10 +511,10 @@ pub enum Error {
 
 /// This function is used to read a knapsack instance from file. It returns either a
 /// knapsack instance if everything went on well or an error describing the problem.
-pub fn read_instance<P: AsRef<Path>>(fname: P) -> Result<Knapsack, Error> {
+pub fn read_instance<P: AsRef<Path>>(fname: P, clustering: u8) -> Result<Knapsack, Error> {
     let f = File::open(fname)?;
     let f = BufReader::new(f);
-    
+
     let mut is_first = true;
     let mut n = 0;
     let mut count = 0;
@@ -340,13 +542,16 @@ pub fn read_instance<P: AsRef<Path>>(fname: P) -> Result<Knapsack, Error> {
             count += 1;
         }
     }
-    Ok(Knapsack::new(capa, profit, weight))
+    Ok(Knapsack::new(capa, profit, weight, clustering))
 }
 
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
 /// in the overall problem.
-fn max_width<T,X>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T,X> + Send + Sync> {
+fn max_width<T, X>(
+    nb_vars: usize,
+    w: Option<usize>,
+) -> Box<dyn WidthHeuristic<T, X> + Send + Sync> {
     if let Some(w) = w {
         Box::new(FixedWidth(w))
     } else {
@@ -358,9 +563,9 @@ fn max_width<T,X>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T,
 /// to create a fast an effective solver for the knapsack problem.
 fn main() {
     let args = Args::parse();
-    let problem = read_instance(&args.fname).unwrap();
-    let relaxation= KPRelax{pb: &problem};
-    let heuristic= KPRanking;
+    let problem = read_instance(&args.fname, args.clusters).unwrap();
+    let relaxation = KPRelax { pb: &problem };
+    let heuristic = KPRanking;
     let width = max_width(problem.nb_variables(), args.width);
     let dominance = SimpleDominanceChecker::new(KPDominance, problem.nb_variables());
     // let cutoff = TimeBudget::new(Duration::from_secs(15));//NoCutoff;
@@ -368,52 +573,55 @@ fn main() {
     let mut fringe = SimpleFringe::new(MaxUB::new(&heuristic));
 
     // let mut solver = DefaultCachingSolver::new(
-    //     &problem, 
-    //     &relaxation, 
-    //     &heuristic, 
-    //     width.as_ref(), 
+    //     &problem,
+    //     &relaxation,
+    //     &heuristic,
+    //     width.as_ref(),
     //     &dominance,
-    //     &cutoff, 
+    //     &cutoff,
     //     &mut fringe,
     // );
 
     // let mut solver = SeqCachingSolverLel::new(
-    //     &problem, 
-    //     &relaxation, 
-    //     &heuristic, 
-    //     width.as_ref(), 
+    //     &problem,
+    //     &relaxation,
+    //     &heuristic,
+    //     width.as_ref(),
     //     &dominance,
-    //     &cutoff, 
+    //     &cutoff,
     //     &mut fringe,
     // );
 
     let mut solver = SeqIncrementalSolver::new(
-        &problem, 
-        &relaxation, 
-        &heuristic, 
-        width.as_ref(), 
+        &problem,
+        &relaxation,
+        &heuristic,
+        width.as_ref(),
         &dominance,
-        &cutoff, 
+        &cutoff,
         &mut fringe,
     );
 
     let start = Instant::now();
-    let Completion{ is_exact, best_value } = solver.maximize();
-    
+    let Completion {
+        is_exact,
+        best_value,
+    } = solver.maximize();
+
     let duration = start.elapsed();
     let upper_bound = solver.best_upper_bound();
     let lower_bound = solver.best_lower_bound();
     let gap = solver.gap();
-    let best_solution  = solver.best_solution().map(|mut decisions|{
+    let best_solution = solver.best_solution().map(|mut decisions| {
         decisions.sort_unstable_by_key(|d| d.variable.id());
         decisions.iter().map(|d| d.value).collect::<Vec<_>>()
     });
 
     println!("Duration:   {:.3} seconds", duration.as_secs_f32());
-    println!("Objective:  {}",            best_value.unwrap_or(-1));
-    println!("Upper Bnd:  {}",            upper_bound);
-    println!("Lower Bnd:  {}",            lower_bound);
-    println!("Gap:        {:.3}",         gap);
-    println!("Aborted:    {}",            !is_exact);
-    println!("Solution:   {:?}",          best_solution.unwrap_or_default());
+    println!("Objective:  {}", best_value.unwrap_or(-1));
+    println!("Upper Bnd:  {}", upper_bound);
+    println!("Lower Bnd:  {}", lower_bound);
+    println!("Gap:        {:.3}", gap);
+    println!("Aborted:    {}", !is_exact);
+    println!("Solution:   {:?}", best_solution.unwrap_or_default());
 }

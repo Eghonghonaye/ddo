@@ -23,7 +23,7 @@ use std::path::PathBuf;
 
 use ddo::*;
 
-use crate::{KPRelax, KPRanking, read_instance, KPDominance};
+use crate::{read_instance, KPDominance, KPRanking, KPRelax};
 
 fn locate(id: &str) -> PathBuf {
     PathBuf::new()
@@ -36,9 +36,9 @@ pub fn solve_id(id: &str) -> isize {
     let fname = locate(id);
     let fname = fname.to_str();
     let fname = fname.unwrap();
-    
-    let problem = read_instance(fname).unwrap();
-    let relaxation = KPRelax{pb: &problem};
+
+    let problem = read_instance(fname, false).unwrap();
+    let relaxation = KPRelax { pb: &problem };
     let ranking = KPRanking;
 
     let width = NbUnassignedWidth(problem.nb_variables());
@@ -48,19 +48,18 @@ pub fn solve_id(id: &str) -> isize {
 
     // This solver compile DD that allow the definition of long arcs spanning over several layers.
     let mut solver = DefaultCachingSolver::new(
-        &problem, 
-        &relaxation, 
-        &ranking, 
-        &width, 
+        &problem,
+        &relaxation,
+        &ranking,
+        &width,
         &dominance,
-        &cutoff, 
+        &cutoff,
         &mut fringe,
     );
 
-    let Completion { best_value , ..} = solver.maximize();
+    let Completion { best_value, .. } = solver.maximize();
     best_value.map(|x| x).unwrap_or(-1)
 }
-
 
 #[test]
 fn f9_l_d_kp_5_80() {
@@ -131,7 +130,8 @@ fn knappi_3_200_1000_1() {
 // these large scale integration tests are ignored but feel free
 // to reactivate them..
 // =================================================================
-#[ignore] #[test]
+#[ignore]
+#[test]
 fn knappi_1_5000_1000_1() {
     assert_eq!(solve_id("knapPI_1_5000_1000_1"), 276457);
 }
@@ -146,7 +146,8 @@ fn knappi_1_500_1000_1() {
     assert_eq!(solve_id("knapPI_1_500_1000_1"), 28857);
 }
 
-#[ignore] #[test]
+#[ignore]
+#[test]
 fn knappi_1_10000_1000_1() {
     assert_eq!(solve_id("knapPI_1_10000_1000_1"), 563647);
 }
@@ -161,7 +162,8 @@ fn knappi_3_1000_1000_1() {
     assert_eq!(solve_id("knapPI_3_1000_1000_1"), 14390);
 }
 
-#[ignore] #[test]
+#[ignore]
+#[test]
 fn knappi_2_5000_1000_1() {
     assert_eq!(solve_id("knapPI_2_5000_1000_1"), 44356);
 }
@@ -171,7 +173,8 @@ fn knappi_3_500_1000_1() {
     assert_eq!(solve_id("knapPI_3_500_1000_1"), 7117);
 }
 
-#[ignore] #[test]
+#[ignore]
+#[test]
 fn knappi_2_10000_1000_1() {
     assert_eq!(solve_id("knapPI_2_10000_1000_1"), 90204);
 }
@@ -185,12 +188,14 @@ fn knappi_1_1000_1000_1() {
     assert_eq!(solve_id("knapPI_1_1000_1000_1"), 54503);
 }
 
-#[ignore] #[test]
+#[ignore]
+#[test]
 fn knappi_3_10000_1000_1() {
     assert_eq!(solve_id("knapPI_3_10000_1000_1"), 146919);
 }
 
-#[ignore] #[test]
+#[ignore]
+#[test]
 fn knappi_3_5000_1000_1() {
     assert_eq!(solve_id("knapPI_3_5000_1000_1"), 72505);
 }
