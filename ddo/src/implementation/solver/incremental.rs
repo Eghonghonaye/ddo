@@ -173,18 +173,15 @@ where
     /// case the best value of the current `mdd` expansion improves the current
     /// bounds.
     fn maybe_update_best(&mut self) {
-        println!("in here");
         let dd_best_value = self.mdd.best_exact_value().unwrap_or(isize::MIN);
         if dd_best_value > self.best_lb {
             self.best_lb = dd_best_value;
             self.best_sol = self.mdd.best_exact_solution();
         }
-        println!("in here 1");
         let dd_upper_bound = self.mdd.best_value().unwrap_or(isize::MIN);
         if dd_upper_bound < self.best_ub {
             self.best_ub = dd_upper_bound;
         }
-        println!("in here out");
     }
 }
 
@@ -266,18 +263,15 @@ where
             };
 
             let outcome = self.mdd.refine(&compilation);
-            println!("completd refinement");
+            println!("completed refinement");
 
             // breaking condition?
             // handle error?
-
             if let Err(reason) = outcome {
                 self.abort_search(reason);
                 break;
             }
-            println!("did not abort");
             self.maybe_update_best();
-            println!("updated best");
             if self.mdd.is_exact() {
                 println!("ended as exact");
                 break;

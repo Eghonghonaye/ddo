@@ -581,20 +581,12 @@ where
                                                             if !node.flags.is_deleted() { return Some(id)}
                                                             else {return None }
                                                                         }).collect::<Vec<_>>();
-        let all_final_l = (final_layer.from..final_layer.to).map(|x| NodeId(x)).collect::<Vec<_>>();
-
-        // println!("Final layer contents");
-        // for node_id in &all_final_l {
-        //     let node = get!(node node_id, self);
-        //     println!("node {:?} is exact {:?} at value {:?} and is deleted {:?}",node_id,node.flags.is_exact(),node.value_top,node.flags.is_deleted());
-        // }
         for id in final_l.drain(..) {
             let node = get!(mut node id, self);
             self.next_l.insert(node.state.clone(),id);
         }
 
         self._finalize_for_refine(input);
-        println!("prep return");
 
         Ok(Completion { 
             is_exact: self.is_exact(), 
@@ -644,12 +636,10 @@ where
 
     fn _finalize_for_refine(&mut self, input: &CompilationInput<T,X>) {
         self._find_best_node();
-        println!("found best node");
         self._finalize_exact(input);
         self._finalize_cutset(input);
         self._compute_local_bounds(input);
         self._compute_thresholds(input);
-        println!("completed finalize");
     }
 
 
@@ -862,20 +852,13 @@ where
             .values()
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
-        println!("here");
         if let Some(x) = self.best_node {println!("best node {:?} is exact {:?} at value {:?}",x,get!(node x, self).flags.is_exact(),get!(node x, self).value_top);};
-        // for node_id in self.next_l.values() {
-        //     let node = get!(node node_id, self);
-        //     println!("node {:?} is exact {:?} at value {:?} and is deleted {:?}",node_id,node.flags.is_exact(),node.value_top,node.flags.is_deleted());
-        // }
-        println!("here now");
         self.best_exact_node = self
             .next_l
             .values()
             .filter(|id| get!(node id, self).flags.is_exact())
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
-        println!("here done");
     }
 
     fn _finalize_exact(&mut self, input: &CompilationInput<T,X>) {
@@ -1104,11 +1087,9 @@ where
             CompilationType::Restricted => {  /* refinement does not build restrictions */ },
 
             _ => {  /* for both exact and realaxed we just keep splitting and filtering */
-                println!("trying to stretch");
                 if curr_l.len() < input.max_width && self.layers.len() > 1 { /* TODO: any checks here for root? we dont want to stretch the root of the subproblem */ 
                     let mut fully_split = false;
                     while curr_l.len() < input.max_width && !fully_split {
-                        // println!("in stretch with fully split {fully_split}");
                         fully_split = self._split_layer(input,curr_l,curr_layer_id);
                         if !fully_split && curr_layer_id > 0 {
                             if self.lel.is_none() {
@@ -1220,9 +1201,7 @@ where
 
         // select worst node and split  
         let mut index = curr_l.len();
-        // println!("index is {index}");
         while index > 0 {
-            println!("splitting layer");
             let node_to_split_id = curr_l[index-1];
             let node_to_split = get!(node node_to_split_id, self);
             let inbound_start = self.in_edgelists[node_to_split.inbound.0];
@@ -1239,10 +1218,6 @@ where
                             _ => None}).collect::<Vec<EdgeId>>();
             
             if inbound_edges.len() > 1 { 
-                // println!("splitting node {:?} with value {:?} which is exact {:?} with {:?} incoming edges",node_to_split_id,
-                //                                                                                         node_to_split.value_top,
-                //                                                                                         node_to_split.flags.is_exact(),
-                //                                                                                         inbound_edges.len());
                 // split the node at that index
                 // TODO we expect an ietrator of inbound edges...other similar functions in dp.rs use a mutable iterator
                 // TODO how do we safely do this while making sure the split algorithm cannot modify already made decisons?
@@ -1314,8 +1289,6 @@ where
                 
                 //Delete split node
                 get!(mut node node_to_split_id, self).flags.set_deleted(true);
-
-                println!("successfully split node {:?} to create",node_to_split_id);
                 for new_node_id in &new_nodes{
                     let new_node = get!(mut node new_node_id, self);
                     println!("new node {:?} with value {:?} which is exact {:?}",new_node_id,
@@ -1352,7 +1325,6 @@ where
                 let current_decision = self.edges[*edge_id].decision.as_ref();
                 let parent_state = get!(node (self.edges[*edge_id].from),self).state.as_ref();
                 let next_state = Arc::new(input.problem.transition(parent_state, current_decision));
-                let cost = input.problem.transition_cost(parent_state, next_state.as_ref(), current_decision); //TODO actually use this cost post split
                 new_states.push(next_state);
             }
 

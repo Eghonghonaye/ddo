@@ -121,12 +121,14 @@ impl NodeFlags {
     /// Sets the exact flag to the given value
     #[inline]
     pub fn set_exact(&mut self, exact: bool) {
-        self.set(NodeFlags::F_EXACT, exact)
+        self.set(NodeFlags::F_EXACT, exact);
+        self.set(NodeFlags::F_RELAXED, !exact);
     }
     /// Sets the relaxed flat to the given value
     #[inline]
     pub fn set_relaxed(&mut self, relaxed: bool) {
-        self.set(NodeFlags::F_RELAXED, relaxed)
+        self.set(NodeFlags::F_RELAXED, relaxed);
+        self.set(NodeFlags::F_EXACT, !relaxed);    
     }
     /// Sets the marked flag to the given value
     #[inline]
