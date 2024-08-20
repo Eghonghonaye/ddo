@@ -20,21 +20,19 @@
 //! This example show how to implement a solver for the knapsack problem using ddo.
 //! It is a fairly simple example but  features most of the aspects you will want to
 //! copy when implementing your own solver.
-use std::cmp::Ordering;
-use std::fmt::{Debug, Formatter};
-use std::ops::{Add, Div, Mul, Rem, Sub};
+use std::fmt::Debug;
+use std::time::Instant;
 use std::{
     fs::File,
     io::{BufRead, BufReader},
     num::ParseIntError,
     path::Path,
     sync::Arc,
-    time::{Duration, Instant},
 };
 
 use clap::Parser;
+use clustering::kmeans;
 use ddo::*;
-use num_traits::ToPrimitive;
 use ordered_float::OrderedFloat;
 
 #[cfg(test)]
@@ -190,20 +188,28 @@ impl Problem for Knapsack {
             let all_decision_state_capacities = decisions
                 .map(|(id, d)| StateClusterHelper::new(id, d.state.unwrap()))
                 .collect::<Vec<_>>();
-            let clusters = ckmeans::ckmeans(
-                &all_decision_state_capacities,
-                u8::min(
-                    self.clustering,
-                    u8::try_from(all_decision_state_capacities.len()).unwrap_or(u8::MAX),
-                ),
-            )
-            .expect("clustering failed :'(");
-            let split_a = clusters[0].iter().map(|h| h.id).collect();
-            let split_b = clusters[1].iter().map(|h| h.id).collect();
+            let nclusters = usize::min(
+                self.clustering as usize,
+                all_decision_state_capacities.len(),
+            );
+            let clustering = kmeans(nclusters, &all_decision_state_capacities, 100);
+            let mut result = vec![Vec::new(); nclusters];
+            for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
+                result[label].push(h.id);
+            }
+            result.retain(|v| !v.is_empty());
 
-            // println!("Split edges by clustering into {split_a:?}, {split_b:?}");
+            if result.len() == 1 {
+                let split = result[0].split_at(result[0].len() - 1);
+                result = vec![split.0.to_vec(), split.1.to_vec()];
+            } else {
+                println!(
+                    "split into sizes: {:?}",
+                    result.iter().map(Vec::len).collect::<Vec<_>>()
+                );
+            }
 
-            vec![split_a, split_b]
+            result
         } else {
             //TODO use split at mut logic of earlier, order, split at mut and them map into 2 vectors instead -- check keep merge art of code
 
@@ -249,111 +255,13 @@ impl StateClusterHelper {
     }
 }
 
-impl num_traits::Num for StateClusterHelper {
-    type FromStrRadixErr = ParseIntError;
-
-    fn from_str_radix(str: &str, radix: u32) -> Result<Self, Self::FromStrRadixErr> {
-        Ok(StateClusterHelper::from_capacity(usize::from_str_radix(
-            str, radix,
-        )?))
-    }
-}
-
-impl num_traits::identities::Zero for StateClusterHelper {
-    fn zero() -> Self {
-        StateClusterHelper::from_capacity(0)
+impl clustering::Elem for StateClusterHelper {
+    fn dimensions(&self) -> usize {
+        1
     }
 
-    fn is_zero(&self) -> bool {
-        self.state.capacity == 0
-    }
-}
-
-impl Add<Self> for StateClusterHelper {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        let mut res = self.clone();
-        res.state.capacity += rhs.state.capacity;
-        res
-    }
-}
-
-impl num_traits::identities::One for StateClusterHelper {
-    fn one() -> Self {
-        StateClusterHelper::from_capacity(1)
-    }
-}
-
-impl Mul<Self> for StateClusterHelper {
-    type Output = Self;
-
-    fn mul(self, rhs: Self) -> Self::Output {
-        let mut res = self.clone();
-        res.state.capacity *= rhs.state.capacity;
-        res
-    }
-}
-
-impl Sub<Self> for StateClusterHelper {
-    type Output = Self;
-
-    fn sub(self, rhs: Self) -> Self::Output {
-        let mut res = self.clone();
-        res.state.capacity -= rhs.state.capacity;
-        res
-    }
-}
-
-impl Div<Self> for StateClusterHelper {
-    type Output = Self;
-
-    fn div(self, rhs: Self) -> Self::Output {
-        let mut res = self.clone();
-        res.state.capacity /= rhs.state.capacity;
-        res
-    }
-}
-
-impl Rem<Self> for StateClusterHelper {
-    type Output = Self;
-
-    fn rem(self, rhs: Self) -> Self::Output {
-        let mut res = self.clone();
-        res.state.capacity %= rhs.state.capacity;
-        res
-    }
-}
-
-impl num_traits::cast::NumCast for StateClusterHelper {
-    fn from<T: num_traits::cast::ToPrimitive>(n: T) -> Option<Self> {
-        n.to_usize().map(StateClusterHelper::from_capacity)
-    }
-}
-
-impl num_traits::cast::ToPrimitive for StateClusterHelper {
-    fn to_i64(&self) -> Option<i64> {
-        self.state.capacity.to_i64()
-    }
-
-    fn to_u64(&self) -> Option<u64> {
-        self.state.capacity.to_u64()
-    }
-}
-
-impl PartialOrd for StateClusterHelper {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        self.state.capacity.partial_cmp(&other.state.capacity)
-    }
-}
-
-impl num_traits::cast::FromPrimitive for StateClusterHelper {
-    fn from_i64(n: i64) -> Option<Self> {
-        usize::from_i64(n).map(StateClusterHelper::from_capacity)
-    }
-
-    fn from_u64(n: u64) -> Option<Self> {
-        usize::from_u64(n).map(StateClusterHelper::from_capacity)
+    fn at(&self, _i: usize) -> f64 {
+        self.state.capacity as f64
     }
 }
 
