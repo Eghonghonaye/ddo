@@ -584,7 +584,7 @@ where
         config.group_merged = true;
         print!("before refine\n");
         let s = self.as_graphviz(&config);
-        fs::write("/home/eaeigbe/Documents/PhD/ddo/resources/visualisation_tests/incremental.dot", s).expect("Unable to write file");
+        fs::write("incremental.dot", s).expect("Unable to write file");
 
         // intialise diagram but without emptying nodes and edges etc
         // only enough that we start analysis from top to bottom
@@ -641,7 +641,7 @@ where
 
         print!("after refine\n");
         let s = self.as_graphviz(&config);
-        fs::write("/home/eaeigbe/Documents/PhD/ddo/resources/visualisation_tests/incremental.dot", s).expect("Unable to write file");
+        fs::write("incremental.dot", s).expect("Unable to write file");
 
 
         Ok(Completion {
@@ -1378,9 +1378,9 @@ where
         // inbound_edges: &Vec<&(usize, &Decision<X>)>,
         outbound_edges: &Vec<EdgeId>) -> Vec<NodeId>{
         let mut new_nodes = vec![];
+        let mut outgoing_nodes_to_update = HashSet::new();
         for (state, edges_to_append) in split_states {
             // only add merged as new node
-            //TODO is this Id what i should be? If I insert, its id is different
             let curr_layer = get!(mut layer curr_layer_id, self);
             let split_id = NodeId(curr_layer_id.0, curr_layer.len());
             new_nodes.push(split_id);
@@ -1403,97 +1403,19 @@ where
                 all: HashSet::new(),
             });
 
+            self._redirect_incoming_edges(input, state, edges_to_append, split_id);
             
-            let mut some: HashSet<(Variable,isize)> = HashSet::new();
-            let mut all: HashSet<(Variable,isize)> = HashSet::new();
-            //TODO redirect edges inbound
-            let mut to_delete = true;
-            for edge_id in edges_to_append {
-                let e = self.edges[*edge_id].clone();
-                if !get!(node e.from, self).flags.is_deleted() && !input.problem.filter(&get!(node e.from, self).state.clone(), &e.decision){
-                    let cost = input.problem.transition_cost(
-                        get!(node e.from, self).state.as_ref(),
-                        state.as_ref(),
-                        e.decision.as_ref(), //TODO: update decision state?
-                    );
-                    append_edge_to!(
-                        self,
-                        Edge {
-                            from: e.from,
-                            to: split_id,
-                            decision: e.decision.clone(), //TODO: update decision state?
-                            cost: cost
-                        }
-                    ); 
+            if !get!(node split_id, self).flags.is_deleted() {
+                outgoing_nodes_to_update.extend(self._redirect_outgoing_edges(input, outbound_edges, &state, split_id));
+            }
+        }
 
-                    some =  &some | &self._update_some(&e);
-                    if all.is_empty(){
-                        all = self._update_all(&e);
-                    }
-                    else {
-                        all =  &all & &self._update_all(&e);
-                    }
-                    to_delete = false;
-                }
-            }
-            // set node to exact if some and all and relaxed otherwise
-            // exactness is further corrected by edge additon which check sparent exactness too
-            // TODO: set correct exactness here
-            if some == all {
-                get!(mut node split_id, self).flags.set_exact(true);
-            }
-            else {
-                get!(mut node split_id, self).flags.set_relaxed(true);
-            }
-            if to_delete{
-                get!(mut node split_id, self).flags.set_deleted(true);
-            }
-
-            get!(mut node split_id, self).some = some;
-            get!(mut node split_id, self).all = all;
-
-            //TODO replicate all edges outbound - we need to recalculate the decision states because it changes upon split - also filter infeasible outbounds
-            //TODO reserve size of outgoing
-            if !get!(node split_id, self).flags.is_deleted(){
-                let mut outgoing_nodes_to_update = Vec::with_capacity(outbound_edges.len());
-                for edge_id in outbound_edges {
-                    let e = self.edges[edge_id.0].clone();
-                        if !get!(node e.to, self).flags.is_deleted() {
-                            //TODO confirm if not filtering any edges leading to a node makes it safe to only recompute all for that node
-                            outgoing_nodes_to_update.push(e.to);
-                            let cost = input.problem.transition_cost(
-                                state.as_ref(),
-                                get!(node e.to, self).state.as_ref(),
-                                e.decision.as_ref(),
-                            );
-                            println!("trying to add edge with variable {} assigned value {} to node ({},{})",
-                                                    e.decision.variable.0,
-                                                    e.decision.value,
-                                                    split_id.0,split_id.1);
-                            if !input.problem.filter(&state, &e.decision) {
-                                println!("added edge with variable {} assigned value {} to node ({},{})",
-                                                    e.decision.variable.0,
-                                                    e.decision.value,
-                                                    split_id.0,split_id.1);
-                                append_edge_to!(
-                                    self,
-                                    Edge {
-                                        from: split_id,
-                                        to: e.to,
-                                        decision: e.decision.clone(),
-                                        cost: cost
-                                    }
-                                ); 
-                            }
-                        }
-                }
-            
-            // update outgoing node edges
-            for outgoing_node_id in outgoing_nodes_to_update{
-                let mut some: HashSet<(Variable,isize)> = HashSet::new();
-                let mut all: HashSet<(Variable,isize)> = HashSet::new();
-                let inbound_start_for_outgoing = self.in_edgelists[get!(node outgoing_node_id,self).inbound.0];
-                let inbound_edges = inbound_start_for_outgoing
+        // update outgoing node edges
+        for outgoing_node_id in outgoing_nodes_to_update {
+            let mut some: HashSet<(Variable, isize)> = HashSet::new();
+            let mut all: HashSet<(Variable, isize)> = HashSet::new();
+            let inbound_start_for_outgoing = self.in_edgelists[get!(node outgoing_node_id,self).inbound.0];
+            let inbound_edges = inbound_start_for_outgoing
                 .iter(&self.in_edgelists)
                 .filter_map(|x| match x {
                     EdgesList::Cons { head, tail: _ } => {
@@ -1503,38 +1425,134 @@ where
                 })
                 .collect::<Vec<EdgeId>>();
 
-                //update node attributes
-                let merged = self._merge_states_from_incoming_edges(input, &inbound_edges.iter().map(|x| x.0).collect());
-                get!(mut node outgoing_node_id, self).state = merged.clone();
-                // get!(mut node outgoing_node_id, self).value_top = isize::MIN;
-                // get!(mut node outgoing_node_id, self).value_bot = isize::MIN;
-                // get!(mut node outgoing_node_id, self).theta = None;
-                // get!(mut node outgoing_node_id, self).best = None;
+            //update node attributes
+            let merged = self._merge_states_from_incoming_edges(input, &inbound_edges.iter().map(|x| x.0).collect());
+            get!(mut node outgoing_node_id, self).state = merged.clone();
+            get!(mut node outgoing_node_id, self).value_top = isize::MIN;
+            get!(mut node outgoing_node_id, self).value_bot = isize::MIN;
+            get!(mut node outgoing_node_id, self).theta = None;
+            get!(mut node outgoing_node_id, self).best = None;
 
-                for e_id in &inbound_edges{
-                    let e = get!(edge e_id,self);
-                    if !get!(node e.from, self).flags.is_deleted() {
-                        some =  &some | &self._update_some(&e);
-                        if all.is_empty(){
-                            all = self._update_all(&e);
-                        }
-                        else {
-                            all =  &all & &self._update_all(&e);
-                        }
+            for e_id in &inbound_edges {
+                let e = get!(edge e_id,self);
+                if !get!(node e.from, self).flags.is_deleted() {
+                    some = &some | &self._update_some(&e);
+                    if all.is_empty() {
+                        all = self._update_all(&e);
+                    } else {
+                        all = &all & &self._update_all(&e);
+                    }
+                    let parent = get!(mut node e.from, self);
+                    let parent_exact = parent.flags.is_exact();
+                    let value = parent.value_top.saturating_add(e.cost);
+    
+                    let node = get!(mut node e.to, self);
+                    let exact = parent_exact & node.flags.is_exact();
+                    node.flags.set_exact(exact);
+    
+                    if value >= node.value_top {
+                        node.best = Some(*e_id);
+                        node.value_top = value;
                     }
                 }
+            }
 
-                get!(mut node outgoing_node_id, self).some = some;
-                get!(mut node outgoing_node_id, self).all = all;
-            }
-            }
+            get!(mut node outgoing_node_id, self).some = some;
+            get!(mut node outgoing_node_id, self).all = all;
         }
+        
         // //TODO we should then delete all incoming and outgoing edges to the split node
         // // basically call this detach for all the edges coming into the node
         // for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
         //     // detach_edge_from!(self,node_to_split_id,e_list);
         // }
         new_nodes
+    }
+
+    fn _redirect_outgoing_edges(&mut self, input: &CompilationInput<T, X>, outbound_edges: &Vec<EdgeId>, state: &&Arc<T>, split_id: NodeId) -> Vec<NodeId> {
+        //TODO replicate all edges outbound - we need to recalculate the decision states because it changes upon split - also filter infeasible outbounds
+        //TODO reserve size of outgoing
+        let mut outgoing_nodes_to_update = Vec::with_capacity(outbound_edges.len());
+        for edge_id in outbound_edges {
+            let e = self.edges[edge_id.0].clone();
+            if !get!(node e.to, self).flags.is_deleted() {
+                //TODO confirm if not filtering any edges leading to a node makes it safe to only recompute all for that node
+                outgoing_nodes_to_update.push(e.to);
+                let cost = input.problem.transition_cost(
+                    state.as_ref(),
+                    get!(node e.to, self).state.as_ref(),
+                    e.decision.as_ref(),
+                );
+                println!("trying to add edge with variable {} assigned value {} to node ({},{})",
+                         e.decision.variable.0,
+                         e.decision.value,
+                         split_id.0, split_id.1);
+                if !input.problem.filter(&state, &e.decision) {
+                    println!("added edge with variable {} assigned value {} to node ({},{})",
+                             e.decision.variable.0,
+                             e.decision.value,
+                             split_id.0, split_id.1);
+                    append_edge_to!(
+                                self,
+                                Edge {
+                                    from: split_id,
+                                    to: e.to,
+                                    decision: e.decision.clone(),
+                                    cost: cost
+                                }
+                            );
+                }
+            }
+        }
+        outgoing_nodes_to_update
+    }
+
+    fn _redirect_incoming_edges(&mut self, input: &CompilationInput<T, X>, state: &Arc<T>, edges_to_append: &Vec<usize>, split_id: NodeId) {
+        let mut some: HashSet<(Variable, isize)> = HashSet::new();
+        let mut all: HashSet<(Variable, isize)> = HashSet::new();
+        //TODO redirect edges inbound
+        let mut to_delete = true;
+        for edge_id in edges_to_append {
+            let e = self.edges[*edge_id].clone();
+            if !get!(node e.from, self).flags.is_deleted() && !input.problem.filter(&get!(node e.from, self).state.clone(), &e.decision) {
+                let cost = input.problem.transition_cost(
+                    get!(node e.from, self).state.as_ref(),
+                    state.as_ref(),
+                    e.decision.as_ref(), //TODO: update decision state?
+                );
+                append_edge_to!(
+                        self,
+                        Edge {
+                            from: e.from,
+                            to: split_id,
+                            decision: e.decision.clone(), //TODO: update decision state?
+                            cost: cost
+                        }
+                    );
+
+                some = &some | &self._update_some(&e);
+                if all.is_empty() {
+                    all = self._update_all(&e);
+                } else {
+                    all = &all & &self._update_all(&e);
+                }
+                to_delete = false;
+            }
+        }
+        // set node to exact if some and all and relaxed otherwise
+        // exactness is further corrected by edge additon which check sparent exactness too
+        // TODO: set correct exactness here
+        if some == all {
+            get!(mut node split_id, self).flags.set_exact(true);
+        } else {
+            get!(mut node split_id, self).flags.set_relaxed(true);
+        }
+        if to_delete {
+            get!(mut node split_id, self).flags.set_deleted(true);
+        }
+
+        get!(mut node split_id, self).some = some;
+        get!(mut node split_id, self).all = all;
     }
 
 
@@ -1614,7 +1632,7 @@ where
         config.group_merged = true;
         print!("after split layer {curr_layer_id}\n");
         let s = self.as_graphviz(&config);
-        fs::write("/home/eaeigbe/Documents/PhD/ddo/resources/visualisation_tests/incremental.dot", s).expect("Unable to write file");
+        fs::write("incremental.dot", s).expect("Unable to write file");
 
         true
     }
