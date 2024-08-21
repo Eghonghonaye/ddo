@@ -560,7 +560,7 @@ where
             }
 
             for node_id in curr_l.iter() {
-                let state = get!(node node_id, self).state.clone();
+                let state = Arc::clone(&get!(node node_id, self).state);
                 let rub = input.relaxation.fast_upper_bound(state.as_ref());
                 get!(mut node node_id, self).rub = rub;
                 let ub = rub.saturating_add(get!(node node_id, self).value_top);
@@ -644,7 +644,7 @@ where
         for (id, node) in final_layer.iter().enumerate() {
             if !node.flags.is_deleted(){
                 self.next_l
-                .insert(node.state.clone(), NodeId(final_layer_id.0, id));
+                .insert(Arc::clone(&node.state), NodeId(final_layer_id.0, id));
             }
         }
 
@@ -673,7 +673,7 @@ where
         let all = self.path_to_root.iter().map(|x| (x.variable,x.value)).collect();
         
         let root_node = Node {
-            state: input.residual.state.clone(),
+            state: Arc::clone(&input.residual.state),
             value_top: input.residual.value,
             value_bot: isize::MIN,
             best: None,
@@ -690,7 +690,7 @@ where
 
         self.nodes.push(vec![root_node]);
         self.next_l
-            .insert(input.residual.state.clone(), root_node_id);
+            .insert(Arc::clone(&input.residual.state), root_node_id);
         //TODO why are we pushing Nil twice? Line 507 above and here too
         self.in_edgelists.push(EdgesList::Nil);
         self.out_edgelists.push(EdgesList::Nil);
@@ -729,7 +729,7 @@ where
                     let ub = rub.min(locb).min(best_value);
 
                     func(SubProblem {
-                        state: node.state.clone(),
+                        state: Arc::clone(&node.state),
                         value: node.value_top,
                         path: Self::_best_path_partial_borrow(
                             id,
@@ -843,7 +843,7 @@ where
         if let Some(theta) = node.theta {
             if node.flags.is_above_cutset() {
                 input.cache.update_threshold(
-                    node.state.clone(),
+                    Arc::clone(&node.state),
                     node.depth,
                     theta,
                     !node.flags.is_cutset(),
@@ -1054,7 +1054,7 @@ where
                     dominated,
                     threshold,
                 } = input.dominance.is_dominated_or_insert(
-                    node.state.clone(),
+                    Arc::clone(&node.state),
                     node.depth,
                     node.value_top,
                 );
@@ -1091,24 +1091,21 @@ where
     //TODO we should actually compute this filter at the point of edge creation so we don't do this later. FIX!
     fn _filter_constraints(&mut self, input: &CompilationInput<T, X>, curr_l: &mut Vec<NodeId>) {
         for node_id in curr_l.iter() {
-            // let state = get!(node node_id, self).state.as_ref();
-            let state = get!(mut node node_id, self).state.clone(); //TODO cloning to satisfy borrow checker, look into
-            let outbound_decisions: Vec<(EdgesList, Arc<Decision<_>>)> = self.out_edgelists
+            self.out_edgelists
                 [get!(node node_id, self).outbound.0]
                 .iter(&self.out_edgelists)
                 .filter_map(|x| match x {
                     EdgesList::Cons { head, tail: _ } => {
-                        Some((x, self.edges[head.0].decision.clone()))
+                        Some((x, Arc::clone(&self.edges[head.0].decision)))
                     }
                     _ => None,
                 })
-                .collect();
-            for (e_list, e_dec) in outbound_decisions {
-                if input.problem.filter(&state, &e_dec) {
-                    // delete this edge
-                    // detach_edge_from!(self, node_id, e_list);
-                }
-            }
+                .for_each(|(_e_list, e_dec)| {
+                    if input.problem.filter(&get!(mut node node_id, self).state, &e_dec) {
+                        // delete this edge
+                        // detach_edge_from!(self, node_id, e_list);
+                    }
+                });
         }
         //TODO if outbound edges all detached, set node as deleted-- basically if outbound is nil? I think
     }
@@ -1124,7 +1121,7 @@ where
         let cost = problem.transition_cost(state, next_state.as_ref(), decision.as_ref());
         let next_layer_id = from_id.0 + 1;
 
-        match self.next_l.entry(next_state.clone()) {
+        match self.next_l.entry(Arc::clone(&next_state)) {
             Entry::Vacant(e) => {
                 let parent = get!(node from_id, self).clone();
                 let node_id = NodeId(next_layer_id, self.nodes[next_layer_id].len());
@@ -1165,7 +1162,7 @@ where
                     Edge {
                         from: from_id,
                         to: node_id,
-                        decision: decision.clone(),
+                        decision: Arc::clone(&decision),
                         cost,
                     }
                 );
@@ -1178,7 +1175,7 @@ where
                     Edge {
                         from: from_id,
                         to: node_id,
-                        decision: decision.clone(),
+                        decision: Arc::clone(&decision),
                         cost,
                     }
                 );
@@ -1320,7 +1317,7 @@ where
             let node_id = NodeId(last_layer_id, self.nodes[last_layer_id].len());
             let depth = get!(node merge[0], self).depth;
             self.nodes[last_layer_id].push(Node {
-                state: merged.clone(),
+                state: Arc::clone(&merged),
                 value_top: isize::MIN,
                 value_bot: isize::MIN,
                 best: None,    // yet
@@ -1355,7 +1352,7 @@ where
                     append_edge_to!(self, Edge {
                         from: edge.from,
                         to: merged_id,
-                        decision: edge.decision.clone(),
+                        decision: Arc::clone(&edge.decision),
                         cost: rcost
                     });
 
@@ -1401,7 +1398,7 @@ where
             let depth = get!(node node_to_split_id, self).depth;
             let curr_layer = get!(mut layer curr_layer_id, self);
             curr_layer.push(Node {
-                state: state.clone(),
+                state: Arc::clone(state),
                 value_top: isize::MIN,
                 value_bot: isize::MIN,
                 best: None,    // yet
@@ -1488,7 +1485,7 @@ where
 
     fn clear_node(&mut self, node_id: NodeId, state: Arc<T>) {
         let node = get!(mut node node_id, self);
-        node.state = state.clone();
+        node.state = state;
         node.value_top = isize::MIN;
         node.value_bot = isize::MIN;
         node.theta = None;
@@ -1524,7 +1521,7 @@ where
                                 Edge {
                                     from: split_id,
                                     to: e.to,
-                                    decision: e.decision.clone(),
+                                    decision: Arc::clone(&e.decision),
                                     cost: cost
                                 }
                             );
@@ -1542,9 +1539,10 @@ where
         let mut to_delete = true;
         for edge_id in edges_to_append {
             let e = self.edges[*edge_id].clone();
-            if !get!(node e.from, self).flags.is_deleted() && !input.problem.filter(&get!(node e.from, self).state.clone(), &e.decision) {
+            let from_node = get!(node e.from, self);
+            if !from_node.flags.is_deleted() && !input.problem.filter(&from_node.state, &e.decision) {
                 let cost = input.problem.transition_cost(
-                    get!(node e.from, self).state.as_ref(),
+                    from_node.state.as_ref(),
                     state.as_ref(),
                     e.decision.as_ref(), //TODO: update decision state?
                 );
@@ -1553,7 +1551,7 @@ where
                         Edge {
                             from: e.from,
                             to: split_id,
-                            decision: e.decision.clone(), //TODO: update decision state?
+                            decision: Arc::clone(&e.decision), //TODO: update decision state?
                             cost: cost
                         }
                     );
@@ -1707,9 +1705,9 @@ where
         let split_state_edges = input.problem.split_state_edges(split_state, inbound_edges);
 
         // create n_split new nodes and redirect edges
-        for cluster in &split_state_edges {
-            let merged = self._merge_states_from_incoming_edges(input, cluster);
-            after_split.push((merged, cluster.clone()));
+        for cluster in split_state_edges {
+            let merged = self._merge_states_from_incoming_edges(input, &cluster);
+            after_split.push((merged, cluster));
         }
         after_split
     }
@@ -1813,10 +1811,9 @@ where
     fn edges_of(&self, id: NodeId) -> String {
         let mut out = String::new();
         foreach!(in_edge of id, self, |edge: Edge<X>| {
-            let Edge{from, to, decision, cost} = edge.clone(); //TODO is this clone expensive?
+            let Edge{from, to, decision, cost} = &edge; //TODO is this clone expensive?
             let best = get!(node id, self).best;
-            let best = best.map(|eid| get!(edge eid, self).clone());
-            out.push_str(&Self::edge(from, to, decision, cost, Some(edge) == best));
+            out.push_str(&Self::edge(from, to, decision, *cost, best.map_or(false, |eid| *get!(edge eid, self) == edge)));
         });
         out
     }
@@ -1852,9 +1849,9 @@ where
     }
     /// Creates a string representation of one edge
     fn edge(
-        from: NodeId,
-        to: NodeId,
-        decision: Arc<Decision<X>>,
+        from: &NodeId,
+        to: &NodeId,
+        decision: &Decision<X>,
         cost: isize,
         is_best: bool,
     ) -> String {
