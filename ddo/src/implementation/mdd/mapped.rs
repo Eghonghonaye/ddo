@@ -10,10 +10,10 @@
 //! ``Decision Diagram-Based Branch-and-Bound with Caching
 //! for Dominance and Suboptimality Detection''.
 
-use std::{collections::{hash_map::Entry, HashSet}, fmt::Debug, hash::Hash, sync::Arc, fs};
+use std::{collections::{hash_map::Entry}, fmt::Debug, hash::Hash, sync::Arc, fs};
 
 use derive_builder::Builder;
-use fxhash::FxHashMap;
+use fxhash::{FxHashMap, FxHashSet};
 
 use crate::{
     CompilationInput, CompilationType, Completion, CutsetType, Variable, Decision, DecisionDiagram,
@@ -79,9 +79,9 @@ struct Node<T> {
     /// The number of decisions that have been made since the problem root
     depth: usize,
     /// List of edges that appear on some path to the node
-    some: HashSet<(Variable,isize)>,
+    some: FxHashSet<(Variable,isize)>,
     /// List of edges that appear on all paths to the node
-    all: HashSet<(Variable,isize)>,
+    all: FxHashSet<(Variable,isize)>,
     /// (Under-)estimate of conflicts between in/outgoing decisions
     conflict_count: usize,
 }
@@ -1272,14 +1272,14 @@ where
         curr_l.truncate(input.max_width);
     }
 
-    fn _update_some(&self,edge:&Edge<X>) -> HashSet<(Variable, isize)>{
+    fn _update_some(&self,edge:&Edge<X>) -> FxHashSet<(Variable, isize)>{
         let mut some = get!(node edge.from, self).some.clone();
         assert!(!get!(node edge.from, self).flags.is_deleted(),"attempting to use a deleted parent node");
         some.insert((edge.decision.variable,edge.decision.value));
         some
     }
 
-    fn _update_all(&self,edge:&Edge<X>) -> HashSet<(Variable, isize)>{
+    fn _update_all(&self,edge:&Edge<X>) -> FxHashSet<(Variable, isize)>{
         let mut all = get!(node edge.from, self).all.clone();
         assert!(!get!(node edge.from, self).flags.is_deleted(),"attempting to use a deleted parent node");
         all.insert((edge.decision.variable,edge.decision.value));
@@ -1330,8 +1330,8 @@ where
                 theta: None,
                 flags: NodeFlags::new_relaxed(),
                 depth,
-                some: HashSet::new(),
-                all: HashSet::new(),
+                some: FxHashSet::default(),
+                all: FxHashSet::default(),
                 conflict_count: 0,
             });
             node_id
@@ -1339,8 +1339,8 @@ where
 
         get!(mut node merged_id, self).flags.set_relaxed(true);
 
-        let mut some: HashSet<(Variable,isize)> = HashSet::new();
-        let mut all: HashSet<(Variable,isize)> = HashSet::new();
+        let mut some: FxHashSet<(Variable,isize)> = FxHashSet::default();
+        let mut all: FxHashSet<(Variable,isize)> = FxHashSet::default();
 
         for drop_id in merge {
             get!(mut node drop_id, self).flags.set_deleted(true);
@@ -1391,7 +1391,7 @@ where
         // inbound_edges: &Vec<&(usize, &Decision<X>)>,
         outbound_edges: &Vec<EdgeId>) -> Vec<NodeId>{
         let mut new_nodes = vec![];
-        let mut outgoing_nodes_to_update = HashSet::new();
+        let mut outgoing_nodes_to_update = FxHashSet::default();
         for (state, edges_to_append) in split_states {
             // only add merged as new node
             let curr_layer = get!(mut layer curr_layer_id, self);
@@ -1412,8 +1412,8 @@ where
                 flags: NodeFlags::new_relaxed(),
                 // flags: if edges_to_append.len() == 1 {NodeFlags::new_exact()} else {NodeFlags::new_relaxed()},
                 depth,
-                some: HashSet::new(),
-                all: HashSet::new(),
+                some: FxHashSet::default(),
+                all: FxHashSet::default(),
                 conflict_count: 0,
             });
 
@@ -1426,8 +1426,8 @@ where
 
         // update outgoing node edges
         for outgoing_node_id in outgoing_nodes_to_update {
-            let mut some: HashSet<(Variable, isize)> = HashSet::new();
-            let mut all: HashSet<(Variable, isize)> = HashSet::new();
+            let mut some: FxHashSet<(Variable, isize)> = FxHashSet::default();
+            let mut all: FxHashSet<(Variable, isize)> = FxHashSet::default();
             let outgoing_node = get!(node outgoing_node_id,self);
             let inbound_edges: Vec<_> = get!(in_edgelist outgoing_node.inbound, self)
                 .iter(&self.in_edgelists)
@@ -1534,8 +1534,8 @@ where
     }
 
     fn _redirect_incoming_edges(&mut self, input: &CompilationInput<T, X>, state: &Arc<T>, edges_to_append: &Vec<usize>, split_id: NodeId, outbound_edges: &Vec<EdgeId>) {
-        let mut some: HashSet<(Variable, isize)> = HashSet::new();
-        let mut all: HashSet<(Variable, isize)> = HashSet::new();
+        let mut some: FxHashSet<(Variable, isize)> = FxHashSet::default();
+        let mut all: FxHashSet<(Variable, isize)> = FxHashSet::default();
         let mut conflict_count = 0;
         //TODO redirect edges inbound
         let mut to_delete = true;
