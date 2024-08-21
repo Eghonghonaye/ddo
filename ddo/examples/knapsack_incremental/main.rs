@@ -90,6 +90,19 @@ impl Knapsack {
             clustering,
         }
     }
+    pub fn conflicting_decisions(&self, in_decision: &Decision<KnapsackDecisionState>,out_decision: &Decision<KnapsackDecisionState>) -> bool{
+        if out_decision.value == TAKE_IT{
+            if let Some(state) = in_decision.state {
+                self.weight[out_decision.variable.id()] > state.capacity
+            }
+            else{
+                false
+            }
+        }
+        else{
+            false //we're always allowed to leave an item
+        } 
+    }
 }
 
 /// For each variable in the decision problem, there are two possible choices:
@@ -181,18 +194,17 @@ impl Problem for Knapsack {
         }
         else{
             false //we're always allowed to leave an item
-        }
-        
+        }  
     }
 
     fn split_state_edges(
         &self,
         _state: &Self::State,
-        decisions: &mut dyn Iterator<Item = (usize, &Decision<Self::DecisionState>)>,
+        decisions: &mut dyn Iterator<Item = (usize, isize, &Decision<Self::DecisionState>)>,
     ) -> Vec<Vec<usize>> {
         if self.clustering >= 2 {
             let all_decision_state_capacities = decisions
-                .map(|(id, d)| StateClusterHelper::new(id, d.state.unwrap()))
+                .map(|(id, _cost, d)| StateClusterHelper::new(id, d.state.unwrap()))
                 .collect::<Vec<_>>();
             let nclusters = usize::min(
                 self.clustering as usize,
@@ -221,7 +233,7 @@ impl Problem for Knapsack {
 
             let mut all_decisions = decisions.collect::<Vec<_>>();
             //TODO confirm behaviour of ordering
-            all_decisions.sort_unstable_by(|(_a_id, a_dec), (_b_id, b_dec)| match a_dec.state {
+            all_decisions.sort_unstable_by(|(_a_id, _acost, a_dec), (_b_id, _bcost, b_dec)| match a_dec.state {
                 Some(x) => match b_dec.state {
                     Some(y) => x.capacity.cmp(&y.capacity),
                     None => x.capacity.cmp(&usize::MIN),
@@ -234,12 +246,17 @@ impl Problem for Knapsack {
             let split_point = all_decisions.len() - 1;
             let (a, b) = all_decisions.split_at_mut(split_point);
 
-            let split_a = a.iter().map(|(x, y)| *x).collect();
-            let split_b = b.iter().map(|(x, y)| *x).collect();
+            let split_a = a.iter().map(|(x, _,_)| *x).collect();
+            let split_b = b.iter().map(|(x, _,_)| *x).collect();
 
             vec![split_a, split_b]
         }
     }
+
+    fn check_conflict(&self, in_decision: &Decision<Self::DecisionState>, out_decision: &Decision<Self::DecisionState>) -> bool {
+        return self.conflicting_decisions(in_decision,out_decision)
+    }
+
 }
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]

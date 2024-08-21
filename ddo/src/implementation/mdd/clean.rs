@@ -1210,8 +1210,8 @@ where
             // collect inbound and outbound edges from linked list structure
             let inbound_edges = 
                         inbound_start.iter(&self.in_edgelists).filter_map(|x| match x {
-                            EdgesList::Cons{head, tail:_} => Some((head.0, self.edges[head.0].decision.as_ref())),
-                            _ => None}).collect::<Vec<(usize,&Decision<X>)>>();
+                            EdgesList::Cons{head, tail:_} => Some((head.0, self.edges[head.0].cost, self.edges[head.0].decision.as_ref())),
+                            _ => None}).collect::<Vec<(usize,isize,&Decision<X>)>>();
             let outbound_edges = 
                         outbound_start.iter(&self.out_edgelists).filter_map(|x| match x {
                             EdgesList::Cons{head, tail:_} => Some(head),
@@ -1309,7 +1309,7 @@ where
 
     fn _split_node(&self, node_to_split_id: NodeId, 
             input: &CompilationInput<T,X>, 
-            inbound_edges: &mut dyn Iterator<Item = (usize,&Decision<X>)> ) -> Vec<(Arc<T>,Vec<usize>)>{
+            inbound_edges: &mut dyn Iterator<Item = (usize,isize,&Decision<X>)> ) -> Vec<(Arc<T>,Vec<usize>)>{
         
         // let mut new_nodes = vec![];
         let mut after_split:Vec<(Arc<T>,Vec<usize>)> = vec![]; // this usize is actually an edge id

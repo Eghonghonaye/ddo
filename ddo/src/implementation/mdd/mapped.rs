@@ -1614,11 +1614,11 @@ where
                 .iter(&self.in_edgelists)
                 .filter_map(|x| match x {
                     EdgesList::Cons { head, tail: _ } => {
-                        Some((head.0, self.edges[head.0].decision.as_ref()))
+                        Some((head.0, self.edges[head.0].cost,self.edges[head.0].decision.as_ref()))
                     }
                     _ => None,
                 })
-                .collect::<Vec<(usize, &Decision<X>)>>();
+                .collect::<Vec<(usize, isize, &Decision<X>)>>();
             let outbound_edges = outbound_start
                 .iter(&self.out_edgelists)
                 .filter_map(|x| match x {
@@ -1693,7 +1693,7 @@ where
         &self,
         node_to_split_id: NodeId,
         input: &CompilationInput<T, X>,
-        inbound_edges: &mut dyn Iterator<Item = (usize, &Decision<X>)>,
+        inbound_edges: &mut dyn Iterator<Item = (usize, isize, &Decision<X>)>,
     ) -> Vec<(Arc<T>, Vec<usize>)> {
         let split_state = get!(node node_to_split_id, self).state.as_ref();
         let split_state_edges = input.problem.split_state_edges(split_state, inbound_edges);

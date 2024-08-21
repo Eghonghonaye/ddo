@@ -92,7 +92,7 @@ pub trait Problem {
     /// 
     /// This is also an optional trait as a default heuristic is implemented
     /// TODO implement default heuristic
-    fn split_state_edges(&self, _state:&Self::State, _decisions:&mut dyn Iterator<Item = (usize,&Decision<Self::DecisionState>)>) -> Vec<Vec<usize>>
+    fn split_state_edges(&self, _state:&Self::State, _decisions:&mut dyn Iterator<Item = (usize,isize,&Decision<Self::DecisionState>)>) -> Vec<Vec<usize>>
     {
         vec![]
     }
