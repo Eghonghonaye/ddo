@@ -1384,7 +1384,7 @@ where
         curr_layer_id: LayerId,
         // inbound_edges: &Vec<&(usize, &Decision<X>)>,
         outbound_edges: &Vec<EdgeId>) -> Vec<NodeId>{
-        let mut new_nodes = vec![];
+        let mut new_nodes = Vec::with_capacity(split_states.len());
         let mut outgoing_nodes_to_update = FxHashSet::default();
         for (state, edges_to_append) in split_states {
             // only add merged as new node
@@ -1665,7 +1665,7 @@ where
         &self,
         input: &CompilationInput<T, X>,
         inbound_edges: &Vec<usize>) -> Arc<T> {
-        let mut new_states = vec![];
+        let mut new_states = Vec::with_capacity(inbound_edges.len());
         for edge_id in inbound_edges {
             // create states for each edge transition
             let edge = get!(edge EdgeId(*edge_id), self);
@@ -1695,17 +1695,13 @@ where
         input: &CompilationInput<T, X>,
         inbound_edges: &mut dyn Iterator<Item = (usize, &Decision<X>)>,
     ) -> Vec<(Arc<T>, Vec<usize>)> {
-        let mut after_split: Vec<(Arc<T>, Vec<usize>)> = vec![]; // this usize is actually an edge id
-                                                                 // let node_to_split = get!(mut node node_to_split_id, self);
         let split_state = get!(node node_to_split_id, self).state.as_ref();
         let split_state_edges = input.problem.split_state_edges(split_state, inbound_edges);
 
-        // create n_split new nodes and redirect edges
-        for cluster in split_state_edges {
+        split_state_edges.into_iter().map(|cluster| {
             let merged = self._merge_states_from_incoming_edges(input, &cluster);
-            after_split.push((merged, cluster));
-        }
-        after_split
+            (merged, cluster)
+        }).collect()
     }
 }
 
@@ -1770,10 +1766,9 @@ where
         // Show clusters if requested
         if config.show_deleted && config.group_merged {
             for (layer_id, layer) in self.nodes.iter().enumerate() {
-                let mut merged = vec![];
+                let mut merged = Vec::with_capacity(layer.len());
                 for (node_id, node) in layer.iter().enumerate() {
                     let id = NodeId(layer_id, node_id);
-                    let node = get!(node id, self);
                     if node.flags.is_deleted() || node.flags.is_relaxed() {
                         merged.push(format!("node_{}_{}", id.0,id.1));
                     }
