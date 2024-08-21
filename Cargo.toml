@@ -14,3 +14,7 @@ panic            = 'abort'
 opt-level        = 3
 incremental      = true
 
+[profile.rel-with-debug]
+inherits = "release"
+debug = true
+
