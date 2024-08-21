@@ -1128,10 +1128,6 @@ where
                 let mut flags = NodeFlags::new_exact();
                 flags.set_exact(parent.flags.is_exact());
 
-                if self.nodes.len() == next_layer_id {
-                    self.nodes.push(vec![]);
-                }
-
                 let mut some = parent.some.clone();
                 some.insert((decision.variable,decision.value));
 
