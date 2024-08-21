@@ -735,8 +735,7 @@ where
 
     #[allow(clippy::redundant_closure_call)]
     fn _compute_local_bounds(&mut self, input: &CompilationInput<T, X>) {
-        //FIXME ?? how does this work -- first part of check always true
-        if self.lel.0 < self.nodes.len() && input.comp_type == CompilationType::Relaxed {
+        if !self.is_exact && input.comp_type == CompilationType::Relaxed {
             // initialize last layer
             let last_layer_id = LayerId(self.nodes.len() - 1);
             let layer = get!(mut layer last_layer_id, self);
@@ -842,9 +841,6 @@ where
     }
 
     fn _finalize_cutset(&mut self, input: &CompilationInput<T, X>) {
-        // if self.lel.is_none() {
-        //     self.lel = Some(LayerId(self.nodes.len())); // all nodes of the DD are above cutset
-        // }
         if input.comp_type == CompilationType::Relaxed || self.is_exact {
             match CUTSET_TYPE {
                 LAST_EXACT_LAYER => {
@@ -861,7 +857,7 @@ where
     }
 
     fn _compute_last_exact_layer_cutset(&mut self, lel: LayerId) {
-        if lel.0 < self.nodes.len() {
+        if !self.is_exact {
             let layer = get!(mut layer lel, self);
             for (id, node) in layer.iter_mut().enumerate() {
                 self.cutset.push(NodeId(lel.0, id));
