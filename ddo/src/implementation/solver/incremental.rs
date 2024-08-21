@@ -1,10 +1,11 @@
 use std::clone::Clone;
 use std::{hash::Hash, sync::Arc};
+use std::fs;
 
 use crate::{
     Cache, CompilationInput, CompilationType, Completion, Cutoff, Decision, DecisionDiagram,
     DefaultMappedLEL, DominanceChecker, EmptyCache, Fringe, Problem, Reason, Relaxation, Solution,
-    Solver, StateRanking, SubProblem, WidthHeuristic,
+    Solver, StateRanking, SubProblem, WidthHeuristic
 };
 
 pub struct IncrementalSolver<

@@ -10,7 +10,7 @@
 //! ``Decision Diagram-Based Branch-and-Bound with Caching
 //! for Dominance and Suboptimality Detection''.
 
-use std::{collections::{hash_map::Entry, HashSet}, fmt::Debug, hash::Hash, sync::Arc};
+use std::{collections::{hash_map::Entry, HashSet}, fmt::Debug, hash::Hash, sync::Arc, fs};
 
 use derive_builder::Builder;
 use fxhash::FxHashMap;
@@ -379,8 +379,8 @@ macro_rules! detach_edge_from {
 
 impl<T, X, const CUTSET_TYPE: CutsetType> Default for Mapped<T, X, { CUTSET_TYPE }>
 where
-    T: Eq + PartialEq + Hash + Clone,
-    X: Eq + PartialEq + Hash + Clone,
+    T: Eq + PartialEq + Hash + Clone + Debug,
+    X: Eq + PartialEq + Hash + Clone + Debug,
 {
     fn default() -> Self {
         Self::new()
@@ -389,8 +389,8 @@ where
 
 impl<T, X, const CUTSET_TYPE: CutsetType> DecisionDiagram for Mapped<T, X, { CUTSET_TYPE }>
 where
-    T: Eq + PartialEq + Hash + Clone,
-    X: Eq + PartialEq + Hash + Clone,
+    T: Eq + PartialEq + Hash + Clone + Debug,
+    X: Eq + PartialEq + Hash + Clone + Debug,
 {
     type State = T;
     type DecisionState = X;
@@ -439,8 +439,8 @@ where
 
 impl<T, X, const CUTSET_TYPE: CutsetType> Mapped<T, X, { CUTSET_TYPE }>
 where
-    T: Eq + PartialEq + Hash + Clone,
-    X: Eq + PartialEq + Hash + Clone,
+    T: Eq + PartialEq + Hash + Clone + Debug,
+    X: Eq + PartialEq + Hash + Clone + Debug,
 {
     pub fn new() -> Self {
         Self {
@@ -458,7 +458,7 @@ where
             cutset: vec![],
             best_node: None,
             best_exact_node: None,
-            is_exact: true,
+            is_exact: false,
             has_exact_best_path: false,
         }
     }
@@ -578,6 +578,14 @@ where
         // clear parts of diagram reset by refinement
         self._clear_for_refine();
 
+        //visualise for debug
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("before refine\n");
+        let s = self.as_graphviz(&config);
+        fs::write("/home/eaeigbe/Documents/PhD/ddo/resources/visualisation_tests/incremental.dot", s).expect("Unable to write file");
+
         // intialise diagram but without emptying nodes and edges etc
         // only enough that we start analysis from top to bottom
         self.path_to_root.extend_from_slice(&input.residual.path);
@@ -594,7 +602,7 @@ where
             if input.cutoff.must_stop() {
                 return Err(Reason::CutoffOccurred);
             }
-            print!("refining layer {curr_layer_id} \n");
+            // print!("refining layer {curr_layer_id} \n");
             if !self._refine_curr_layer(input, curr_layer_id) {
                 break;
             }
@@ -616,12 +624,12 @@ where
             .iter().enumerate()
             .filter_map(|(node_id,node)| (!node.flags.is_deleted()).then_some((node_id,node)))
             .collect::<Vec<_>>();
-        println!("Final layer contents");
+        println!("Final layer {:?} contents while last exact layer is {:?}",final_layer_id,self.lel);
         for (node_id,node) in &print_final_l {
             println!("node {:?} is exact {:?} and is deleted {:?} with value {:?} ",NodeId(self.nodes.len() - 1,*node_id), 
                                         node.flags.is_exact(),node.flags.is_deleted(),node.value_top);
         }
-        
+
         for (id, node) in final_layer.iter().enumerate() {
             if !node.flags.is_deleted(){
                 self.next_l
@@ -630,6 +638,11 @@ where
         }
 
         self._finalize_for_refine(input);
+
+        print!("after refine\n");
+        let s = self.as_graphviz(&config);
+        fs::write("/home/eaeigbe/Documents/PhD/ddo/resources/visualisation_tests/incremental.dot", s).expect("Unable to write file");
+
 
         Ok(Completion {
             is_exact: self.is_exact(),
@@ -1085,7 +1098,7 @@ where
             for (e_list, e_dec) in outbound_decisions {
                 if input.problem.filter(&state, &e_dec) {
                     // delete this edge
-                    detach_edge_from!(self, node_id, e_list);
+                    // detach_edge_from!(self, node_id, e_list);
                 }
             }
         }
@@ -1215,7 +1228,7 @@ where
                     }
                     if fully_split && 
                         self.lel.0 == curr_layer_id -1 &&
-                        curr_l.iter().all(|x| !get!(node x, self).flags.is_deleted() && get!(node x, self).flags.is_exact()){
+                        curr_l.iter().filter(|x| !get!(node x, self).flags.is_deleted()).all(|x| get!(node x, self).flags.is_exact()){
                         self.lel = LayerId(curr_layer_id); // lel was the previous layer
                     }
                 }
@@ -1361,6 +1374,174 @@ where
         }
     }
 
+    fn _redirect_edges_after_split(&mut self,
+        input: &CompilationInput<T, X>,
+        split_states:&Vec<(Arc<T>,Vec<usize>)>,
+        node_to_split_id: NodeId,
+        curr_layer_id: LayerId,
+        // inbound_edges: &Vec<&(usize, &Decision<X>)>,
+        outbound_edges: &Vec<EdgeId>) -> Vec<NodeId>{
+        let mut new_nodes = vec![];
+        for (state, edges_to_append) in split_states {
+            // only add merged as new node
+            //TODO is this Id what i should be? If I insert, its id is different
+            let curr_layer = get!(mut layer curr_layer_id, self);
+            let split_id = NodeId(curr_layer_id.0, curr_layer.len());
+            new_nodes.push(split_id);
+            let depth = get!(node node_to_split_id, self).depth;
+            let curr_layer = get!(mut layer curr_layer_id, self);
+            curr_layer.push(Node {
+                state: state.clone(),
+                value_top: isize::MIN,
+                value_bot: isize::MIN,
+                best: None,    // yet
+                inbound: NIL,  // yet
+                outbound: NIL, // yet
+                //
+                rub: isize::MAX,
+                theta: None,
+                flags: NodeFlags::new_relaxed(),
+                // flags: if edges_to_append.len() == 1 {NodeFlags::new_exact()} else {NodeFlags::new_relaxed()},
+                depth,
+                some: HashSet::new(),
+                all: HashSet::new(),
+            });
+
+            
+            let mut some: HashSet<(Variable,isize)> = HashSet::new();
+            let mut all: HashSet<(Variable,isize)> = HashSet::new();
+            //TODO redirect edges inbound
+            let mut to_delete = true;
+            for edge_id in edges_to_append {
+                let e = self.edges[*edge_id].clone();
+                if !get!(node e.from, self).flags.is_deleted() && !input.problem.filter(&get!(node e.from, self).state.clone(), &e.decision){
+                    let cost = input.problem.transition_cost(
+                        get!(node e.from, self).state.as_ref(),
+                        state.as_ref(),
+                        e.decision.as_ref(), //TODO: update decision state?
+                    );
+                    append_edge_to!(
+                        self,
+                        Edge {
+                            from: e.from,
+                            to: split_id,
+                            decision: e.decision.clone(), //TODO: update decision state?
+                            cost: cost
+                        }
+                    ); 
+
+                    some =  &some | &self._update_some(&e);
+                    if all.is_empty(){
+                        all = self._update_all(&e);
+                    }
+                    else {
+                        all =  &all & &self._update_all(&e);
+                    }
+                    to_delete = false;
+                }
+            }
+            // set node to exact if some and all and relaxed otherwise
+            // exactness is further corrected by edge additon which check sparent exactness too
+            // TODO: set correct exactness here
+            if some == all {
+                get!(mut node split_id, self).flags.set_exact(true);
+            }
+            else {
+                get!(mut node split_id, self).flags.set_relaxed(true);
+            }
+            if to_delete{
+                get!(mut node split_id, self).flags.set_deleted(true);
+            }
+
+            get!(mut node split_id, self).some = some;
+            get!(mut node split_id, self).all = all;
+
+            //TODO replicate all edges outbound - we need to recalculate the decision states because it changes upon split - also filter infeasible outbounds
+            //TODO reserve size of outgoing
+            if !get!(node split_id, self).flags.is_deleted(){
+                let mut outgoing_nodes_to_update = Vec::with_capacity(outbound_edges.len());
+                for edge_id in outbound_edges {
+                    let e = self.edges[edge_id.0].clone();
+                        if !get!(node e.to, self).flags.is_deleted() {
+                            //TODO confirm if not filtering any edges leading to a node makes it safe to only recompute all for that node
+                            outgoing_nodes_to_update.push(e.to);
+                            let cost = input.problem.transition_cost(
+                                state.as_ref(),
+                                get!(node e.to, self).state.as_ref(),
+                                e.decision.as_ref(),
+                            );
+                            println!("trying to add edge with variable {} assigned value {} to node ({},{})",
+                                                    e.decision.variable.0,
+                                                    e.decision.value,
+                                                    split_id.0,split_id.1);
+                            if !input.problem.filter(&state, &e.decision) {
+                                println!("added edge with variable {} assigned value {} to node ({},{})",
+                                                    e.decision.variable.0,
+                                                    e.decision.value,
+                                                    split_id.0,split_id.1);
+                                append_edge_to!(
+                                    self,
+                                    Edge {
+                                        from: split_id,
+                                        to: e.to,
+                                        decision: e.decision.clone(),
+                                        cost: cost
+                                    }
+                                ); 
+                            }
+                        }
+                }
+            
+            // update outgoing node edges
+            for outgoing_node_id in outgoing_nodes_to_update{
+                let mut some: HashSet<(Variable,isize)> = HashSet::new();
+                let mut all: HashSet<(Variable,isize)> = HashSet::new();
+                let inbound_start_for_outgoing = self.in_edgelists[get!(node outgoing_node_id,self).inbound.0];
+                let inbound_edges = inbound_start_for_outgoing
+                .iter(&self.in_edgelists)
+                .filter_map(|x| match x {
+                    EdgesList::Cons { head, tail: _ } => {
+                        Some(head)
+                    }
+                    _ => None,
+                })
+                .collect::<Vec<EdgeId>>();
+
+                //update node attributes
+                let merged = self._merge_states_from_incoming_edges(input, &inbound_edges.iter().map(|x| x.0).collect());
+                get!(mut node outgoing_node_id, self).state = merged.clone();
+                // get!(mut node outgoing_node_id, self).value_top = isize::MIN;
+                // get!(mut node outgoing_node_id, self).value_bot = isize::MIN;
+                // get!(mut node outgoing_node_id, self).theta = None;
+                // get!(mut node outgoing_node_id, self).best = None;
+
+                for e_id in &inbound_edges{
+                    let e = get!(edge e_id,self);
+                    if !get!(node e.from, self).flags.is_deleted() {
+                        some =  &some | &self._update_some(&e);
+                        if all.is_empty(){
+                            all = self._update_all(&e);
+                        }
+                        else {
+                            all =  &all & &self._update_all(&e);
+                        }
+                    }
+                }
+
+                get!(mut node outgoing_node_id, self).some = some;
+                get!(mut node outgoing_node_id, self).all = all;
+            }
+            }
+        }
+        // //TODO we should then delete all incoming and outgoing edges to the split node
+        // // basically call this detach for all the edges coming into the node
+        // for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
+        //     // detach_edge_from!(self,node_to_split_id,e_list);
+        // }
+        new_nodes
+    }
+
+
     fn _split_layer(
         &mut self,
         input: &CompilationInput<T, X>,
@@ -1411,167 +1592,62 @@ where
             if inbound_edges.len() > 1 {
                 let split_states =
                     self._split_node(node_to_split_id, input, &mut inbound_edges.into_iter());
-                let mut new_nodes = vec![];
-
-                for (state, edges_to_append) in split_states {
-                    // only add merged as new node
-                    //TODO is this Id what i should be? If I insert, its id is different
-                    let curr_layer = get!(mut layer LayerId(curr_layer_id), self);
-                    let split_id = NodeId(curr_layer_id, curr_layer.len());
-                    new_nodes.push(split_id);
-                    let depth = get!(node node_to_split_id, self).depth;
-                    let curr_layer = get!(mut layer LayerId(curr_layer_id), self);
-                    curr_layer.push(Node {
-                        state: state.clone(),
-                        value_top: isize::MIN,
-                        value_bot: isize::MIN,
-                        best: None,    // yet
-                        inbound: NIL,  // yet
-                        outbound: NIL, // yet
-                        //
-                        rub: isize::MAX,
-                        theta: None,
-                        flags: NodeFlags::new_relaxed(),
-                        // flags: if edges_to_append.len() == 1 {NodeFlags::new_exact()} else {NodeFlags::new_relaxed()},
-                        depth,
-                        some: HashSet::new(),
-                        all: HashSet::new(),
-                    });
-
-                    
-                    let mut some: HashSet<(Variable,isize)> = HashSet::new();
-                    let mut all: HashSet<(Variable,isize)> = HashSet::new();
-                    //TODO redirect edges inbound
-                    for edge_id in edges_to_append {
-                        let e = self.edges[edge_id].clone();
-                        if !get!(node e.from, self).flags.is_deleted(){
-                            let cost = input.problem.transition_cost(
-                                get!(node e.from, self).state.as_ref(),
-                                state.as_ref(),
-                                e.decision.as_ref(),
-                            );
-                            append_edge_to!(
-                                self,
-                                Edge {
-                                    from: e.from,
-                                    to: split_id,
-                                    decision: e.decision.clone(),
-                                    cost: cost
-                                }
-                            ); 
-
-                            some =  &some | &self._update_some(&e);
-                            if all.is_empty(){
-                                all = self._update_all(&e);
-                            }
-                            else {
-                                all =  &all & &self._update_all(&e);
-                            }
-                        }
-                    }
-
-                    // set node to exact if some and all and relaxed otherwise
-                    // exactness is further corrected by edge additon which check sparent exactness too
-                    // TODO: set correct exactness here
-                    if some == all {
-                        get!(mut node split_id, self).flags.set_exact(true);
-                    }
-                    else {
-                        get!(mut node split_id, self).flags.set_relaxed(true);
-                    }
-
-                    get!(mut node split_id, self).some = some;
-                    get!(mut node split_id, self).all = all;
-
-                    //TODO replicate all edges outbound - we need to recalculate the decision states because it changes upon split - also filter infeasible outbounds
-                    //TODO reserve size of outgo
-                    let mut outgoing_nodes_to_update = Vec::with_capacity(outbound_edges.len());
-                    for edge_id in &outbound_edges {
-                        let e = self.edges[edge_id.0].clone();
-                            if !get!(node e.to, self).flags.is_deleted() {
-
-                                let cost = input.problem.transition_cost(
-                                    state.as_ref(),
-                                    get!(node e.to, self).state.as_ref(),
-                                    e.decision.as_ref(),
-                                );
-                                //TODO confirm if not filtering any edges leading to a node makes it safe to only recompute all for that node
-                                outgoing_nodes_to_update.push(e.to);
-                                if !input.problem.filter(&state, &e.decision) {
-                                    append_edge_to!(
-                                        self,
-                                        Edge {
-                                            from: split_id,
-                                            to: e.to,
-                                            decision: e.decision.clone(),
-                                            cost: cost
-                                        }
-                                    ); 
-                                }
-                            }
-                    }
-
-                    // update outgoing node edges
-                    for outgoing_node_id in outgoing_nodes_to_update{
-                        let mut some: HashSet<(Variable,isize)> = HashSet::new();
-                        let mut all: HashSet<(Variable,isize)> = HashSet::new();
-                        let inbound_start_for_outgoing = self.in_edgelists[get!(node outgoing_node_id,self).inbound.0];
-                        let inbound_edges = inbound_start_for_outgoing
-                        .iter(&self.in_edgelists)
-                        .filter_map(|x| match x {
-                            EdgesList::Cons { head, tail: _ } => {
-                                Some(head)
-                            }
-                            _ => None,
-                        })
-                        .collect::<Vec<EdgeId>>();
-
-                        for e_id in &inbound_edges{
-                            let e = get!(edge e_id,self);
-                            if !get!(node e.from, self).flags.is_deleted() {
-                                some =  &some | &self._update_some(&e);
-                                if all.is_empty(){
-                                    all = self._update_all(&e);
-                                }
-                                else {
-                                    all =  &all & &self._update_all(&e);
-                                }
-                            }
-                        }
-
-                        get!(mut node outgoing_node_id, self).some = some;
-                        get!(mut node outgoing_node_id, self).all = all;
-                    }
-                }
-                // //TODO we should then delete all incoming and outgoing edges to the split node
-                // // basically call this detach for all the edges coming into the node
-                for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
-                    detach_edge_from!(self,node_to_split_id,e_list);
-                }
+                
 
                 //Delete split node
                 get!(mut node node_to_split_id, self)
                     .flags
                     .set_deleted(true);
 
-                // for new_node_id in &new_nodes {
-                //     let new_node = get!(mut node new_node_id, self);
-                //     println!(
-                //         "new node {:?} with value {:?} which is exact {:?}",
-                //         new_node_id,
-                //         new_node.value_top,
-                //         new_node.flags.is_exact()
-                //     );
-                // }
-                // get!(node curr_l[index-1], self).flags.set_deleted(true);
+            
+                let mut new_nodes = self._redirect_edges_after_split(input,&split_states,node_to_split_id,LayerId(curr_layer_id),&outbound_edges);
+                
+
                 curr_l.remove(index - 1);
                 curr_l.append(&mut new_nodes);
                 return false;
             } else {
                 index -= 1;
+                if inbound_edges.is_empty(){
+                    get!(mut node node_to_split_id, self).flags.set_deleted(true);
+                }
             }
         }
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("after split layer {curr_layer_id}\n");
+        let s = self.as_graphviz(&config);
+        fs::write("/home/eaeigbe/Documents/PhD/ddo/resources/visualisation_tests/incremental.dot", s).expect("Unable to write file");
+
         true
+    }
+
+    fn _merge_states_from_incoming_edges (
+        &self,
+        input: &CompilationInput<T, X>,
+        inbound_edges: &Vec<usize>) -> Arc<T> {
+        let mut new_states = vec![];
+        for edge_id in inbound_edges {
+            // create states for each edge transition
+            let current_decision = self.edges[*edge_id].decision.as_ref();
+            let parent_state = get!(node(self.edges[*edge_id].from), self).state.as_ref();
+            let next_state = Arc::new(input.problem.transition(parent_state, current_decision));
+            // let cost = input.problem.transition_cost(
+            //     parent_state,
+            //     next_state.as_ref(),
+            //     current_decision,
+            // ); //TODO actually use this cost post split
+            new_states.push(next_state);
+        }
+
+        // merge them as they go to the same state actually
+        let merged = Arc::new(
+            input
+                .relaxation
+                .merge(&mut new_states.iter().map(|x| x.as_ref())),
+        );
+        merged
     }
 
     fn _split_node(
@@ -1580,7 +1656,6 @@ where
         input: &CompilationInput<T, X>,
         inbound_edges: &mut dyn Iterator<Item = (usize, &Decision<X>)>,
     ) -> Vec<(Arc<T>, Vec<usize>)> {
-        // let mut new_nodes = vec![];
         let mut after_split: Vec<(Arc<T>, Vec<usize>)> = vec![]; // this usize is actually an edge id
                                                                  // let node_to_split = get!(mut node node_to_split_id, self);
         let split_state = get!(node node_to_split_id, self).state.as_ref();
@@ -1588,26 +1663,7 @@ where
 
         // create n_split new nodes and redirect edges
         for cluster in &split_state_edges {
-            let mut new_states = vec![];
-            for edge_id in cluster {
-                // create states for each edge transition
-                let current_decision = self.edges[*edge_id].decision.as_ref();
-                let parent_state = get!(node(self.edges[*edge_id].from), self).state.as_ref();
-                let next_state = Arc::new(input.problem.transition(parent_state, current_decision));
-                // let cost = input.problem.transition_cost(
-                //     parent_state,
-                //     next_state.as_ref(),
-                //     current_decision,
-                // ); //TODO actually use this cost post split
-                new_states.push(next_state);
-            }
-
-            // merge them as they go to the same state actually
-            let merged = Arc::new(
-                input
-                    .relaxation
-                    .merge(&mut new_states.iter().map(|x| x.as_ref())),
-            );
+            let merged = self._merge_states_from_incoming_edges(input, cluster);
             after_split.push((merged, cluster.clone()));
         }
         after_split
@@ -1680,7 +1736,7 @@ where
                     let id = NodeId(layer_id, node_id);
                     let node = get!(node id, self);
                     if node.flags.is_deleted() || node.flags.is_relaxed() {
-                        merged.push(format!("{}", id.0));
+                        merged.push(format!("node_{}_{}", id.0,id.1));
                     }
                 }
                 if !merged.is_empty() {
@@ -1704,7 +1760,7 @@ where
     /// Creates a string representation of one single node
     fn node(&self, id: NodeId, config: &VizConfig) -> String {
         let attributes = self.node_attributes(id, config);
-        format!("\t{}_{} [{attributes}];\n", id.0, id.1)
+        format!("\tnode_{}_{} [{attributes}];\n", id.0, id.1)
     }
 
     #[allow(clippy::redundant_closure_call)]
@@ -1715,7 +1771,7 @@ where
             let Edge{from, to, decision, cost} = edge.clone(); //TODO is this clone expensive?
             let best = get!(node id, self).best;
             let best = best.map(|eid| get!(edge eid, self).clone());
-            out.push_str(&Self::edge(from.0, to.0, decision, cost, Some(edge) == best));
+            out.push_str(&Self::edge(from, to, decision, cost, Some(edge) == best));
         });
         out
     }
@@ -1739,11 +1795,11 @@ where
                 let value = term.value_top;
                 if value == vmax {
                     out.push_str(&format!(
-                        "\t{}_{} -> terminal [penwidth=3];\n",
+                        "\tnode_{}_{} -> terminal [penwidth=3];\n",
                         last_layer_id, id
                     ));
                 } else {
-                    out.push_str(&format!("\t{}_{} -> terminal;\n", last_layer_id, id));
+                    out.push_str(&format!("\tnode_{}_{} -> terminal;\n", last_layer_id, id));
                 }
             }
         }
@@ -1751,8 +1807,8 @@ where
     }
     /// Creates a string representation of one edge
     fn edge(
-        from: usize,
-        to: usize,
+        from: NodeId,
+        to: NodeId,
         decision: Arc<Decision<X>>,
         cost: isize,
         is_best: bool,
@@ -1762,7 +1818,7 @@ where
         let value = decision.value;
         let label = format!("(x{variable} = {value})\\ncost = {cost}");
 
-        format!("\t{from} -> {to} [penwidth={width},label=\"{label}\"];\n")
+        format!("\tnode_{}_{} -> node_{}_{} [penwidth={width},label=\"{label}\"];\n",from.0,from.1,to.0,to.1)
     }
     /// Creates the list of attributes that are used to configure one node
     fn node_attributes(&self, id: NodeId, config: &VizConfig) -> String {
@@ -1775,7 +1831,7 @@ where
         let color = Self::node_color(node, merged);
         let peripheries = Self::node_peripheries(node);
         let group = self.node_group(node);
-        let label = Self::node_label(node, state, config);
+        let label = Self::node_label(node, id, state, config);
 
         format!("shape={shape},style=filled,color={color},peripheries={peripheries},group=\"{group}\",label=\"{label}\"")
     }
@@ -1817,8 +1873,9 @@ where
         }
     }
     /// Creates text label to place inside of the node when displaying it
-    fn node_label(node: &Node<T>, state: &T, config: &VizConfig) -> String {
-        let mut out = format!("{state:?}");
+    fn node_label(node: &Node<T>, id: NodeId, state: &T, config: &VizConfig) -> String {
+        let mut out = format!("id: ({},{})", id.0,id.1);
+        out.push_str(&format!("\n{state:?}"));
 
         if config.show_value {
             out.push_str(&format!("\\nval: {}", node.value_top));

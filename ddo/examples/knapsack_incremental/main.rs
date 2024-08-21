@@ -176,7 +176,13 @@ impl Problem for Knapsack {
     }
 
     fn filter(&self, state: &Self::State, decision: &Decision<Self::DecisionState>) -> bool {
-        self.weight[decision.variable.id()] > state.capacity
+        if decision.value == TAKE_IT{
+            self.weight[decision.variable.id()] > state.capacity
+        }
+        else{
+            false //we're always allowed to leave an item
+        }
+        
     }
 
     fn split_state_edges(

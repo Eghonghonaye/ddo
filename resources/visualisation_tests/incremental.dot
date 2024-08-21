@@ -1,0 +1,92 @@
+digraph {
+	ranksep = 3;
+
+	node_0_0 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="root",label="id: (0,0)
+KnapsackState { depth: 0, capacity: 20 }\nval: 0\nlocb: 35\nrub: 37\ntheta: 0"];
+	node_1_0 [shape=circle,style=filled,color=red,peripheries=4,group="1",label="id: (1,0)
+KnapsackState { depth: 1, capacity: 15 }\nval: 11\nlocb: 24\nrub: 26\ntheta: 11"];
+	node_0_0 -> node_1_0 [penwidth=3,label="(x1 = 1)\ncost = 11"];
+	node_1_1 [shape=circle,style=filled,color=red,peripheries=4,group="1",label="id: (1,1)
+KnapsackState { depth: 1, capacity: 20 }\nval: 0\nlocb: 28\nrub: 34\ntheta: 1"];
+	node_0_0 -> node_1_1 [penwidth=3,label="(x1 = 0)\ncost = 0"];
+	node_2_0 [shape=circle,style=filled,color=red,peripheries=4,group="3",label="id: (2,0)
+KnapsackState { depth: 2, capacity: 8 }\nval: 26\nlocb: 9\nrub: 11\ntheta: 26"];
+	node_1_0 -> node_2_0 [penwidth=3,label="(x3 = 1)\ncost = 15"];
+	node_2_2 [shape=circle,style=filled,color=red,peripheries=4,group="3",label="id: (2,2)
+KnapsackState { depth: 2, capacity: 13 }\nval: 15\nlocb: 13\nrub: 19\ntheta: 16"];
+	node_1_1 -> node_2_2 [penwidth=3,label="(x3 = 1)\ncost = 15"];
+	node_2_5 [shape=circle,style=filled,color=red,peripheries=4,group="3",label="id: (2,5)
+KnapsackState { depth: 2, capacity: 15 }\nval: 11\nlocb: 22\nrub: +inf\ntheta: 13"];
+	node_1_0 -> node_2_5 [penwidth=3,label="(x3 = 0)\ncost = 0"];
+	node_2_6 [shape=circle,style=filled,color=red,peripheries=4,group="3",label="id: (2,6)
+KnapsackState { depth: 2, capacity: 20 }\nval: 0\nlocb: 22\nrub: +inf\ntheta: 13"];
+	node_1_1 -> node_2_6 [penwidth=3,label="(x3 = 0)\ncost = 0"];
+	node_3_0 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,0)
+KnapsackState { depth: 3, capacity: 2 }\nval: 35\nlocb: 0\nrub: 2\ntheta: +inf"];
+	node_2_0 -> node_3_0 [penwidth=3,label="(x0 = 1)\ncost = 9"];
+	node_3_1 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,1)
+KnapsackState { depth: 3, capacity: 8 }\nval: 26\nlocb: 0\nrub: 11\ntheta: +inf"];
+	node_2_0 -> node_3_1 [penwidth=3,label="(x0 = 0)\ncost = 0"];
+	node_3_2 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,2)
+KnapsackState { depth: 3, capacity: 7 }\nval: 24\nlocb: -inf\nrub: +inf\ntheta: 26"];
+	node_2_2 -> node_3_2 [penwidth=3,label="(x0 = 1)\ncost = 9"];
+	node_3_10 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,10)
+KnapsackState { depth: 3, capacity: 20 }\nval: 0\nlocb: 13\nrub: +inf\ntheta: +inf"];
+	node_2_6 -> node_3_10 [penwidth=3,label="(x0 = 0)\ncost = 0"];
+	node_3_12 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,12)
+KnapsackState { depth: 3, capacity: 15 }\nval: 11\nlocb: 13\nrub: +inf\ntheta: +inf"];
+	node_2_5 -> node_3_12 [penwidth=3,label="(x0 = 0)\ncost = 0"];
+	node_3_14 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,14)
+KnapsackState { depth: 3, capacity: 14 }\nval: 9\nlocb: 13\nrub: +inf\ntheta: +inf"];
+	node_2_6 -> node_3_14 [penwidth=3,label="(x0 = 1)\ncost = 9"];
+	node_3_15 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,15)
+KnapsackState { depth: 3, capacity: 13 }\nval: 15\nlocb: 13\nrub: +inf\ntheta: +inf"];
+	node_2_2 -> node_3_15 [penwidth=3,label="(x0 = 0)\ncost = 0"];
+	node_3_16 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="0",label="id: (3,16)
+KnapsackState { depth: 3, capacity: 9 }\nval: 20\nlocb: 13\nrub: +inf\ntheta: +inf"];
+	node_2_5 -> node_3_16 [penwidth=3,label="(x0 = 1)\ncost = 9"];
+	node_4_0 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="2",label="id: (4,0)
+KnapsackState { depth: 4, capacity: 2 }\nval: 35\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_0 -> node_4_0 [penwidth=3,label="(x2 = 0)\ncost = 0"];
+	node_4_1 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="2",label="id: (4,1)
+KnapsackState { depth: 4, capacity: 8 }\nval: 26\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_1 -> node_4_1 [penwidth=3,label="(x2 = 0)\ncost = 0"];
+	node_4_2 [shape=square,style=filled,color=yellow,peripheries=1,group="2",label="id: (4,2)
+KnapsackState { depth: 4, capacity: 11 }\nval: 33\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_16 -> node_4_2 [penwidth=3,label="(x2 = 1)\ncost = 13"];
+	node_3_15 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_14 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_13 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_12 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_11 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_10 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_9 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_7 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_3_6 -> node_4_2 [penwidth=1,label="(x2 = 1)\ncost = 13"];
+	node_4_7 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="2",label="id: (4,7)
+KnapsackState { depth: 4, capacity: 9 }\nval: 20\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_16 -> node_4_7 [penwidth=3,label="(x2 = 0)\ncost = 0"];
+	node_4_9 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="2",label="id: (4,9)
+KnapsackState { depth: 4, capacity: 20 }\nval: 0\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_10 -> node_4_9 [penwidth=3,label="(x2 = 0)\ncost = 0"];
+	node_4_10 [shape=square,style=filled,color=yellow,peripheries=1,group="2",label="id: (4,10)
+KnapsackState { depth: 4, capacity: 15 }\nval: 11\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_14 -> node_4_10 [penwidth=1,label="(x2 = 0)\ncost = 0"];
+	node_3_12 -> node_4_10 [penwidth=3,label="(x2 = 0)\ncost = 0"];
+	node_4_11 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="2",label="id: (4,11)
+KnapsackState { depth: 4, capacity: 13 }\nval: 15\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_15 -> node_4_11 [penwidth=3,label="(x2 = 0)\ncost = 0"];
+	terminal [shape="circle", label="", style="filled", color="black", group="terminal"];
+	node_4_0 -> terminal [penwidth=3];
+	node_4_1 -> terminal;
+	node_4_2 -> terminal;
+	node_4_3 -> terminal;
+	node_4_4 -> terminal;
+	node_4_5 -> terminal;
+	node_4_6 -> terminal;
+	node_4_7 -> terminal;
+	node_4_8 -> terminal;
+	node_4_9 -> terminal;
+	node_4_10 -> terminal;
+	node_4_11 -> terminal;
+}
