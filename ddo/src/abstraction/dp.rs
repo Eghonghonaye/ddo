@@ -77,6 +77,13 @@ pub trait Problem {
     fn filter(&self, _state:&Self::State, _decision: &Decision<Self::DecisionState>) -> bool {
         false
     }
+    /// Given an incoming decision, and an outgoing decision, this method should mark whether the
+    /// outgoing decision is infeasible. In that case return true. This will be used for a conflict
+    /// count to split highly conflicted states first.
+    /// Return false otherwise
+    fn check_conflict(&self, _in_decision: &Decision<Self::DecisionState>, _out_decision: &Decision<Self::DecisionState>) -> bool {
+        false
+    }
 
     /// Given a state and all its incoming decisions, this method should split/ partition them
     /// Decisions are passed as a tuple of an id and the decision

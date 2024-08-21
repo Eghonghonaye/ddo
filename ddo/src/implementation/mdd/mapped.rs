@@ -82,6 +82,8 @@ struct Node<T> {
     some: HashSet<(Variable,isize)>,
     /// List of edges that appear on all paths to the node
     all: HashSet<(Variable,isize)>,
+    /// (Under-)estimate of conflicts between in/outgoing decisions
+    conflict_count: usize,
 }
 
 /// Materializes one edge a.k.a arc from the decision diagram. It logically
@@ -254,8 +256,16 @@ macro_rules! get {
 /// // TODO: Confirm functionality here, I cloned edge instead of the copy via derefenecing it was doing before.
 /// // How does that change behaviour?
 macro_rules! foreach {
-    (edge of $id:expr, $dd:expr, $action:expr) => {
+    (in_edge of $id:expr, $dd:expr, $action:expr) => {
         let mut list = get!(node $id, $dd).inbound;
+        while let EdgesList::Cons{head, tail} = *get!(in_edgelist list, $dd) {
+            let edge = get!(edge head, $dd).clone();
+            $action(edge);
+            list = tail;
+        }
+    };
+    (out_edge of $id:expr, $dd:expr, $action:expr) => {
+        let mut list = get!(node $id, $dd).outbound;
         while let EdgesList::Cons{head, tail} = *get!(in_edgelist list, $dd) {
             let edge = get!(edge head, $dd).clone();
             $action(edge);
@@ -674,6 +684,7 @@ where
             depth: input.residual.depth,
             some: some,
             all: all,
+            conflict_count: 0,
         };
 
         self.nodes.push(vec![root_node]);
@@ -753,7 +764,7 @@ where
                     let node = get!(node id, self);
                     let value = node.value_bot;
                     if node.flags.is_marked() {
-                        foreach!(edge of id, self, |edge: Edge<X>| {
+                        foreach!(in_edge of id, self, |edge: Edge<X>| {
                             let using_edge = value.saturating_add(edge.cost);
                             let parent = get!(mut node edge.from, self);
                             parent.flags.set_marked(true);
@@ -815,7 +826,7 @@ where
                     }
                     // only propagate if you have an actual threshold
                     if let Some(my_theta) = node.theta {
-                        foreach!(edge of id, self, |edge: Edge<X>| {
+                        foreach!(in_edge of id, self, |edge: Edge<X>| {
                             let parent = get!(mut node edge.from, self);
                             let theta  = parent.theta.unwrap_or(isize::MAX);
                             parent.theta = Some(theta.min(my_theta.saturating_sub(edge.cost)));
@@ -887,7 +898,7 @@ where
                 if node.flags.is_exact() {
                     node.flags.set_above_cutset(true);
                 } else {
-                    foreach!(edge of id, self, |edge: Edge<X>| {
+                    foreach!(in_edge of id, self, |edge: Edge<X>| {
                         let parent = get!(mut node edge.from, self);
                         if parent.flags.is_exact() && !parent.flags.is_cutset() {
                             self.cutset.push(edge.from);
@@ -1145,7 +1156,8 @@ where
                     flags,
                     depth: parent.depth + 1,
                     some: some,
-                    all: all
+                    all: all,
+                    conflict_count: 0,
                 });
                 append_edge_to!(
                     self,
@@ -1320,6 +1332,7 @@ where
                 depth,
                 some: HashSet::new(),
                 all: HashSet::new(),
+                conflict_count: 0,
             });
             node_id
         });
@@ -1332,7 +1345,7 @@ where
         for drop_id in merge {
             get!(mut node drop_id, self).flags.set_deleted(true);
 
-            foreach!(edge of drop_id, self, |edge: Edge<X>| {
+            foreach!(in_edge of drop_id, self, |edge: Edge<X>| {
                 if !get!(node edge.from, self).flags.is_deleted(){
                     let src   = get!(node edge.from, self).state.as_ref();
                     let dst   = get!(node edge.to,   self).state.as_ref();
@@ -1401,10 +1414,11 @@ where
                 depth,
                 some: HashSet::new(),
                 all: HashSet::new(),
+                conflict_count: 0,
             });
 
-            self._redirect_incoming_edges(input, state, edges_to_append, split_id);
-            
+            self._redirect_incoming_edges(input, state, edges_to_append, split_id, outbound_edges);
+
             if !get!(node split_id, self).flags.is_deleted() {
                 outgoing_nodes_to_update.extend(self._redirect_outgoing_edges(input, outbound_edges, &state, split_id));
             }
@@ -1414,59 +1428,71 @@ where
         for outgoing_node_id in outgoing_nodes_to_update {
             let mut some: HashSet<(Variable, isize)> = HashSet::new();
             let mut all: HashSet<(Variable, isize)> = HashSet::new();
-            let inbound_start_for_outgoing = self.in_edgelists[get!(node outgoing_node_id,self).inbound.0];
-            let inbound_edges = inbound_start_for_outgoing
+            let outgoing_node = get!(node outgoing_node_id,self);
+            let inbound_edges: Vec<_> = get!(in_edgelist outgoing_node.inbound, self)
                 .iter(&self.in_edgelists)
                 .filter_map(|x| match x {
                     EdgesList::Cons { head, tail: _ } => {
-                        Some(head)
+                        Some(head.0)
                     }
                     _ => None,
                 })
-                .collect::<Vec<EdgeId>>();
+                .collect();
 
             //update node attributes
-            let merged = self._merge_states_from_incoming_edges(input, &inbound_edges.iter().map(|x| x.0).collect());
-            get!(mut node outgoing_node_id, self).state = merged.clone();
-            get!(mut node outgoing_node_id, self).value_top = isize::MIN;
-            get!(mut node outgoing_node_id, self).value_bot = isize::MIN;
-            get!(mut node outgoing_node_id, self).theta = None;
-            get!(mut node outgoing_node_id, self).best = None;
+            let merged = self._merge_states_from_incoming_edges(input, &inbound_edges);
+            self.clear_node(outgoing_node_id, merged);
 
             for e_id in &inbound_edges {
-                let e = get!(edge e_id,self);
-                if !get!(node e.from, self).flags.is_deleted() {
-                    some = &some | &self._update_some(&e);
+                let in_edge = get!(edge EdgeId(*e_id),self);
+                if !get!(node in_edge.from, self).flags.is_deleted() {
+                    some = &some | &self._update_some(&in_edge);
                     if all.is_empty() {
-                        all = self._update_all(&e);
+                        all = self._update_all(&in_edge);
                     } else {
-                        all = &all & &self._update_all(&e);
+                        all = &all & &self._update_all(&in_edge);
                     }
-                    let parent = get!(mut node e.from, self);
+                    let parent = get!(mut node in_edge.from, self);
                     let parent_exact = parent.flags.is_exact();
-                    let value = parent.value_top.saturating_add(e.cost);
-    
-                    let node = get!(mut node e.to, self);
+                    let value = parent.value_top.saturating_add(in_edge.cost);
+
+                    let node = get!(mut node in_edge.to, self);
                     let exact = parent_exact & node.flags.is_exact();
                     node.flags.set_exact(exact);
-    
+
                     if value >= node.value_top {
-                        node.best = Some(*e_id);
+                        node.best = Some(EdgeId(*e_id));
                         node.value_top = value;
                     }
+
+                    foreach!(out_edge of outgoing_node_id, self, |out_edge: Edge<X>| {
+                        if input.problem.check_conflict(&in_edge.decision, &out_edge.decision) {
+                            get!(mut node outgoing_node_id, self).conflict_count += 1;
+                        }
+                    });
                 }
             }
 
             get!(mut node outgoing_node_id, self).some = some;
             get!(mut node outgoing_node_id, self).all = all;
         }
-        
+
         // //TODO we should then delete all incoming and outgoing edges to the split node
         // // basically call this detach for all the edges coming into the node
         // for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
         //     // detach_edge_from!(self,node_to_split_id,e_list);
         // }
         new_nodes
+    }
+
+    fn clear_node(&mut self, node_id: NodeId, state: Arc<T>) {
+        let node = get!(mut node node_id, self);
+        node.state = state.clone();
+        node.value_top = isize::MIN;
+        node.value_bot = isize::MIN;
+        node.theta = None;
+        node.best = None;
+        node.conflict_count = 0;
     }
 
     fn _redirect_outgoing_edges(&mut self, input: &CompilationInput<T, X>, outbound_edges: &Vec<EdgeId>, state: &&Arc<T>, split_id: NodeId) -> Vec<NodeId> {
@@ -1507,9 +1533,10 @@ where
         outgoing_nodes_to_update
     }
 
-    fn _redirect_incoming_edges(&mut self, input: &CompilationInput<T, X>, state: &Arc<T>, edges_to_append: &Vec<usize>, split_id: NodeId) {
+    fn _redirect_incoming_edges(&mut self, input: &CompilationInput<T, X>, state: &Arc<T>, edges_to_append: &Vec<usize>, split_id: NodeId, outbound_edges: &Vec<EdgeId>) {
         let mut some: HashSet<(Variable, isize)> = HashSet::new();
         let mut all: HashSet<(Variable, isize)> = HashSet::new();
+        let mut conflict_count = 0;
         //TODO redirect edges inbound
         let mut to_delete = true;
         for edge_id in edges_to_append {
@@ -1538,21 +1565,28 @@ where
                 }
                 to_delete = false;
             }
+            for outbound_edge in outbound_edges {
+                if input.problem.check_conflict(&e.decision, &get!(edge outbound_edge, self).decision) {
+                    conflict_count += 1;
+                }
+            }
         }
         // set node to exact if some and all and relaxed otherwise
         // exactness is further corrected by edge additon which check sparent exactness too
         // TODO: set correct exactness here
+        let split_node = get!(mut node split_id, self);
         if some == all {
-            get!(mut node split_id, self).flags.set_exact(true);
+            split_node.flags.set_exact(true);
         } else {
-            get!(mut node split_id, self).flags.set_relaxed(true);
+            split_node.flags.set_relaxed(true);
         }
         if to_delete {
-            get!(mut node split_id, self).flags.set_deleted(true);
+            split_node.flags.set_deleted(true);
         }
 
-        get!(mut node split_id, self).some = some;
-        get!(mut node split_id, self).all = all;
+        split_node.some = some;
+        split_node.all = all;
+        split_node.conflict_count = conflict_count;
     }
 
 
@@ -1568,12 +1602,7 @@ where
             get!(node a, self)
                 .value_top
                 .cmp(&get!(node b, self).value_top)
-                .then_with(|| {
-                    input.ranking.compare(
-                        get!(node a, self).state.as_ref(),
-                        get!(node b, self).state.as_ref(),
-                    )
-                })
+                .then_with(|| get!(node a, self).conflict_count.cmp(&get!(node b, self).conflict_count))
                 .reverse()
         }); // reverse because greater means more likely to be kept
 
@@ -1644,8 +1673,9 @@ where
         let mut new_states = vec![];
         for edge_id in inbound_edges {
             // create states for each edge transition
-            let current_decision = self.edges[*edge_id].decision.as_ref();
-            let parent_state = get!(node(self.edges[*edge_id].from), self).state.as_ref();
+            let edge = get!(edge EdgeId(*edge_id), self);
+            let current_decision = edge.decision.as_ref();
+            let parent_state = get!(node edge.from, self).state.as_ref();
             let next_state = Arc::new(input.problem.transition(parent_state, current_decision));
             // let cost = input.problem.transition_cost(
             //     parent_state,
@@ -1781,7 +1811,7 @@ where
     /// Creates a string representation of the edges incident to one node
     fn edges_of(&self, id: NodeId) -> String {
         let mut out = String::new();
-        foreach!(edge of id, self, |edge: Edge<X>| {
+        foreach!(in_edge of id, self, |edge: Edge<X>| {
             let Edge{from, to, decision, cost} = edge.clone(); //TODO is this clone expensive?
             let best = get!(node id, self).best;
             let best = best.map(|eid| get!(edge eid, self).clone());
