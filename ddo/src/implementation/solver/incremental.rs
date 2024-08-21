@@ -243,7 +243,7 @@ where
             // }
 
             // create starting point to create input object - for now always start at root
-            println!("in loop");
+            // println!("in loop");
             let best_lb = self.best_lb;
             // increase width
             width = width + 5;
@@ -264,7 +264,7 @@ where
             };
 
             let outcome = self.mdd.refine(&compilation);
-            println!("completed refinement");
+            // println!("completed refinement");
 
             // breaking condition?
             // handle error?
@@ -274,13 +274,13 @@ where
             }
             self.maybe_update_best();
             if self.mdd.is_exact() {
-                println!("ended as exact");
+                // println!("ended as exact");
                 break;
             }
-            println!("end of loop");
+            // println!("end of loop");
         }
 
-        println!("out of loop");
+        // println!("out of loop");
 
         if let Some(sol) = self.best_sol.as_mut() {
             sol.sort_unstable_by_key(|d| d.variable.0)

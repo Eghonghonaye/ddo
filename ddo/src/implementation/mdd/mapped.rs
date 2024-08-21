@@ -531,10 +531,10 @@ where
         let mut edge_id = nodes[id.0][id.1].best;
         while let Some(eid) = edge_id {
             let edge = edges[eid.0].clone();
-            println!(
-                "finding best path with edge from {:?} to {:?} with cost {:?}",
-                edge.from, edge.to, edge.cost
-            );
+            // println!(
+            //     "finding best path with edge from {:?} to {:?} with cost {:?}",
+            //     edge.from, edge.to, edge.cost
+            // );
             sol.push(edge.decision);
             edge_id = nodes[edge.from.0][edge.from.1].best;
         }
@@ -588,13 +588,13 @@ where
         // clear parts of diagram reset by refinement
         self._clear_for_refine();
 
-        //visualise for debug
-        let mut config = VizConfigBuilder::default().build().unwrap();
-        // config.show_deleted = true;
-        config.group_merged = true;
-        print!("before refine\n");
-        let s = self.as_graphviz(&config);
-        fs::write("incremental.dot", s).expect("Unable to write file");
+        // //visualise for debug
+        // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
+        // config.group_merged = true;
+        // print!("before refine\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
 
         // intialise diagram but without emptying nodes and edges etc
         // only enough that we start analysis from top to bottom
@@ -630,15 +630,16 @@ where
         let final_layer = get!(layer final_layer_id, self);
 
         //TODO only collect those that are not deleted
-        let print_final_l = final_layer
-            .iter().enumerate()
-            .filter_map(|(node_id,node)| (!node.flags.is_deleted()).then_some((node_id,node)))
-            .collect::<Vec<_>>();
-        println!("Final layer {:?} contents while last exact layer is {:?}",final_layer_id,self.lel);
-        for (node_id,node) in &print_final_l {
-            println!("node {:?} is exact {:?} and is deleted {:?} with value {:?} ",NodeId(self.nodes.len() - 1,*node_id), 
-                                        node.flags.is_exact(),node.flags.is_deleted(),node.value_top);
-        }
+
+        // let print_final_l = final_layer
+        //     .iter().enumerate()
+        //     .filter_map(|(node_id,node)| (!node.flags.is_deleted()).then_some((node_id,node)))
+        //     .collect::<Vec<_>>();
+        // println!("Final layer {:?} contents while last exact layer is {:?}",final_layer_id,self.lel);
+        // for (node_id,node) in &print_final_l {
+        //     println!("node {:?} is exact {:?} and is deleted {:?} with value {:?} ",NodeId(self.nodes.len() - 1,*node_id),
+        //                                 node.flags.is_exact(),node.flags.is_deleted(),node.value_top);
+        // }?
 
         for (id, node) in final_layer.iter().enumerate() {
             if !node.flags.is_deleted(){
@@ -649,9 +650,9 @@ where
 
         self._finalize_for_refine(input);
 
-        print!("after refine\n");
-        let s = self.as_graphviz(&config);
-        fs::write("incremental.dot", s).expect("Unable to write file");
+        // print!("after refine\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
 
 
         Ok(Completion {
@@ -706,12 +707,12 @@ where
 
     fn _finalize_for_refine(&mut self, input: &CompilationInput<T, X>) {
         self._find_best_node();
-        println!("found best node");
+        // println!("found best node");
         self._finalize_exact(input);
         self._finalize_cutset(input);
         self._compute_local_bounds(input);
         self._compute_thresholds(input);
-        println!("completed finalize");
+        // println!("completed finalize");
     }
 
     fn _drain_cutset<F>(&mut self, mut func: F)
@@ -916,36 +917,36 @@ where
             .values()
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
-        if let Some(x) = self.best_node {
-            println!(
-                "best node {:?} is exact {:?} at value {:?}",
-                x,
-                get!(node x, self).flags.is_exact(),
-                get!(node x, self).value_top
-            );
-        };
+        // if let Some(x) = self.best_node {
+        //     println!(
+        //         "best node {:?} is exact {:?} at value {:?}",
+        //         x,
+        //         get!(node x, self).flags.is_exact(),
+        //         get!(node x, self).value_top
+        //     );
+        // };
         self.best_exact_node = self
             .next_l
             .values()
             .filter(|id| get!(node id, self).flags.is_exact())
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
-        if let Some(x) = self.best_exact_node {
-            println!(
-                "best exact node {:?} is exact {:?} at value {:?}",
-                x,
-                get!(node x, self).flags.is_exact(),
-                get!(node x, self).value_top
-            );
-        };
+        // if let Some(x) = self.best_exact_node {
+        //     println!(
+        //         "best exact node {:?} is exact {:?} at value {:?}",
+        //         x,
+        //         get!(node x, self).flags.is_exact(),
+        //         get!(node x, self).value_top
+        //     );
+        // };
 
     }
 
     fn _finalize_exact(&mut self, input: &CompilationInput<T, X>) {
         self.is_exact = self.lel.0 == self.nodes.len() - 1;
-        if self.is_exact{
-            println!()
-        }
+        // if self.is_exact{
+        //     println!()
+        // }
         self.has_exact_best_path = matches!(input.comp_type, CompilationType::Relaxed)
             && self._has_exact_best_path(self.best_node);
 
@@ -1509,15 +1510,15 @@ where
                     get!(node e.to, self).state.as_ref(),
                     e.decision.as_ref(),
                 );
-                println!("trying to add edge with variable {} assigned value {} to node ({},{})",
-                         e.decision.variable.0,
-                         e.decision.value,
-                         split_id.0, split_id.1);
+                // println!("trying to add edge with variable {} assigned value {} to node ({},{})",
+                //          e.decision.variable.0,
+                //          e.decision.value,
+                //          split_id.0, split_id.1);
                 if !input.problem.filter(&state, &e.decision) {
-                    println!("added edge with variable {} assigned value {} to node ({},{})",
-                             e.decision.variable.0,
-                             e.decision.value,
-                             split_id.0, split_id.1);
+                    // println!("added edge with variable {} assigned value {} to node ({},{})",
+                    //          e.decision.variable.0,
+                    //          e.decision.value,
+                    //          split_id.0, split_id.1);
                     append_edge_to!(
                                 self,
                                 Edge {
@@ -1656,12 +1657,12 @@ where
                 }
             }
         }
-        let mut config = VizConfigBuilder::default().build().unwrap();
-        // config.show_deleted = true;
-        config.group_merged = true;
-        print!("after split layer {curr_layer_id}\n");
-        let s = self.as_graphviz(&config);
-        fs::write("incremental.dot", s).expect("Unable to write file");
+        // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
+        // config.group_merged = true;
+        // print!("after split layer {curr_layer_id}\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
 
         true
     }
