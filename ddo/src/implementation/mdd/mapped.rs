@@ -1295,7 +1295,6 @@ where
         let mut all = get!(node edge.from, self).all.clone();
         assert!(!get!(node edge.from, self).flags.is_deleted(),"attempting to use a deleted parent node");
         all.set(Self::decision_index(problem, &edge.decision), true);
-        let all_string = all.to_string();
         all
     }
 
@@ -1593,8 +1592,6 @@ where
         // exactness is further corrected by edge additon which check sparent exactness too
         // TODO: set correct exactness here
         let split_node = get!(mut node split_id, self);
-        let some_string = some.to_string();
-        let all_string = all.to_string();
         if some == all {
             split_node.flags.set_exact(true);
         } else {
