@@ -11,6 +11,8 @@
 //! for Dominance and Suboptimality Detection''.
 
 use std::{collections::{hash_map::Entry}, fmt::Debug, hash::Hash, sync::Arc, fs};
+use bitvec::bitvec;
+use bitvec::vec::BitVec;
 
 use derive_builder::Builder;
 use fxhash::{FxHashMap, FxHashSet};
@@ -79,9 +81,9 @@ struct Node<T> {
     /// The number of decisions that have been made since the problem root
     depth: usize,
     /// List of edges that appear on some path to the node
-    some: FxHashSet<(Variable,isize)>,
+    some: BitVec,
     /// List of edges that appear on all paths to the node
-    all: FxHashSet<(Variable,isize)>,
+    all: BitVec,
     /// (Under-)estimate of conflicts between in/outgoing decisions
     conflict_count: usize,
 }
@@ -570,6 +572,14 @@ where
 
         self._finalize(input);
 
+        // //visualise for debug
+        // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
+        // config.group_merged = true;
+        // print!("before refine\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
+
         Ok(Completion {
             is_exact: self.is_exact(),
             best_value: self.best_node.map(|n| get!(node n, self).value_top),
@@ -653,6 +663,20 @@ where
         })
     }
 
+    pub(crate) fn translate_value<P: Problem + ?Sized>(problem: &P, value: isize) -> usize {
+        let start = problem.value_range().start;
+        let tr_value = problem.translate_value(value);
+        (tr_value - start) as usize
+    }
+    pub(crate) fn decision_index<P: Problem + ?Sized>(problem: &P, decision: &Decision<X>) -> usize {
+        let values = problem.value_range().len();
+        decision.variable.0 * values + Self::translate_value(problem, decision.value)
+    }
+
+    pub(crate) fn bitvec_len<P: Problem + ?Sized>(problem: &P) -> usize {
+        problem.nb_variables() * problem.value_range().len()
+    }
+
     fn _initialize(&mut self, input: &CompilationInput<T, X>) {
         self.path_to_root.extend_from_slice(&input.residual.path);
         self.in_edgelists.push(EdgesList::Nil);
@@ -661,8 +685,10 @@ where
         let root_node_id = NodeId(0, 0);
         // because I expect subproblems to begin with exact nodes, i know that some == all 
         // and all decisions in the path to root also are in both sets
-        let some = self.path_to_root.iter().map(|x| (x.variable,x.value)).collect();
-        let all = self.path_to_root.iter().map(|x| (x.variable,x.value)).collect();
+        let mut some = bitvec!(0; Self::bitvec_len(input.problem));
+        self.path_to_root.iter().for_each(|d| some.set(Self::decision_index(input.problem, d), true));
+        let mut all = bitvec!(0; Self::bitvec_len(input.problem));
+        self.path_to_root.iter().for_each(|d| all.set(Self::decision_index(input.problem, d), true));
         
         let root_node = Node {
             state: Arc::clone(&input.residual.state),
@@ -675,8 +701,8 @@ where
             theta: None,
             flags: NodeFlags::new_exact(),
             depth: input.residual.depth,
-            some: some,
-            all: all,
+            some,
+            all,
             conflict_count: 0,
         };
 
@@ -1121,12 +1147,12 @@ where
                 flags.set_exact(parent.flags.is_exact());
 
                 let mut some = parent.some.clone();
-                some.insert((decision.variable,decision.value));
+                some.set(Self::decision_index(problem, &decision), true);
 
                 // we can get away with insertint into the all set during branch because
                 // we only branch one one deciison at a time so its defintely contained
                 let mut all = parent.all.clone();
-                all.insert((decision.variable,decision.value));
+                all.set(Self::decision_index(problem, &decision), true);
 
                 self.nodes[next_layer_id].push(Node {
                     state: next_state,
@@ -1141,8 +1167,8 @@ where
                     theta: None,
                     flags,
                     depth: parent.depth + 1,
-                    some: some,
-                    all: all,
+                    some,
+                    all,
                     conflict_count: 0,
                 });
                 append_edge_to!(
@@ -1258,17 +1284,18 @@ where
         curr_l.truncate(input.max_width);
     }
 
-    fn _update_some(&self,edge:&Edge<X>) -> FxHashSet<(Variable, isize)>{
+    fn _update_some(&self, problem: &dyn Problem<State = T, DecisionState = X>, edge:&Edge<X>) -> BitVec {
         let mut some = get!(node edge.from, self).some.clone();
         assert!(!get!(node edge.from, self).flags.is_deleted(),"attempting to use a deleted parent node");
-        some.insert((edge.decision.variable,edge.decision.value));
+        some.set(Self::decision_index(problem, &edge.decision), true);
         some
     }
 
-    fn _update_all(&self,edge:&Edge<X>) -> FxHashSet<(Variable, isize)>{
+    fn _update_all(&self, problem: &dyn Problem<State = T, DecisionState = X>, edge:&Edge<X>) -> BitVec {
         let mut all = get!(node edge.from, self).all.clone();
         assert!(!get!(node edge.from, self).flags.is_deleted(),"attempting to use a deleted parent node");
-        all.insert((edge.decision.variable,edge.decision.value));
+        all.set(Self::decision_index(problem, &edge.decision), true);
+        let all_string = all.to_string();
         all
     }
 
@@ -1316,8 +1343,8 @@ where
                 theta: None,
                 flags: NodeFlags::new_relaxed(),
                 depth,
-                some: FxHashSet::default(),
-                all: FxHashSet::default(),
+                some: bitvec!(0; Self::bitvec_len(input.problem)),
+                all: bitvec!(0; Self::bitvec_len(input.problem)),
                 conflict_count: 0,
             });
             node_id
@@ -1325,16 +1352,21 @@ where
 
         get!(mut node merged_id, self).flags.set_relaxed(true);
 
-        let mut some: FxHashSet<(Variable,isize)> = FxHashSet::default();
-        let mut all: FxHashSet<(Variable,isize)> = FxHashSet::default();
+        let mut some = bitvec!(0; Self::bitvec_len(input.problem));
+        let mut all = bitvec!(0; Self::bitvec_len(input.problem));
 
         for drop_id in merge {
             get!(mut node drop_id, self).flags.set_deleted(true);
 
+            let mut edges = vec![];
             foreach!(in_edge of drop_id, self, |edge: Edge<X>| {
-                if !get!(node edge.from, self).flags.is_deleted(){
-                    let src   = get!(node edge.from, self).state.as_ref();
-                    let dst   = get!(node edge.to,   self).state.as_ref();
+                edges.push(edge);
+            });
+
+            for edge in edges {
+                if !get!(node edge.from, self).flags.is_deleted() {
+                    let src = get!(node edge.from, self).state.as_ref();
+                    let dst = get!(node edge.to,   self).state.as_ref();
                     let rcost = input.relaxation.relax(src, dst, merged.as_ref(), edge.decision.as_ref(), edge.cost);
 
                     append_edge_to!(self, Edge {
@@ -1344,15 +1376,14 @@ where
                         cost: rcost
                     });
 
-                    some =  &some | &self._update_some(&edge);
-                    if all.is_empty(){
-                        all = self._update_all(&edge);
-                    }
-                    else {
-                        all =  &all & &self._update_all(&edge);
+                    some |= self._update_some(input.problem, &edge);
+                    if all.count_ones() == 0 {
+                        all = self._update_all(input.problem, &edge);
+                    } else {
+                        all &= self._update_all(input.problem, &edge);
                     }
                 }
-            });
+            }
         }
 
         get!(mut node merged_id, self).some = some;
@@ -1398,8 +1429,8 @@ where
                 flags: NodeFlags::new_relaxed(),
                 // flags: if edges_to_append.len() == 1 {NodeFlags::new_exact()} else {NodeFlags::new_relaxed()},
                 depth,
-                some: FxHashSet::default(),
-                all: FxHashSet::default(),
+                some: bitvec!(0; Self::bitvec_len(input.problem)),
+                all: bitvec!(0; Self::bitvec_len(input.problem)),
                 conflict_count: 0,
             });
 
@@ -1412,8 +1443,8 @@ where
 
         // update outgoing node edges
         for outgoing_node_id in outgoing_nodes_to_update {
-            let mut some: FxHashSet<(Variable, isize)> = FxHashSet::default();
-            let mut all: FxHashSet<(Variable, isize)> = FxHashSet::default();
+            let mut some = bitvec!(0; Self::bitvec_len(input.problem));
+            let mut all = bitvec!(0; Self::bitvec_len(input.problem));
             let outgoing_node = get!(node outgoing_node_id,self);
             let inbound_edges: Vec<_> = get!(in_edgelist outgoing_node.inbound, self)
                 .iter(&self.in_edgelists)
@@ -1432,11 +1463,11 @@ where
             for e_id in &inbound_edges {
                 let in_edge = get!(edge EdgeId(*e_id),self);
                 if !get!(node in_edge.from, self).flags.is_deleted() {
-                    some = &some | &self._update_some(&in_edge);
-                    if all.is_empty() {
-                        all = self._update_all(&in_edge);
+                    some |= self._update_some(input.problem, &in_edge);
+                    if all.count_ones() == 0 {
+                        all = self._update_all(input.problem, &in_edge);
                     } else {
-                        all = &all & &self._update_all(&in_edge);
+                        all &= self._update_all(input.problem, &in_edge);
                     }
                     let parent = get!(mut node in_edge.from, self);
                     let parent_exact = parent.flags.is_exact();
@@ -1520,8 +1551,8 @@ where
     }
 
     fn _redirect_incoming_edges(&mut self, input: &CompilationInput<T, X>, state: &Arc<T>, edges_to_append: &Vec<usize>, split_id: NodeId, outbound_edges: &Vec<EdgeId>) {
-        let mut some: FxHashSet<(Variable, isize)> = FxHashSet::default();
-        let mut all: FxHashSet<(Variable, isize)> = FxHashSet::default();
+        let mut some = bitvec!(0; Self::bitvec_len(input.problem));
+        let mut all = bitvec!(0; Self::bitvec_len(input.problem));
         let mut conflict_count = 0;
         //TODO redirect edges inbound
         let mut to_delete = true;
@@ -1544,11 +1575,11 @@ where
                         }
                     );
 
-                some = &some | &self._update_some(&e);
-                if all.is_empty() {
-                    all = self._update_all(&e);
+                some |= self._update_some(input.problem, &e);
+                if all.count_ones() == 0 {
+                    all = self._update_all(input.problem, &e);
                 } else {
-                    all = &all & &self._update_all(&e);
+                    all &= self._update_all(input.problem, &e);
                 }
                 to_delete = false;
             }
@@ -1562,6 +1593,8 @@ where
         // exactness is further corrected by edge additon which check sparent exactness too
         // TODO: set correct exactness here
         let split_node = get!(mut node split_id, self);
+        let some_string = some.to_string();
+        let all_string = all.to_string();
         if some == all {
             split_node.flags.set_exact(true);
         } else {
@@ -1937,6 +1970,7 @@ where
 #[cfg(test)]
 mod test_default_mdd {
     use std::cmp::Ordering;
+    use std::ops::Range;
     use std::sync::Arc;
 
     use fxhash::FxHashMap;
@@ -3384,6 +3418,18 @@ mod test_default_mdd {
         ) -> isize {
             d.value
         }
+
+        fn value_range(&self) -> Range<isize> {
+            0..9
+        }
+
+        fn translate_value(&self, value: isize) -> isize {
+            if value == 10 {
+                8
+            } else {
+                value
+            }
+        }
     }
 
     #[derive(Copy, Clone)]
@@ -3883,6 +3929,10 @@ mod test_default_mdd {
                 }))
             }
         }
+
+        fn value_range(&self) -> Range<isize> {
+            0..3
+        }
     }
 
     #[derive(Clone, Copy)]
@@ -3940,6 +3990,10 @@ mod test_default_mdd {
             _: &mut dyn DecisionCallback<Self::DecisionState>,
         ) {
             /* do nothing, just consider that all domains are empty */
+        }
+
+        fn value_range(&self) -> Range<isize> {
+            0..0
         }
     }
 

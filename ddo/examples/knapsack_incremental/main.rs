@@ -29,6 +29,7 @@ use std::{
     path::Path,
     sync::Arc,
 };
+use std::ops::Range;
 
 use clap::Parser;
 use clustering::kmeans;
@@ -257,6 +258,9 @@ impl Problem for Knapsack {
         return self.conflicting_decisions(in_decision,out_decision)
     }
 
+    fn value_range(&self) -> Range<isize> {
+        0..2
+    }
 }
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]

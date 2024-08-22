@@ -541,6 +541,7 @@ where
 mod test_solver {
     use crate::*;
     use std::{sync::Arc, hash::Hash};
+    use std::ops::Range;
 
     type SeqSolver<'a, T, X> = SequentialSolver<'a, T, X, DefaultMDDLEL<T,X>, EmptyCache<T,X>>;
     type SeqCachingSolver<'a, T, X> = SequentialSolver<'a, T, X, DefaultMDDFC<T,X>, SimpleCache<T,X>>;
@@ -1030,6 +1031,11 @@ mod test_solver {
         fn nb_variables(&self) -> usize {
             self.profit.len()
         }
+
+        fn value_range(&self) -> Range<isize> {
+            0..2
+        }
+
         fn initial_state(&self) -> Self::State {
             KnapsackState{ depth: 0, capacity: self.capacity }
         }

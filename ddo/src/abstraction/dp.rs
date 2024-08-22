@@ -24,7 +24,8 @@
 //! The most important abstractions that should be provided by a client are
 //! `Problem` and `Relaxation`.
 
-use crate::{Variable, Decision};
+use std::ops::Range;
+use crate::{Variable, Decision, CompilationInput};
 use std::sync::Arc;
 
 /// This trait defines the "contract" of what defines an optimization problem
@@ -40,6 +41,16 @@ pub trait Problem {
     /// Any problem bears on a number of variable $x_0, x_1, x_2, ... , x_{n-1}$
     /// This method returns the value of the number $n$
     fn nb_variables(&self) -> usize;
+    /// Range of values a variable can take. Keep this small, nb_variables * size(value_range) is
+    /// the number of bits used internally for the _some_ set and the _all_ set in each node of the
+    /// DD!
+    fn value_range(&self) -> Range<isize>;
+    /// Maps each value for a variable into a unique value in the range given by
+    /// `value_range(&self)`. Identity mapping by default, override your values are not consecutive
+    /// and you want to map your values into a smaller consecutive value_range.
+    fn translate_value(&self, value: isize) -> isize {
+        return value;
+    }
     /// This method returns the initial state of the problem (the state of $r$).
     fn initial_state(&self) -> Self::State;
     /// This method returns the initial value $v_r$ of the problem
@@ -153,6 +164,7 @@ impl <T,X: FnMut(Arc<Decision<T>>)> DecisionCallback<T> for X {
 
 #[cfg(test)]
 mod tests {
+    use std::ops::Range;
     use crate::{Relaxation, DecisionCallback, Decision, Problem};
     use std::sync::Arc;
     
@@ -188,6 +200,11 @@ mod tests {
         fn nb_variables(&self) -> usize {
             todo!()
         }
+
+        fn value_range(&self) -> Range<isize> {
+            todo!()
+        }
+
         fn initial_state(&self) -> Self::State {
             todo!()
         }

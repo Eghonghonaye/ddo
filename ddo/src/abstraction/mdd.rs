@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use crate::{SubProblem, Completion, Reason, Problem, Relaxation, StateRanking, Solution, Cutoff, Cache, DominanceChecker};
+use crate::{SubProblem, Completion, Reason, Problem, Relaxation, StateRanking, Solution, Cutoff, Cache, DominanceChecker, Decision};
 
 // FIXME: Replace that with the following enum definition when const generics allow enum types
 /// What type of cut-set are we using for relaxed DDs ?

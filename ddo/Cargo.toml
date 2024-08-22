@@ -20,6 +20,7 @@ binary-heap-plus = "0.5"
 dashmap          = "5.4"
 derive_builder   = "0.12"
 clustering       = "0.2.1"
+bitvec           = "1.0.1"
 
 # -- going parallel --------
 num_cpus         = "1.15"

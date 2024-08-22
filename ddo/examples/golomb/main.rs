@@ -28,6 +28,7 @@
 //! The cost of a solution is thus the position of the last mark.
 //!
 use std::{time::{Duration, Instant}};
+use std::ops::Range;
 use smallbitset::Set256;
 
 use clap::Parser;
@@ -136,6 +137,10 @@ impl Problem for Golomb {
         } else {
             None
         }
+    }
+
+    fn value_range(&self) -> Range<isize> {
+        0 .. (self.n * self.n) as isize
     }
 }
 

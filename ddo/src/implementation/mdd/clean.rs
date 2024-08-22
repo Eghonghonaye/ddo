@@ -490,7 +490,7 @@ where
         let mut edge_id = nodes[id.0].best;
         while let Some(eid) = edge_id {
             let edge = edges[eid.0].clone();
-            println!("finding best path with edge from {:?} to {:?}", edge.from.0,edge.to.0);
+            // println!("finding best path with edge from {:?} to {:?}", edge.from.0,edge.to.0);
             sol.push(edge.decision);
             edge_id = nodes[edge.from.0].best;
         }
@@ -852,7 +852,7 @@ where
             .values()
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
-        if let Some(x) = self.best_node {println!("best node {:?} is exact {:?} at value {:?}",x,get!(node x, self).flags.is_exact(),get!(node x, self).value_top);};
+        // if let Some(x) = self.best_node {println!("best node {:?} is exact {:?} at value {:?}",x,get!(node x, self).flags.is_exact(),get!(node x, self).value_top);};
         self.best_exact_node = self
             .next_l
             .values()
@@ -1289,12 +1289,12 @@ where
                 
                 //Delete split node
                 get!(mut node node_to_split_id, self).flags.set_deleted(true);
-                for new_node_id in &new_nodes{
-                    let new_node = get!(mut node new_node_id, self);
-                    println!("new node {:?} with value {:?} which is exact {:?}",new_node_id,
-                                                                                new_node.value_top,
-                                                                                new_node.flags.is_exact());
-                }
+                // for new_node_id in &new_nodes{
+                //     let new_node = get!(mut node new_node_id, self);
+                //     println!("new node {:?} with value {:?} which is exact {:?}",new_node_id,
+                //                                                                 new_node.value_top,
+                //                                                                 new_node.flags.is_exact());
+                // }
                 // self.nodes[curr_l[index-1].0].flags.set_deleted(true);
                 curr_l.remove(index-1);
                 curr_l.append(&mut new_nodes);
@@ -1558,6 +1558,7 @@ where T: Debug + Eq + PartialEq + Hash + Clone,
 #[cfg(test)]
 mod test_default_mdd {
     use std::cmp::Ordering;
+    use std::ops::Range;
     use std::sync::Arc;
 
     use fxhash::FxHashMap;
@@ -2602,6 +2603,10 @@ mod test_default_mdd {
         fn transition_cost(&self, _: &char, _: &Self::State, d: &Decision<Self::DecisionState>) -> isize {
             d.value
         }
+
+        fn value_range(&self) -> Range<isize> {
+            0 .. 11
+        }
     }
 
     #[derive(Copy, Clone)]
@@ -3064,6 +3069,10 @@ mod test_default_mdd {
                 f.apply(Arc::new(Decision {variable: var, value: d, state: None}))
             }
         }
+
+        fn value_range(&self) -> Range<isize> {
+            0 .. 3
+        }
     }
 
     #[derive(Clone,Copy)]
@@ -3103,6 +3112,10 @@ mod test_default_mdd {
 
         fn for_each_in_domain(&self, _: crate::Variable, _: &Self::State, _: &mut dyn DecisionCallback<Self::DecisionState>) {
             /* do nothing, just consider that all domains are empty */
+        }
+
+        fn value_range(&self) -> Range<isize> {
+            0 .. 0
         }
     }
 

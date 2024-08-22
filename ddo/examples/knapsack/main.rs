@@ -21,6 +21,7 @@
 //! It is a fairly simple example but  features most of the aspects you will want to
 //! copy when implementing your own solver.
 use std::{path::Path, fs::File, io::{BufReader, BufRead}, time::{Duration, Instant}, num::ParseIntError, sync::Arc};
+use std::ops::Range;
 
 use clap::Parser;
 use ddo::*;
@@ -126,6 +127,10 @@ impl Problem for Knapsack {
         } else {
             None
         }
+    }
+
+    fn value_range(&self) -> Range<isize> {
+        0 .. 2
     }
 }
 
