@@ -137,14 +137,6 @@ impl<'a> Iterator for EdgesListIter<'a> {
     }
 }
 
-/// Represents a 'layer' in the decision diagram
-#[derive(Debug, Clone, Copy)]
-struct Layer {
-    from: usize,
-    to: usize,
-    size: usize,
-}
-
 /// The decision diagram in itself. This structure essentially keeps track
 /// of the nodes composing the diagram as well as the edges connecting these
 /// nodes in two vectors (enabling preallocation and good cache locality).
