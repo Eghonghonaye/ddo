@@ -559,10 +559,20 @@ where
                 get!(mut node node_id, self).rub = rub;
                 let ub = rub.saturating_add(get!(node node_id, self).value_top);
                 if ub > input.best_lb {
+                    let is_must_keep_match = |(var,value)| {
+                        let must_keep_decision:Option<Decision<X>> = input.problem.perform_ml_decision_inference(&state);
+                        match must_keep_decision {
+                            Some(dec) => return (dec.variable,dec.value) == (var,value),
+                            None => return false};
+                    };
                     input
                         .problem
-                        .for_each_in_domain(var, state.as_ref(), &mut |decision| {
-                            self._branch_on(*node_id, decision, input.problem)
+                        .for_each_in_domain(var, state.as_ref(), &mut |decision: Arc<Decision<X>>| {
+                            let decision_tuple = (decision.variable,decision.value);
+                            self._branch_on(*node_id, 
+                                decision, 
+                                input.problem, 
+                                is_must_keep_match(decision_tuple))
                         })
                 }
             }
@@ -1131,8 +1141,9 @@ where
     fn _branch_on(
         &mut self,
         from_id: NodeId,
-        decision: Arc<Decision<X>>, //TODO why do I only take the type by refernece? matched definitions of functions transition and transiton_cost in dp.rs but why
+        decision: Arc<Decision<X>>, 
         problem: &dyn Problem<State = T, DecisionState = X>,
+        must_keep: bool 
     ) {
         let state = get!(node from_id, self).state.as_ref();
         let next_state = Arc::new(problem.transition(state, decision.as_ref()));
@@ -1145,12 +1156,13 @@ where
                 let node_id = NodeId(next_layer_id, self.nodes[next_layer_id].len());
                 let mut flags = NodeFlags::new_exact();
                 flags.set_exact(parent.flags.is_exact());
+                flags.set_must_keep(must_keep);
 
                 let mut some = parent.some.clone();
                 some.set(Self::decision_index(problem, &decision), true);
 
-                // we can get away with insertint into the all set during branch because
-                // we only branch one one deciison at a time so its defintely contained
+                // we can get away with inserting into the all set during branch because
+                // we only branch on one deciison at a time so its defintely contained
                 let mut all = parent.all.clone();
                 all.set(Self::decision_index(problem, &decision), true);
 
@@ -1265,9 +1277,10 @@ where
 
     fn _restrict(&mut self, input: &CompilationInput<T, X>, curr_l: &mut Vec<NodeId>) {
         curr_l.sort_unstable_by(|a, b| {
-            get!(node a, self)
+            get!(node a, self).flags.is_must_keep().cmp(&get!(node b, self).flags.is_must_keep()) // make sure any must_keep nodes are higher in the ranking
+            .then_with(|| { get!(node a, self)
                 .value_top
-                .cmp(&get!(node b, self).value_top)
+                .cmp(&get!(node b, self).value_top)})
                 .then_with(|| {
                     input.ranking.compare(
                         get!(node a, self).state.as_ref(),
@@ -1278,10 +1291,13 @@ where
         }); // reverse because greater means more likely to be kept
 
         for drop_id in curr_l.iter().skip(input.max_width).copied() {
-            get!(mut node drop_id, self).flags.set_deleted(true);
+            if !get!(mut node drop_id, self).flags.is_must_keep(){
+                get!(mut node drop_id, self).flags.set_deleted(true);
+            }
         }
 
         curr_l.truncate(input.max_width);
+    
     }
 
     fn _update_some(&self, problem: &dyn Problem<State = T, DecisionState = X>, edge:&Edge<X>) -> BitVec {

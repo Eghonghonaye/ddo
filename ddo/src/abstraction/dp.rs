@@ -107,6 +107,10 @@ pub trait Problem {
     {
         vec![]
     }
+
+    fn perform_ml_decision_inference(&self, _state:&Self::State) -> Option<Decision<Self::DecisionState>>{
+        None
+    }
 }
 
 
