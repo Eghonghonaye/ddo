@@ -28,7 +28,7 @@
 use std::clone::Clone;
 use std::{sync::Arc, hash::Hash};
 
-use crate::{Fringe, Decision, Problem, Relaxation, StateRanking, WidthHeuristic, Cutoff, SubProblem, DecisionDiagram, CompilationInput, CompilationType, Solver, Solution, Completion, Reason, Cache, EmptyCache, DefaultMDDLEL, DominanceChecker};
+use crate::{Fringe, Decision, Problem, Relaxation, StateRanking, WidthHeuristic, Cutoff, SubProblem, DecisionDiagram, CompilationInput, CompilationType, CompilationStrategy, Solver, Solution, Completion, Reason, Cache, EmptyCache, DefaultMDDLEL, DominanceChecker};
 
 /// The workload a thread can get from the shared state
 enum WorkLoad<T,X> {
@@ -350,6 +350,7 @@ where
         let width = self.width_heu.max_width(&node);
         let compilation = CompilationInput {
             comp_type: CompilationType::Restricted,
+            comp_strategy: CompilationStrategy::TopDown,
             max_width: width,
             problem: self.problem,
             relaxation: self.relaxation,
@@ -372,6 +373,7 @@ where
         let best_lb = self.best_lb;
         let compilation = CompilationInput {
             comp_type: CompilationType::Relaxed,
+            comp_strategy: CompilationStrategy::TopDown,
             max_width: width,
             problem: self.problem,
             relaxation: self.relaxation,

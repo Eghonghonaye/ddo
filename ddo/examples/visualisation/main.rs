@@ -19,7 +19,7 @@
 
 //! This example show how to visualize a decision diagram you have compiled. It does
 //! so by using the knapsack example that has already been used over and over..
-use std::{path::{Path, PathBuf}, fs::File, io::{BufReader, BufRead}, num::ParseIntError, sync::Arc};
+use std::{fs::File, io::{BufRead, BufReader}, num::ParseIntError, ops::Range, path::{Path, PathBuf}, sync::Arc};
 
 use clap::Parser;
 use ddo::*;
@@ -112,6 +112,9 @@ impl Problem for Knapsack {
         } else {
             None
         }
+    }
+    fn value_range(&self) -> Range<isize> {
+        LEAVE_IT_OUT .. TAKE_IT + 1 //not inclusive so add 1
     }
 }
 
@@ -280,6 +283,7 @@ fn main() {
      };
     let input = CompilationInput {
         comp_type: CompilationType::Relaxed,
+        comp_strategy: CompilationStrategy::TopDown,
         problem: &problem,
         relaxation: &relaxation,
         ranking: &ranking,

@@ -21,7 +21,7 @@
 //! of the SOP. (Implementation of the `Problem` trait).
 
 use ddo::{Problem, Variable, Decision, DecisionCallback};
-use std::sync::Arc;
+use std::{ops::Range, sync::Arc};
 
 use crate::{io_utils::SopInstance, state::{Previous, SopDecisionState, SopState}, BitSet};
 use clustering::kmeans;
@@ -235,6 +235,9 @@ impl Problem for Sop {
 
     fn check_conflict(&self, in_decision: &Decision<Self::DecisionState>, out_decision: &Decision<Self::DecisionState>) -> bool {
         return self.conflicting_decisions(in_decision,out_decision)
+    }
+    fn value_range(&self) -> Range<isize> {
+       0..self.nb_variables() as isize
     }
 }
 

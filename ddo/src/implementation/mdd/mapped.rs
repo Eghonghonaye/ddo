@@ -10,7 +10,7 @@
 //! ``Decision Diagram-Based Branch-and-Bound with Caching
 //! for Dominance and Suboptimality Detection''.
 
-use std::{collections::{hash_map::Entry}, fmt::Debug, hash::Hash, sync::Arc, fs};
+use std::{collections::hash_map::Entry, fmt::Debug, hash::Hash, sync::Arc, fs};
 use bitvec::bitvec;
 use bitvec::vec::BitVec;
 
@@ -18,9 +18,7 @@ use derive_builder::Builder;
 use fxhash::{FxHashMap, FxHashSet};
 
 use crate::{
-    CompilationInput, CompilationType, Completion, CutsetType, Variable, Decision, DecisionDiagram,
-    DominanceCheckResult, NodeFlags, Problem, Reason, Solution, SubProblem, FRONTIER,
-    LAST_EXACT_LAYER,
+    CompilationInput, CompilationStrategy, CompilationType, Completion, CutsetType, Decision, DecisionDiagram, DominanceCheckResult, NodeFlags, Problem, Reason, Solution, SubProblem, Variable, FRONTIER, LAST_EXACT_LAYER
 };
 
 /// The identifier of a node: it indicates the position of the referenced node
@@ -183,6 +181,13 @@ where
     /// layer should lead to the same node. This indexation helps ensuring
     /// the uniqueness constraint in amortized O(1).
     next_l: FxHashMap<Arc<T>, NodeId>,
+    /// The nodes from the final layer of the mdd. 
+    /// These are the nodes form which we extract solutions and bounds of the whole mdd. 
+    /// In top down constructions, these are simply the nodes in next_l after compilation
+    /// But in refinement, we direcly fetch the last layer of the node as the hashmap implementation
+    /// of next_l strongly assumes that any 2 transitions to the same state should lead to the same nodes
+    /// which is not necessarily the case in the refinement procedure
+    final_l: Vec<NodeId>,
     /// The depth of the layer currently being expanded
     curr_depth: usize,
 
@@ -455,6 +460,7 @@ where
             //
             prev_l: vec![],
             next_l: Default::default(),
+            final_l: vec![],
             curr_depth: 0,
             //
             path_to_root: vec![],
@@ -582,14 +588,6 @@ where
 
         self._finalize(input);
 
-        // //visualise for debug
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("before refine\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-
         Ok(Completion {
             is_exact: self.is_exact(),
             best_value: self.best_node.map(|n| get!(node n, self).value_top),
@@ -635,32 +633,7 @@ where
             self.curr_depth += 1;
         }
 
-        //TODO DO this betterr!
-        // populate next_l as last layer
-        // fetch final layer nodes
-        let final_layer_id = LayerId(self.nodes.len() - 1);
-        let final_layer = get!(layer final_layer_id, self);
-
-        //TODO only collect those that are not deleted
-
-        // let print_final_l = final_layer
-        //     .iter().enumerate()
-        //     .filter_map(|(node_id,node)| (!node.flags.is_deleted()).then_some((node_id,node)))
-        //     .collect::<Vec<_>>();
-        // println!("Final layer {:?} contents while last exact layer is {:?}",final_layer_id,self.lel);
-        // for (node_id,node) in &print_final_l {
-        //     println!("node {:?} is exact {:?} and is deleted {:?} with value {:?} ",NodeId(self.nodes.len() - 1,*node_id),
-        //                                 node.flags.is_exact(),node.flags.is_deleted(),node.value_top);
-        // }?
-
-        for (id, node) in final_layer.iter().enumerate() {
-            if !node.flags.is_deleted(){
-                self.next_l
-                .insert(Arc::clone(&node.state), NodeId(final_layer_id.0, id));
-            }
-        }
-
-        self._finalize_for_refine(input);
+        self._finalize(input);
 
         // print!("after refine\n");
         // let s = self.as_graphviz(&config);
@@ -726,6 +699,7 @@ where
     }
 
     fn _finalize(&mut self, input: &CompilationInput<T, X>) {
+        self._extract_final_layer(input);
         self._find_best_node();
         self._finalize_exact(input);
         self._finalize_cutset(input);
@@ -733,15 +707,14 @@ where
         self._compute_thresholds(input);
     }
 
-    fn _finalize_for_refine(&mut self, input: &CompilationInput<T, X>) {
-        self._find_best_node();
-        // println!("found best node");
-        self._finalize_exact(input);
-        self._finalize_cutset(input);
-        self._compute_local_bounds(input);
-        self._compute_thresholds(input);
-        // println!("completed finalize");
-    }
+    // fn _finalize_for_refine(&mut self, input: &CompilationInput<T, X>) {
+    //     self._extract_final_layer();
+    //     self._find_best_node();
+    //     self._finalize_exact(input);
+    //     self._finalize_cutset(input);
+    //     self._compute_local_bounds(input);
+    //     self._compute_thresholds(input);
+    // }
 
     fn _drain_cutset<F>(&mut self, mut func: F)
     where
@@ -814,7 +787,7 @@ where
                 let best_exact_value = get!(mut node best_exact_node, self).value_top;
                 best_known = best_known.max(best_exact_value);
 
-                for id in self.next_l.values() {
+                for id in &self.final_l {
                     if (CUTSET_TYPE == LAST_EXACT_LAYER && self.is_exact)
                         || (CUTSET_TYPE == FRONTIER && get!(node id, self).flags.is_exact())
                     {
@@ -939,34 +912,85 @@ where
         }
     }
 
+    fn _extract_final_layer(&mut self, input: &CompilationInput<T,X>){
+        self.final_l.clear();
+        match input.comp_strategy {
+            CompilationStrategy::TopDown => {
+                for (_, id) in self.next_l.drain() {
+                    self.final_l.push(id);
+                }
+            },
+            CompilationStrategy::Refinement => {
+            let final_layer_id = LayerId(self.nodes.len() - 1);
+            // self.final_l = (0..get!(layer final_layer_id, self).len()).map(|id| NodeId(final_layer_id.0, id)).collect::<Vec<_>>();
+            self.final_l = (0..get!(layer final_layer_id, self).len())
+            .filter_map(|id| (!get!(node NodeId(final_layer_id.0, id), self).flags.is_deleted())
+            .then_some(NodeId(final_layer_id.0, id))).collect::<Vec<_>>();
+            //TODO only collect those that are not deleted
+
+            // let print_final_l = final_layer
+            //     .iter().enumerate()
+            //     .filter_map(|(node_id,node)| (!node.flags.is_deleted()).then_some((node_id,node)))
+            //     .collect::<Vec<_>>();
+            // println!("Final layer {:?} contents while last exact layer is {:?} and total layers is {:}",final_layer_id,self.lel, self.nodes.len());
+            // for (node_id,node) in &print_final_l {
+            //     println!("node {:?} is exact {:?} and is deleted {:?} with value {:?} ",NodeId(self.nodes.len() - 1,*node_id),
+            //                                 node.flags.is_exact(),node.flags.is_deleted(),node.value_top);
+            // }
+
+            // for (id, node) in final_layer.iter().enumerate() {
+            //     if !node.flags.is_deleted(){
+            //         let ret = self.next_l
+            //         .insert(Arc::clone(&node.state), NodeId(final_layer_id.0, id));
+            //     if let Some(old_node) = ret {
+            //         println!("replaced {:?} with is exact {:?} and is deleted {:?} with value {:?} \n with new node {:?} with is exact {:?} and is deleted {:?} with value {:?} \n due to shared state {:?} \n \n",
+            //                     old_node,get!(node old_node, self).flags.is_exact(),get!(node old_node, self).flags.is_deleted(),get!(node old_node, self).value_top,
+            //                     id,node.flags.is_exact(),node.flags.is_deleted(),node.value_top,
+            //                     node.state);
+
+            //     }
+            //     }
+
+            // }
+
+            // println!("Next layer {:?} contents while last exact layer is {:?} and total layers is {:}",final_layer_id,self.lel, self.nodes.len());
+            // for (node_state,node_id) in &self.next_l {
+            //     println!("node {:?} is exact {:?} and is deleted {:?} with value {:?} ",*node_id,
+            //                                 get!(node node_id,self).flags.is_exact(),get!(node node_id,self).flags.is_deleted(),get!(node node_id,self).value_top);
+            // }
+                }
+        }
+
+    }
+
     fn _find_best_node(&mut self) {
         self.best_node = self
-            .next_l
-            .values()
+            .final_l
+            .iter()
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
-        // if let Some(x) = self.best_node {
-        //     println!(
-        //         "best node {:?} is exact {:?} at value {:?}",
-        //         x,
-        //         get!(node x, self).flags.is_exact(),
-        //         get!(node x, self).value_top
-        //     );
-        // };
+        if let Some(x) = self.best_node {
+            println!(
+                "best node {:?} is exact {:?} at value {:?}",
+                x,
+                get!(node x, self).flags.is_exact(),
+                get!(node x, self).value_top
+            );
+        };
         self.best_exact_node = self
-            .next_l
-            .values()
+            .final_l
+            .iter()
             .filter(|id| get!(node id, self).flags.is_exact())
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
-        // if let Some(x) = self.best_exact_node {
-        //     println!(
-        //         "best exact node {:?} is exact {:?} at value {:?}",
-        //         x,
-        //         get!(node x, self).flags.is_exact(),
-        //         get!(node x, self).value_top
-        //     );
-        // };
+        if let Some(x) = self.best_exact_node {
+            println!(
+                "best exact node {:?} is exact {:?} at value {:?}",
+                x,
+                get!(node x, self).flags.is_exact(),
+                get!(node x, self).value_top
+            );
+        };
 
     }
 
@@ -1162,7 +1186,8 @@ where
                 some.set(Self::decision_index(problem, &decision), true);
 
                 // we can get away with inserting into the all set during branch because
-                // we only branch on one deciison at a time so its defintely contained
+                // we only branch on one decision at a time so its defintely contained
+                // pay attention to this assumption 
                 let mut all = parent.all.clone();
                 all.set(Self::decision_index(problem, &decision), true);
 
@@ -1636,8 +1661,7 @@ where
                 .value_top
                 .cmp(&get!(node b, self).value_top)
                 .then_with(|| get!(node a, self).conflict_count.cmp(&get!(node b, self).conflict_count))
-                .reverse()
-        }); // reverse because greater means more likely to be kept
+        }); // no reverse because greater means more likely to be split
 
         // select worst node and split
         let mut index = curr_l.len();
@@ -1678,9 +1702,17 @@ where
             
                 let mut new_nodes = self._redirect_edges_after_split(input,&split_states,node_to_split_id,LayerId(curr_layer_id),&outbound_edges);
                 
-
                 curr_l.remove(index - 1);
                 curr_l.append(&mut new_nodes);
+
+                // let mut config = VizConfigBuilder::default().build().unwrap();
+                // // config.show_deleted = true;
+                // // config.show_deleted = true;
+                // config.group_merged = true;
+                // print!("after split layer {curr_layer_id}\n");
+                // let s = self.as_graphviz(&config);
+                // fs::write("incremental.dot", s).expect("Unable to write file");
+
                 return false;
             } else {
                 index -= 1;
@@ -2015,6 +2047,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let mut input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2080,6 +2113,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2129,6 +2163,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2178,6 +2213,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2208,6 +2244,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2238,6 +2275,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2276,6 +2314,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2304,6 +2343,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2331,6 +2371,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2359,6 +2400,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2409,6 +2451,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2440,6 +2483,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2469,6 +2513,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2498,6 +2543,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2526,6 +2572,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2554,6 +2601,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2582,6 +2630,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyInfeasibleProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2609,6 +2658,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyInfeasibleProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2636,6 +2686,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2663,6 +2714,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2690,6 +2742,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2721,6 +2774,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2752,6 +2806,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2783,6 +2838,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2812,6 +2868,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -2961,6 +3018,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -3110,6 +3168,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -3217,6 +3276,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &DummyProblem,
             relaxation: &DummyRelax,
             ranking: &DummyRanking,
@@ -3499,6 +3559,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking: &CmpChar,
@@ -3562,6 +3623,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking: &CmpChar,
@@ -3643,6 +3705,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking: &CmpChar,
@@ -3722,6 +3785,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking: &CmpChar,
@@ -3754,6 +3818,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking: &CmpChar,
@@ -3793,6 +3858,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking: &CmpChar,
@@ -3832,6 +3898,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem: &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking: &CmpChar,

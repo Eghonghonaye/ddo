@@ -21,7 +21,7 @@
 //! using ddo. It is a fairly simple example but it features most of the aspects you will
 //! want to copy when implementing your own solver.
 
-use std::{vec, collections::BinaryHeap};
+use std::{collections::BinaryHeap, ops::Range, vec};
 
 use ddo::*;
 use std::sync::Arc;
@@ -138,6 +138,9 @@ impl Problem for Psp {
         if rem_demands < t + 1 {
             f.apply(Arc::new(Decision {variable, value: IDLE, state: None}));
         }
+    }
+    fn value_range(&self) -> Range<isize> {
+        IDLE..self.n_items as isize
     }
 }
 

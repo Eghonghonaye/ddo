@@ -1027,7 +1027,7 @@ where T: Debug + Eq + PartialEq + Hash + Clone,
 
 #[cfg(test)]
 mod test_default_mdd {
-    use std::cmp::Ordering;
+    use std::{cmp::Ordering, ops::Range};
     use std::sync::Arc;
 
     use fxhash::FxHashMap;
@@ -1049,6 +1049,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let mut input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1086,6 +1087,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1122,6 +1124,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1158,6 +1161,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1188,6 +1192,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1218,6 +1223,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1254,6 +1260,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1282,6 +1289,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1309,6 +1317,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1337,6 +1346,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1374,6 +1384,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1405,6 +1416,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1434,6 +1446,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1463,6 +1476,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1491,6 +1505,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1519,6 +1534,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1547,6 +1563,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyInfeasibleProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1574,6 +1591,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyInfeasibleProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1601,6 +1619,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1628,6 +1647,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1655,6 +1675,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1686,6 +1707,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Exact,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1717,6 +1739,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1748,6 +1771,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1777,6 +1801,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1830,6 +1855,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1883,6 +1909,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -1936,6 +1963,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &DummyProblem,
             relaxation: &DummyRelax,
             ranking:    &DummyRanking,
@@ -2070,6 +2098,9 @@ mod test_default_mdd {
         fn transition_cost(&self, _: &char, _: &Self::State, d: &Decision<Self::DecisionState>) -> isize {
             d.value
         }
+        fn value_range(&self) -> Range<isize> {
+            0..12 // just the number of values a variable can take?
+        }
     }
 
     #[derive(Copy, Clone)]
@@ -2119,6 +2150,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking:    &CmpChar,
@@ -2198,6 +2230,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type: crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking:    &CmpChar,
@@ -2275,6 +2308,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type:  crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking:    &CmpChar,
@@ -2308,6 +2342,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type:  crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking:    &CmpChar,
@@ -2346,6 +2381,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type:  crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking:    &CmpChar,
@@ -2384,6 +2420,7 @@ mod test_default_mdd {
         let dominance = EmptyDominanceChecker::default();
         let input = CompilationInput {
             comp_type:  crate::CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             problem:    &LocBoundsAndThresholdsExamplePb,
             relaxation: &LocBoundsAndThresholdsExampleRelax,
             ranking:    &CmpChar,
@@ -2471,6 +2508,9 @@ mod test_default_mdd {
                 f.apply(Arc::new(Decision {variable: var, value: d, state: None}))
             }
         }
+        fn value_range(&self) -> Range<isize> {
+            0..3 //0..=2 as in for each in domain
+        }
     }
 
     #[derive(Clone,Copy)]
@@ -2510,6 +2550,9 @@ mod test_default_mdd {
 
         fn for_each_in_domain(&self, _: crate::Variable, _: &Self::State, _: &mut dyn DecisionCallback<Self::DecisionState>) {
             /* do nothing, just consider that all domains are empty */
+        }
+        fn value_range(&self) -> Range<isize> {
+            0..1
         }
     }
 

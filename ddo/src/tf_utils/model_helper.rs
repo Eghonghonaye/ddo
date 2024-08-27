@@ -1,9 +1,10 @@
 /// example based on https://stackoverflow.com/a/68567498
 
-use tensorflow::{Graph, SavedModelBundle, SessionOptions, SessionRunArgs, Tensor};
+use tensorflow::{Graph, SavedModelBundle, SessionOptions, SessionRunArgs, Tensor, TensorType};
+use crate::Decision;
+use std::path::Path;
 
-
-struct Model{
+pub struct Model{
     graph: Graph,
     bundle: SavedModelBundle,
     input_name: String,
@@ -13,9 +14,12 @@ struct Model{
 pub trait ModelHelper{
 
     type State;
+    type DecisionState;
+    // type OutputTensor where Self::OutputTensor: Copy;
     type OutputTensor;
 
-    fn load_model(model_path: Path, &mut model:Model) {
+    //TODO who creates the initial model
+    fn load_model<P: AsRef<Path>>(model_path: P, model: &mut Model) {
         // Initialize an empty graph
         let mut graph = Graph::new();
         // Load saved model bundle (session state + meta_graph data)
@@ -27,14 +31,15 @@ pub trait ModelHelper{
         model.bundle = bundle;
     }
 
-    fn state_to_input_tensor() -> Tensor<f32>;
+    fn state_to_input_tensor(&self,state: Self::State) -> Tensor<f32>;
 
-    fn perform_inference(&self, model:Model, state: State){
+    fn perform_inference(&self, model:Model, state: Self::State) -> <Self as ModelHelper>::OutputTensor
+    where <Self as ModelHelper>::OutputTensor: TensorType + Copy {
         let signature_input_parameter_name = model.input_name;
         let signature_output_parameter_name = model.output_name;
 
         // initialise inout tensor
-        let tensor: Tensor<f32> = state_to_input_tensor(state).expect("Can't create tensor");
+        let tensor: Tensor<f32> = self.state_to_input_tensor(state);
 
         // Get the session from the loaded model bundle
         let session = &model.bundle.session;
@@ -48,8 +53,8 @@ pub trait ModelHelper{
             .unwrap();
 
         // Get input/output info
-        let input_info = signature.get_input(signature_input_parameter_name).unwrap();
-        let output_info = signature.get_output(signature_output_parameter_name).unwrap();
+        let input_info = signature.get_input(&signature_input_parameter_name).unwrap();
+        let output_info = signature.get_output(&signature_output_parameter_name).unwrap();
 
         // Get input/output ops from graph
         let input_op = model.graph
@@ -70,12 +75,11 @@ pub trait ModelHelper{
             .expect("Error occurred during calculations");
 
         // Fetch outputs after graph execution
-        let out_res: OutputTensor = OutputTensor::new(args.fetch(out).unwrap()[0]);
-
-        println!("Results: {:?}", out_res);
+        let out_res: Self::OutputTensor = args.fetch(out).unwrap()[0];
 
         return out_res;
     }
 
-    fn extract_decision_from_model_output(&self, output: OutputTensor) -> Decision<X>;
+    fn extract_decision_from_model_output(&self, output: Self::OutputTensor) -> Decision<Self::DecisionState>
+    where <Self as ModelHelper>::OutputTensor: Copy;
 }

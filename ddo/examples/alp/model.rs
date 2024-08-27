@@ -21,7 +21,7 @@
 //! using ddo. It is a fairly simple example but it features most of the aspects you will
 //! want to copy when implementing your own solver.
 
-use std::{vec, collections::HashSet};
+use std::{collections::HashSet, ops::Range, vec};
 
 use ddo::*;
 use std::sync::Arc;
@@ -208,6 +208,9 @@ impl Problem for Alp {
         } else {
             decisions.iter().for_each(|d| f.apply(Arc::new(Decision { variable, value: *d, state : None })));
         }
+    }
+    fn value_range(&self) -> Range<isize> {
+        DUMMY..(self.instance.nb_classes * self.instance.nb_runways) as isize
     }
 }
 

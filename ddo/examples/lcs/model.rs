@@ -17,7 +17,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-use std::{vec, collections::BTreeMap};
+use std::{collections::BTreeMap, ops::Range, vec};
 
 use ddo::*;
 use std::sync::Arc;
@@ -167,6 +167,9 @@ impl Problem for Lcs {
     fn is_impacted_by(&self, var: Variable, state: &Self::State) -> bool {
         // this model uses long arcs
         var.0 == state.position[0]
+    }
+    fn value_range(&self) -> Range<isize> {
+        0..self.n_chars as isize
     }
 }
 

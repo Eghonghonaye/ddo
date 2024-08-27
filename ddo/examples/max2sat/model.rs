@@ -20,7 +20,7 @@
 //! This is the module where you will find the definition of the state and DP model
 //! for the MAX2SAT problem. 
 use std::cmp::{max, min, Ordering};
-use std::ops::{Index, IndexMut};
+use std::ops::{Index, IndexMut, Range};
 
 use ddo::*;
 use std::sync::Arc;
@@ -350,6 +350,9 @@ impl Problem for Max2Sat {
         } else {
             None
         }
+    }
+    fn value_range(&self) -> Range<isize> {
+        F..T+1 //not inclusive range so +1
     }
 }
 

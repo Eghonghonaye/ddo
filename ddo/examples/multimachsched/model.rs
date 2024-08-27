@@ -3,6 +3,7 @@
 use ddo::*;
 use crate::abstraction::instance::{Instance,OpId};
 use crate::abstraction::constraints::{SetupType,Constraint,Satisfaction};
+use std::ops::Range;
 // use crate::implementation::constraints::release;
 // use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -283,6 +284,9 @@ impl Problem for Mms{
     /// compile a decision diagram that comprises long arcs.
     fn is_impacted_by(&self, _var: Variable, _state: &Self::State) -> bool {
         true
+    }
+    fn value_range(&self) -> Range<isize> {
+        0..self.instance.ops.len() as isize
     }
 }
 

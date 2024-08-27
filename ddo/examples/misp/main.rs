@@ -20,7 +20,7 @@
 //! This example show how to implement a solver for the maximum independent set problem 
 //! using ddo. It is a fairly simple example but it features most of the aspects you will
 //! want to copy when implementing your own solver.
-use std::{cell::RefCell, path::Path, fs::File, io::{BufReader, BufRead}, num::ParseIntError, time::{Duration, Instant}};
+use std::{cell::RefCell, fs::File, io::{BufRead, BufReader}, num::ParseIntError, ops::Range, path::Path, time::{Duration, Instant}};
 
 use bit_set::BitSet;
 use clap::Parser;
@@ -148,6 +148,9 @@ impl Problem for Misp {
 
     fn is_impacted_by(&self, var: Variable, state: &Self::State) -> bool {
         state.contains(var.id())
+    }
+    fn value_range(&self) -> Range<isize> {
+        NO..YES+1 //not inclusive range so +1
     }
 }
 

@@ -22,7 +22,7 @@
 
 use ddo::{Problem, Variable, Decision};
 use smallbitset::Set64;
-use std::sync::Arc;
+use std::{ops::Range, sync::Arc};
 
 use crate::{io_utils::SrflpInstance, state::{SrflpDecisionState, SrflpState}};
 
@@ -168,6 +168,9 @@ impl Problem for Srflp {
         } else {
             None
         }
+    }
+    fn value_range(&self) -> Range<isize> {
+        0..self.instance.nb_departments as isize
     }
 }
 

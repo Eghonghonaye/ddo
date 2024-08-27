@@ -21,7 +21,7 @@
 //! of the SOP. (Implementation of the `Problem` trait).
 
 use ddo::{Problem, Variable, Decision, DecisionCallback};
-use std::sync::Arc;
+use std::{ops::Range, sync::Arc};
 
 use crate::{io_utils::SopInstance, state::{Previous, SopDecisionState, SopState}, BitSet};
 
@@ -134,6 +134,9 @@ impl Problem for Sop {
         } else {
             None
         }
+    }
+    fn value_range(&self) -> Range<isize> {
+        0..self.nb_variables() as isize
     }
 }
 

@@ -47,10 +47,22 @@ pub enum CompilationType {
     Restricted,
 }
 
+/// What strategy are we using to compile the decision diagram ? 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompilationStrategy{
+    /// If you want to compile a DD by top down construction
+    TopDown,
+    /// If you want to compile a DD by incremental refinement 
+    /// NB: this cannot start from an empty diagram
+    /// At least a skinny with top down diagram to start
+    Refinement,
+}
+
 /// The set of parameters used to tweak the compilation of a MDD
 pub struct CompilationInput<'a, State, DecisionState> {   
     /// How is the mdd being compiled ?
     pub comp_type: CompilationType,
+    pub comp_strategy: CompilationStrategy,
     /// A reference to the original problem we try to maximize
     pub problem: &'a dyn Problem<State = State, DecisionState = DecisionState>,
     /// The relaxation which we use to merge nodes in a relaxed dd

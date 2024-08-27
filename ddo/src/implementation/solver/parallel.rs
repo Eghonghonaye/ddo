@@ -26,7 +26,8 @@ use std::{marker::PhantomData, sync::Arc, hash::Hash};
 
 use parking_lot::{Condvar, Mutex};
 
-use crate::{Fringe, Decision, Problem, Relaxation, StateRanking, WidthHeuristic, Cutoff, SubProblem, DecisionDiagram, CompilationInput, CompilationType, Solver, Solution, Completion, Reason, Cache, DominanceChecker};
+use crate::{Fringe, Decision, Problem, Relaxation, StateRanking, WidthHeuristic, Cutoff, SubProblem, DecisionDiagram, CompilationInput, CompilationType, CompilationStrategy, Solver, Solution, Completion, Reason, Cache, DominanceChecker};
+
 
 /// The shared data that may only be manipulated within critical sections
 struct Critical<'a, State, DecisionState> {
@@ -408,6 +409,7 @@ where
         let width = shared.width_heu.max_width(&node);
         let mut compilation = CompilationInput {
             comp_type: CompilationType::Restricted,
+            comp_strategy: CompilationStrategy::TopDown,
             max_width: width,
             problem: shared.problem,
             relaxation: shared.relaxation,
@@ -655,6 +657,7 @@ where
 mod test_solver {
     use crate::*;
     use std::{sync::Arc, hash::Hash};
+    use std::ops::Range;
 
     
     type DdLel<'a, T, X> = ParallelSolver<'a, T, X, DefaultMDDLEL<T, X>, EmptyCache<T, X>>;
@@ -1308,6 +1311,9 @@ mod test_solver {
             } else {
                 f.apply(Arc::new(Decision { variable, value: LEAVE_IT_OUT , state: None }));
             }
+        }
+        fn value_range(&self) -> Range<isize> {
+            0 .. 2
         }
     }
     struct KPRelax<'a>{pb: &'a Knapsack}

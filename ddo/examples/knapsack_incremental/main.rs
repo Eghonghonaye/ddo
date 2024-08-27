@@ -36,6 +36,8 @@ use clustering::kmeans;
 use ddo::*;
 use ordered_float::OrderedFloat;
 
+use tensorflow::{Graph, SavedModelBundle, SessionOptions, SessionRunArgs, Tensor, TensorType};
+
 #[cfg(test)]
 mod tests;
 
@@ -262,6 +264,27 @@ impl Problem for Knapsack {
         0..2
     }
 }
+
+
+// pub struct KPModel<'a> {
+//     pub pb: &'a Knapsack,
+// }
+
+
+// impl ModelHelper for KPModel<'_>{
+//     type State = KnapsackState;
+//     type DecisionState = KnapsackDecisionState;
+//     type OutputTensor = f32;
+
+//     fn state_to_input_tensor(&self,_state: Self::State) -> Tensor<f32>{
+//         todo!()
+//     }
+
+//     fn extract_decision_from_model_output(&self, _output: Self::OutputTensor) -> Decision<Self::DecisionState>
+//     where <Self as ModelHelper>::OutputTensor: TensorType + Copy{
+//         todo!()
+//     }
+// }
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub struct StateClusterHelper {

@@ -135,6 +135,7 @@ where
         let width = self.width_heu.max_width(&root);
         let compilation = CompilationInput {
             comp_type: CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             max_width: width,
             problem: self.problem,
             relaxation: self.relaxation,
@@ -251,6 +252,7 @@ where
             // refine again
             let compilation = CompilationInput {
                 comp_type: CompilationType::Relaxed,
+                comp_strategy: crate::CompilationStrategy::Refinement,
                 max_width: width,
                 problem: self.problem,
                 relaxation: self.relaxation,

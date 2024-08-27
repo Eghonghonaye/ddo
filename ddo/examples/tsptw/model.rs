@@ -21,7 +21,7 @@
 //! of the TSP+TW. (Implementation of the `Problem` trait).
 
 use ddo::{Problem, Variable, Decision};
-use std::sync::Arc;
+use std::{ops::Range, sync::Arc};
 use smallbitset::Set256;
 
 use crate::{instance::TsptwInstance, state::{ElapsedTime, Position, TsptwDecisionState, TsptwState}};
@@ -146,6 +146,9 @@ impl Problem for Tsptw {
         } else {
             Some(Variable(depth))
         }
+    }
+    fn value_range(&self) -> Range<isize>{
+        0..self.instance.nb_nodes as isize
     }
 }
 

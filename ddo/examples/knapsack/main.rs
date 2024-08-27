@@ -130,7 +130,7 @@ impl Problem for Knapsack {
     }
 
     fn value_range(&self) -> Range<isize> {
-        0 .. 2
+        LEAVE_IT_OUT .. TAKE_IT + 1 //not inclusive so add 1
     }
 }
 

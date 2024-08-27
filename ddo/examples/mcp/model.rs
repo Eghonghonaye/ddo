@@ -20,6 +20,7 @@
 use std::cmp::{max, min};
 use std::fs::File;
 use std::io::{BufRead, BufReader, Lines, Read};
+use std::ops::Range;
 
 use ddo::*;
 use std::sync::Arc;
@@ -97,6 +98,9 @@ impl Problem for Mcp {
         } else {
             None
         }
+    }
+    fn value_range(&self) -> Range<isize> {
+        T..S+1 //not inclusive range so +1
     }
 }
 // private methods

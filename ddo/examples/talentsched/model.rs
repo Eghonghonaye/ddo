@@ -153,6 +153,9 @@ impl Problem for TalentSched {
             }
         }
     }
+    fn value_range(&self) -> std::ops::Range<isize> {
+        0..self.instance.nb_scenes as isize
+    }
 }
 
 /// This structure implements the TalentSched relaxation
