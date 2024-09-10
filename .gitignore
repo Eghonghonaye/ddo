@@ -8,4 +8,5 @@ launch.json
 /py_ddo/.env
 *.profraw
 experiments/*
-knapsack_subset/*
+resources/knapsack_subset/*
+incremental.dot
