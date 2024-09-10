@@ -1,6 +1,6 @@
 use std::clone::Clone;
 use std::{hash::Hash, sync::Arc};
-use std::fs;
+use std::{fs, iter};
 
 use crate::{
     Cache, CompilationInput, CompilationType, Completion, Cutoff, Decision, DecisionDiagram,
@@ -237,6 +237,7 @@ where
         let root = self.root_node();
         let mut width = self.width_heu.max_width(&root);
         self.maybe_update_best();
+        let mut iteration_count = 0;
         loop {
             // if self.mdd.is_exact(){
             //     println!("ended as exact");
@@ -247,7 +248,8 @@ where
             // println!("in loop");
             let best_lb = self.best_lb;
             // increase width
-            width = width + 5;
+            // width = width + 5;
+            width = 50;
 
             // refine again
             let compilation = CompilationInput {
@@ -280,6 +282,9 @@ where
                 break;
             }
             // println!("end of loop");
+            iteration_count += 1;
+            println!("Iteration {}",iteration_count);
+            break;
         }
 
         // println!("out of loop");

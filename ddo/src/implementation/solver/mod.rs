@@ -19,11 +19,13 @@
 
 //! This module provide the solver implementation.
 mod incremental;
+mod td;
 mod parallel;
 mod sequential;
 pub use incremental::*;
 pub use parallel::*;
 pub use sequential::*;
+pub use td::*;
 
 use crate::{DefaultMDDFC, DefaultMDDLEL, DefaultMappedLEL, EmptyCache, Pooled, SimpleCache};
 
@@ -121,6 +123,14 @@ pub type SeqCachingSolverPooled<'a, State, DecisionState> = SequentialSolver<
 >;
 
 pub type SeqIncrementalSolver<'a, State, DecisionState> = IncrementalSolver<
+    'a,
+    State,
+    DecisionState,
+    DefaultMappedLEL<State, DecisionState>,
+    EmptyCache<State, DecisionState>,
+>;
+
+pub type TDCompile<'a, State, DecisionState> = TDSolver<
     'a,
     State,
     DecisionState,

@@ -28,7 +28,7 @@ struct NodeId(usize, usize);
 
 /// The identifier of an edge: it indicates the position of the referenced edge
 /// in the ’edges’ vector of the mdd structure.
-#[derive(Debug, Clone, Copy, Eq, PartialEq)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Hash)]
 struct EdgeId(usize);
 
 /// The identifier of an edge list: it indicates the position of an edge list
@@ -468,7 +468,7 @@ where
             cutset: vec![],
             best_node: None,
             best_exact_node: None,
-            is_exact: false,
+            is_exact: true,
             has_exact_best_path: false,
         }
     }
@@ -585,7 +585,8 @@ where
 
             self.curr_depth += 1;
         }
-
+        // we do not call any restrict/relax on last layer so check if exact before finalize
+        self._maybe_save_lel();
         self._finalize(input);
 
         Ok(Completion {
@@ -638,7 +639,6 @@ where
         // print!("after refine\n");
         // let s = self.as_graphviz(&config);
         // fs::write("incremental.dot", s).expect("Unable to write file");
-
 
         Ok(Completion {
             is_exact: self.is_exact(),
@@ -970,12 +970,12 @@ where
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
         if let Some(x) = self.best_node {
-            println!(
-                "best node {:?} is exact {:?} at value {:?}",
-                x,
-                get!(node x, self).flags.is_exact(),
-                get!(node x, self).value_top
-            );
+            // println!(
+            //     "best node {:?} is exact {:?} at value {:?}",
+            //     x,
+            //     get!(node x, self).flags.is_exact(),
+            //     get!(node x, self).value_top
+            // );
         };
         self.best_exact_node = self
             .final_l
@@ -984,12 +984,12 @@ where
             .copied()
             .max_by_key(|id| get!(node id, self).value_top);
         if let Some(x) = self.best_exact_node {
-            println!(
-                "best exact node {:?} is exact {:?} at value {:?}",
-                x,
-                get!(node x, self).flags.is_exact(),
-                get!(node x, self).value_top
-            );
+            // println!(
+            //     "best exact node {:?} is exact {:?} at value {:?}",
+            //     x,
+            //     get!(node x, self).flags.is_exact(),
+            //     get!(node x, self).value_top
+            // );
         };
 
     }
@@ -999,6 +999,7 @@ where
         // if self.is_exact{
         //     println!()
         // }
+        // println!("nodes is {} long and is exact is {}",self.nodes.len(),self.is_exact);
         self.has_exact_best_path = matches!(input.comp_type, CompilationType::Relaxed)
             && self._has_exact_best_path(self.best_node);
 
@@ -1237,7 +1238,8 @@ where
     fn _squash_if_needed(&mut self, input: &CompilationInput<T, X>, curr_l: &mut Vec<NodeId>) {
         if self.nodes.len() > 1 {
             match input.comp_type {
-                CompilationType::Exact => { /* do nothing: you want to explore the complete DD */ }
+                CompilationType::Exact => { /* do nothing: you want to explore the complete DD */ 
+                    self._maybe_save_lel(); /* every layer is exact */}
                 CompilationType::Restricted => {
                         if curr_l.len() > input.max_width{
                             self._restrict(input, curr_l)
@@ -1277,7 +1279,8 @@ where
                     let mut fully_split = false;
                     while !fully_split {
                         if curr_l.len() < input.max_width {
-                            fully_split = self._split_layer(input, curr_l, curr_layer_id);
+                            fully_split = self._split_layer_new(input, curr_l, curr_layer_id);
+                            println!("in while layer {:?} \n", curr_layer_id);
                         }
                         else {
                             break; // nothing to stretch
@@ -1294,10 +1297,11 @@ where
     }
 
     fn _maybe_save_lel(&mut self) {
-        let last_layer_id = self.nodes.len() - 1;
+        let last_layer_id = self.nodes.len()- 1;
         if self.lel.0 == last_layer_id - 1 {
             self.lel = LayerId(last_layer_id); // lel was the previous layer
         }
+        // println!("lel is {}",self.lel.0);
     }
 
     fn _restrict(&mut self, input: &CompilationInput<T, X>, curr_l: &mut Vec<NodeId>) {
@@ -1316,9 +1320,7 @@ where
         }); // reverse because greater means more likely to be kept
 
         for drop_id in curr_l.iter().skip(input.max_width).copied() {
-            if !get!(mut node drop_id, self).flags.is_must_keep(){
-                get!(mut node drop_id, self).flags.set_deleted(true);
-            }
+            get!(mut node drop_id, self).flags.set_deleted(true);
         }
 
         curr_l.truncate(input.max_width);
@@ -1440,53 +1442,65 @@ where
         }
     }
 
-    fn _redirect_edges_after_split(&mut self,
-        input: &CompilationInput<T, X>,
-        split_states:&Vec<(Arc<T>,Vec<usize>)>,
-        node_to_split_id: NodeId,
-        curr_layer_id: LayerId,
-        // inbound_edges: &Vec<&(usize, &Decision<X>)>,
-        outbound_edges: &Vec<EdgeId>) -> Vec<NodeId>{
-        let mut new_nodes = Vec::with_capacity(split_states.len());
-        let mut outgoing_nodes_to_update = FxHashSet::default();
-        for (state, edges_to_append) in split_states {
-            // only add merged as new node
-            let curr_layer = get!(mut layer curr_layer_id, self);
-            let split_id = NodeId(curr_layer_id.0, curr_layer.len());
-            new_nodes.push(split_id);
-            let depth = get!(node node_to_split_id, self).depth;
-            let curr_layer = get!(mut layer curr_layer_id, self);
-            curr_layer.push(Node {
-                state: Arc::clone(state),
-                value_top: isize::MIN,
-                value_bot: isize::MIN,
-                best: None,    // yet
-                inbound: NIL,  // yet
-                outbound: NIL, // yet
-                //
-                rub: isize::MAX,
-                theta: None,
-                flags: NodeFlags::new_relaxed(),
-                // flags: if edges_to_append.len() == 1 {NodeFlags::new_exact()} else {NodeFlags::new_relaxed()},
-                depth,
-                some: bitvec!(0; Self::bitvec_len(input.problem)),
-                all: bitvec!(0; Self::bitvec_len(input.problem)),
-                conflict_count: 0,
-            });
+    // fn _redirect_edges_after_split(&mut self,
+    //     input: &CompilationInput<T, X>,
+    //     split_states:&Vec<(Arc<T>,Vec<usize>)>,
+    //     node_to_split_id: NodeId,
+    //     curr_layer_id: LayerId,
+    //     // inbound_edges: &Vec<&(usize, &Decision<X>)>,
+    //     outbound_edges: &Vec<EdgeId>) -> Vec<NodeId>{
+    //     let mut new_nodes = Vec::with_capacity(split_states.len());
+    //     let mut outgoing_nodes_to_update = FxHashSet::default();
+    //     for (state, edges_to_append) in split_states {
+    //         // only add merged as new node
+    //         let curr_layer = get!(mut layer curr_layer_id, self);
+    //         let split_id = NodeId(curr_layer_id.0, curr_layer.len());
+    //         new_nodes.push(split_id);
+    //         let depth = get!(node node_to_split_id, self).depth;
+    //         let curr_layer = get!(mut layer curr_layer_id, self);
+    //         curr_layer.push(Node {
+    //             state: Arc::clone(state),
+    //             value_top: isize::MIN,
+    //             value_bot: isize::MIN,
+    //             best: None,    // yet
+    //             inbound: NIL,  // yet
+    //             outbound: NIL, // yet
+    //             //
+    //             rub: isize::MAX,
+    //             theta: None,
+    //             flags: NodeFlags::new_relaxed(),
+    //             // flags: if edges_to_append.len() == 1 {NodeFlags::new_exact()} else {NodeFlags::new_relaxed()},
+    //             depth,
+    //             some: bitvec!(0; Self::bitvec_len(input.problem)),
+    //             all: bitvec!(0; Self::bitvec_len(input.problem)),
+    //             conflict_count: 0,
+    //         });
 
-            self._redirect_incoming_edges(input, state, edges_to_append, split_id, outbound_edges);
+    //         self._redirect_incoming_edges(input, state, edges_to_append, split_id, outbound_edges);
 
-            if !get!(node split_id, self).flags.is_deleted() {
-                outgoing_nodes_to_update.extend(self._redirect_outgoing_edges(input, outbound_edges, &state, split_id));
-            }
-        }
+    //         if !get!(node split_id, self).flags.is_deleted() {
+    //             outgoing_nodes_to_update.extend(self._redirect_outgoing_edges(input, outbound_edges, &state, split_id));
+    //         }
+    //     }
 
-        // update outgoing node edges
-        for outgoing_node_id in outgoing_nodes_to_update {
-            let mut some = bitvec!(0; Self::bitvec_len(input.problem));
+    //     // update outgoing node edges
+    //     for outgoing_node_id in outgoing_nodes_to_update {
+    //         self.update_node(input, outgoing_node_id);
+    //     }
+
+    //     // //TODO we should then delete all incoming and outgoing edges to the split node
+    //     // // basically call this detach for all the edges coming into the node
+    //     // for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
+    //     //     // detach_edge_from!(self,node_to_split_id,e_list);
+    //     // }
+    //     new_nodes
+    // }
+
+    fn update_node(&mut self, input: &CompilationInput<T, X>, node_id: NodeId){
+        let mut some = bitvec!(0; Self::bitvec_len(input.problem));
             let mut all = bitvec!(0; Self::bitvec_len(input.problem));
-            let outgoing_node = get!(node outgoing_node_id,self);
-            let inbound_edges: Vec<_> = get!(in_edgelist outgoing_node.inbound, self)
+            let node_to_update = get!(node node_id,self);
+            let inbound_edges: Vec<_> = get!(in_edgelist node_to_update.inbound, self)
                 .iter(&self.in_edgelists)
                 .filter_map(|x| match x {
                     EdgesList::Cons { head, tail: _ } => {
@@ -1498,7 +1512,7 @@ where
 
             //update node attributes
             let merged = self._merge_states_from_incoming_edges(input, &inbound_edges);
-            self.clear_node(outgoing_node_id, merged);
+            self.clear_node(node_id, merged);
 
             for e_id in &inbound_edges {
                 let in_edge = get!(edge EdgeId(*e_id),self);
@@ -1522,24 +1536,17 @@ where
                         node.value_top = value;
                     }
 
-                    foreach!(out_edge of outgoing_node_id, self, |out_edge: Edge<X>| {
+                    foreach!(out_edge of node_id, self, |out_edge: Edge<X>| {
                         if input.problem.check_conflict(&in_edge.decision, &out_edge.decision) {
-                            get!(mut node outgoing_node_id, self).conflict_count += 1;
+                            get!(mut node node_id, self).conflict_count += 1;
                         }
                     });
                 }
             }
 
-            get!(mut node outgoing_node_id, self).some = some;
-            get!(mut node outgoing_node_id, self).all = all;
-        }
+            get!(mut node node_id, self).some = some;
+            get!(mut node node_id, self).all = all;
 
-        // //TODO we should then delete all incoming and outgoing edges to the split node
-        // // basically call this detach for all the edges coming into the node
-        // for e_list in inbound_start.iter(&self.in_edgelists).collect::<Vec<_>>(){
-        //     // detach_edge_from!(self,node_to_split_id,e_list);
-        // }
-        new_nodes
     }
 
     fn clear_node(&mut self, node_id: NodeId, state: Arc<T>) {
@@ -1552,7 +1559,7 @@ where
         node.conflict_count = 0;
     }
 
-    fn _redirect_outgoing_edges(&mut self, input: &CompilationInput<T, X>, outbound_edges: &Vec<EdgeId>, state: &&Arc<T>, split_id: NodeId) -> Vec<NodeId> {
+    fn _redirect_outgoing_edges(&mut self, input: &CompilationInput<T, X>, outbound_edges: &FxHashSet<EdgeId>, state: &&Arc<T>, split_id: NodeId) -> Vec<NodeId> {
         //TODO replicate all edges outbound - we need to recalculate the decision states because it changes upon split - also filter infeasible outbounds
         //TODO reserve size of outgoing
         let mut outgoing_nodes_to_update = Vec::with_capacity(outbound_edges.len());
@@ -1564,7 +1571,7 @@ where
                 let cost = input.problem.transition_cost(
                     state.as_ref(),
                     get!(node e.to, self).state.as_ref(),
-                    e.decision.as_ref(),
+                    e.decision.as_ref(), //TODO update edge decision state
                 );
                 // println!("trying to add edge with variable {} assigned value {} to node ({},{})",
                 //          e.decision.variable.0,
@@ -1580,7 +1587,7 @@ where
                                 Edge {
                                     from: split_id,
                                     to: e.to,
-                                    decision: Arc::clone(&e.decision),
+                                    decision: Arc::clone(&e.decision), //TODO update edge decision state
                                     cost: cost
                                 }
                             );
@@ -1590,7 +1597,7 @@ where
         outgoing_nodes_to_update
     }
 
-    fn _redirect_incoming_edges(&mut self, input: &CompilationInput<T, X>, state: &Arc<T>, edges_to_append: &Vec<usize>, split_id: NodeId, outbound_edges: &Vec<EdgeId>) {
+    fn _redirect_incoming_edges(&mut self, input: &CompilationInput<T, X>, state: &Arc<T>, edges_to_append: &Vec<usize>, split_id: NodeId, outbound_edges: &FxHashSet<EdgeId>) {
         let mut some = bitvec!(0; Self::bitvec_len(input.problem));
         let mut all = bitvec!(0; Self::bitvec_len(input.problem));
         let mut conflict_count = 0;
@@ -1630,7 +1637,7 @@ where
             }
         }
         // set node to exact if some and all and relaxed otherwise
-        // exactness is further corrected by edge additon which check sparent exactness too
+        // exactness is further corrected by edge additon which checks parent exactness too
         // TODO: set correct exactness here
         let split_node = get!(mut node split_id, self);
         if some == all {
@@ -1648,7 +1655,7 @@ where
     }
 
 
-    fn _split_layer(
+    fn _split_layer_new(
         &mut self,
         input: &CompilationInput<T, X>,
         curr_l: &mut Vec<NodeId>,
@@ -1656,6 +1663,16 @@ where
     ) -> bool {
         // order vec node by ranking
         //TODO assume same ranking as deciding to merge for now but make API for user to add specific ranking here
+
+        // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
+        // // config.show_deleted = true;
+        // config.group_merged = true;
+        // print!("before split layer {curr_layer_id}\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
+
+        // let mut fully_split = false;
         curr_l.sort_unstable_by(|a, b| {
             get!(node a, self)
                 .value_top
@@ -1663,73 +1680,240 @@ where
                 .then_with(|| get!(node a, self).conflict_count.cmp(&get!(node b, self).conflict_count))
         }); // no reverse because greater means more likely to be split
 
-        // select worst node and split
-        let mut index = curr_l.len();
-        while index > 0 {
-            let node_to_split_id = curr_l[index - 1];
-            let node_to_split = get!(node node_to_split_id, self);
-            let inbound_start = self.in_edgelists[node_to_split.inbound.0];
-            let outbound_start = self.out_edgelists[node_to_split.outbound.0];
+        //TODO: select the set of nodes to split - here we assume all
+        let to_split = curr_l.clone();
 
-            // collect inbound and outbound edges from linked list structure
-            let inbound_edges = inbound_start
+        let mut inbound_edges: Vec<(usize, isize, &Decision<X>)> = vec![];
+
+        //Get all inbound edges
+        for node_id in &to_split{
+            println!("gathering inbound edges layer {:?} \n", curr_layer_id);
+            let inbound_start = self.in_edgelists[get!(node node_id, self).inbound.0];
+            inbound_edges.append(&mut inbound_start
                 .iter(&self.in_edgelists)
                 .filter_map(|x| match x {
                     EdgesList::Cons { head, tail: _ } => {
-                        Some((head.0, self.edges[head.0].cost,self.edges[head.0].decision.as_ref()))
+                        let from_node = get!(node self.edges[head.0].from,self);
+                        if !from_node.flags.is_deleted() && !input.problem.filter(&from_node.state, &self.edges[head.0].decision) {
+                            Some((head.0, 
+                                get!(node self.edges[head.0].to,self).value_top + self.edges[head.0].cost,
+                                self.edges[head.0].decision.as_ref()))
+                        }
+                        else{
+                            None
+                        }
                     }
                     _ => None,
                 })
-                .collect::<Vec<(usize, isize, &Decision<X>)>>();
-            let outbound_edges = outbound_start
-                .iter(&self.out_edgelists)
-                .filter_map(|x| match x {
-                    EdgesList::Cons { head, tail: _ } => Some(head),
-                    _ => None,
-                })
-                .collect::<Vec<EdgeId>>();
+                .collect::<Vec<(usize, isize, &Decision<X>)>>()
+            );
 
-            if inbound_edges.len() > 1 {
-                let split_states =
-                    self._split_node(node_to_split_id, input, &mut inbound_edges.into_iter());
-                
-
-                //Delete split node
-                get!(mut node node_to_split_id, self)
-                    .flags
-                    .set_deleted(true);
-
+            //Delete split node
+            get!(mut node node_id, self).flags.set_deleted(true);
             
-                let mut new_nodes = self._redirect_edges_after_split(input,&split_states,node_to_split_id,LayerId(curr_layer_id),&outbound_edges);
-                
-                curr_l.remove(index - 1);
-                curr_l.append(&mut new_nodes);
-
-                // let mut config = VizConfigBuilder::default().build().unwrap();
-                // // config.show_deleted = true;
-                // // config.show_deleted = true;
-                // config.group_merged = true;
-                // print!("after split layer {curr_layer_id}\n");
-                // let s = self.as_graphviz(&config);
-                // fs::write("incremental.dot", s).expect("Unable to write file");
-
-                return false;
-            } else {
-                index -= 1;
-                if inbound_edges.is_empty(){
-                    get!(mut node node_to_split_id, self).flags.set_deleted(true);
-                }
-            }
         }
+
+        // send all inbound to be split into n nodes
+        let how_many = input.max_width; //TODO: because we currently split the entire layer but replace if we do some other logic to split subset
+ 
+        let fully_split = if how_many >= inbound_edges.len(){true} else {false};
+        let split_state_edges = input.problem.split_edges(&mut inbound_edges.into_iter(),how_many);
+        println!("split edges layer {:?} \n", curr_layer_id);
+
+        let split_states: Vec<(Arc<T>, Vec<usize>)>  = split_state_edges.into_iter().map(|cluster| {
+            let merged = self._merge_states_from_incoming_edges(input, &cluster);
+            (merged, cluster)
+        }).collect();
+        println!("split states layer {:?} \n", curr_layer_id);
+        //for each split state, create new nodes and redirect outbound edges
+        let mut new_nodes = self._redirect_edges_after_split_new(input,&split_states,LayerId(curr_layer_id));
+        println!("redirected edges layer {:?} \n", curr_layer_id);
+        curr_l.retain(|&x| !to_split.contains(&x));
+        curr_l.append(&mut new_nodes);
+
         // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
         // // config.show_deleted = true;
         // config.group_merged = true;
         // print!("after split layer {curr_layer_id}\n");
         // let s = self.as_graphviz(&config);
         // fs::write("incremental.dot", s).expect("Unable to write file");
 
-        true
+        for node_id in &to_split{
+            //Delete split node
+            get!(mut node node_id, self)
+            .flags
+            .set_deleted(true);
+        }
+
+        fully_split
     }
+
+    fn _redirect_edges_after_split_new(&mut self,
+        input: &CompilationInput<T, X>,
+        split_states:&Vec<(Arc<T>,Vec<usize>)>,
+        curr_layer_id: LayerId,) -> Vec<NodeId> {
+
+        let mut new_nodes = Vec::with_capacity(split_states.len());
+        let mut outgoing_nodes_to_update = FxHashSet::default();
+
+        for (state, incoming_edges) in split_states{
+            //create new node
+            // let curr_layer = get!(mut layer curr_layer_id, self);
+            // let split_id = NodeId(curr_layer_id.0, curr_layer.len());
+            // new_nodes.push(split_id);
+            //TODO: what is the depth now? This is a round about way to get depth, Also (rightly) assumes all nodes at incoming edges are at same depth
+            println!("creating new node");
+            let depth = get!(node (get!(edge EdgeId(incoming_edges[0]),self).to),self).depth;
+            let curr_layer = get!(mut layer curr_layer_id, self);
+            curr_layer.push(Node {
+                state: Arc::clone(state),
+                value_top: isize::MIN,
+                value_bot: isize::MIN,
+                best: None,    // yet
+                inbound: NIL,  // yet
+                outbound: NIL, // yet
+                //
+                rub: isize::MAX,
+                theta: None,
+                flags: NodeFlags::new_relaxed(),
+                // flags: if edges_to_append.len() == 1 {NodeFlags::new_exact()} else {NodeFlags::new_relaxed()},
+                depth,
+                some: bitvec!(0; Self::bitvec_len(input.problem)),
+                all: bitvec!(0; Self::bitvec_len(input.problem)),
+                conflict_count: 0,
+            });
+            let split_id = NodeId(curr_layer_id.0, curr_layer.len()-1);
+            new_nodes.push(split_id);
+
+            // get all outbound edges
+            // let mut outbound_edges: Vec<EdgeId> = vec![];
+            let mut outbound_edges = FxHashSet::default();
+            for edge_id in incoming_edges{
+                let outbound_node = get!(edge EdgeId(*edge_id), self).to;
+                let outbound_start = self.out_edgelists[get!(node outbound_node, self).outbound.0];
+                // outbound_edges.append(&mut outbound_start
+                // .iter(&self.out_edgelists)
+                // .filter_map(|x| match x {
+                //     EdgesList::Cons { head, tail: _ } => Some(head),
+                //     _ => None,
+                // })
+                // .collect::<Vec<EdgeId>>());
+                outbound_edges.extend(outbound_start
+                    .iter(&self.out_edgelists)
+                    .filter_map(|x| match x {
+                        EdgesList::Cons { head, tail: _ } => Some(head),
+                        _ => None,
+                    })
+                    .collect::<Vec<EdgeId>>());
+            }
+
+            // TODO remove duplicated outbound edges via dedup https://doc.rust-lang.org/std/vec/struct.Vec.html#method.dedup
+            println!("redirect {:?} incoming", incoming_edges.len());
+            // redirect incoming edges
+            self._redirect_incoming_edges(input, state, incoming_edges, split_id, &outbound_edges);
+            println!("redirect {:?} outgoing", outbound_edges.len());
+            // redirect outgoing edges
+            if !get!(node split_id, self).flags.is_deleted() {
+                outgoing_nodes_to_update.extend(self._redirect_outgoing_edges(input, &outbound_edges, &state, split_id));
+            }
+        }
+        println!("updating next layer");
+        // update outgoing node
+        // update outgoing node edges
+        for outgoing_node_id in outgoing_nodes_to_update {
+            self.update_node(input, outgoing_node_id);
+        }
+
+        new_nodes
+
+        }
+
+
+
+    // fn _split_layer(
+    //     &mut self,
+    //     input: &CompilationInput<T, X>,
+    //     curr_l: &mut Vec<NodeId>,
+    //     curr_layer_id: usize,
+    // ) -> bool {
+    //     // order vec node by ranking
+    //     //TODO assume same ranking as deciding to merge for now but make API for user to add specific ranking here
+    //     curr_l.sort_unstable_by(|a, b| {
+    //         get!(node a, self)
+    //             .value_top
+    //             .cmp(&get!(node b, self).value_top)
+    //             .then_with(|| get!(node a, self).conflict_count.cmp(&get!(node b, self).conflict_count))
+    //     }); // no reverse because greater means more likely to be split
+
+    //     // select worst node and split
+    //     let mut index = curr_l.len();
+    //     while index > 0 {
+    //         let node_to_split_id = curr_l[index - 1];
+    //         let node_to_split = get!(node node_to_split_id, self);
+    //         let inbound_start = self.in_edgelists[node_to_split.inbound.0];
+    //         let outbound_start = self.out_edgelists[node_to_split.outbound.0];
+
+    //         // collect inbound and outbound edges from linked list structure
+    //         let inbound_edges = inbound_start
+    //             .iter(&self.in_edgelists)
+    //             .filter_map(|x| match x {
+    //                 EdgesList::Cons { head, tail: _ } => {
+    //                     Some((head.0, self.edges[head.0].cost,self.edges[head.0].decision.as_ref()))
+    //                 }
+    //                 _ => None,
+    //             })
+    //             .collect::<Vec<(usize, isize, &Decision<X>)>>();
+    //         let outbound_edges = outbound_start
+    //             .iter(&self.out_edgelists)
+    //             .filter_map(|x| match x {
+    //                 EdgesList::Cons { head, tail: _ } => Some(head),
+    //                 _ => None,
+    //             })
+    //             .collect::<Vec<EdgeId>>();
+
+    //         if inbound_edges.len() > 1 {
+    //             let split_states =
+    //                 self._split_node(node_to_split_id, input, &mut inbound_edges.into_iter());
+                
+
+    //             //Delete split node
+    //             get!(mut node node_to_split_id, self)
+    //                 .flags
+    //                 .set_deleted(true);
+
+            
+    //             let mut new_nodes = self._redirect_edges_after_split(input,&split_states,node_to_split_id,LayerId(curr_layer_id),&outbound_edges);
+                
+    //             curr_l.remove(index - 1);
+    //             curr_l.append(&mut new_nodes);
+
+    //             // let mut config = VizConfigBuilder::default().build().unwrap();
+    //             // // config.show_deleted = true;
+    //             // // config.show_deleted = true;
+    //             // config.group_merged = true;
+    //             // print!("after split layer {curr_layer_id}\n");
+    //             // let s = self.as_graphviz(&config);
+    //             // fs::write("incremental.dot", s).expect("Unable to write file");
+
+    //             return false;
+    //         } else {
+    //             index -= 1;
+    //             if inbound_edges.is_empty(){
+    //                 get!(mut node node_to_split_id, self).flags.set_deleted(true);
+    //             }
+    //         }
+    //     }
+    //     // let mut config = VizConfigBuilder::default().build().unwrap();
+    //     // // config.show_deleted = true;
+    //     // config.group_merged = true;
+    //     // print!("after split layer {curr_layer_id}\n");
+    //     // let s = self.as_graphviz(&config);
+    //     // fs::write("incremental.dot", s).expect("Unable to write file");
+
+    //     true
+    // }
+
 
     fn _merge_states_from_incoming_edges (
         &self,
@@ -1766,7 +1950,8 @@ where
         inbound_edges: &mut dyn Iterator<Item = (usize, isize, &Decision<X>)>,
     ) -> Vec<(Arc<T>, Vec<usize>)> {
         let split_state = get!(node node_to_split_id, self).state.as_ref();
-        let split_state_edges = input.problem.split_state_edges(split_state, inbound_edges);
+        // TODO: make a macro to specify explicitly this deafult behaviour?
+        let split_state_edges = input.problem.split_edges(inbound_edges,2); // by default tries to split into 2
 
         split_state_edges.into_iter().map(|cluster| {
             let merged = self._merge_states_from_incoming_edges(input, &cluster);
@@ -1976,9 +2161,11 @@ where
         }
     }
     /// Creates text label to place inside of the node when displaying it
-    fn node_label(node: &Node<T>, id: NodeId, state: &T, config: &VizConfig) -> String {
-        let mut out = format!("id: ({},{})", id.0,id.1);
-        out.push_str(&format!("\n{state:?}"));
+    fn node_label(node: &Node<T>, _id: NodeId, state: &T, config: &VizConfig) -> String {
+        // let mut out = format!("id: ({},{})", id.0,id.1);
+        // out.push_str(&format!("\n{state:?}"));
+
+        let mut out = format!("{state:?}");
 
         if config.show_value {
             out.push_str(&format!("\\nval: {}", node.value_top));
@@ -2014,7 +2201,7 @@ where
 
 #[cfg(test)]
 mod test_default_mdd {
-    use std::cmp::Ordering;
+    use std::{cmp::Ordering, fs};
     use std::ops::Range;
     use std::sync::Arc;
 
@@ -2057,12 +2244,12 @@ mod test_default_mdd {
             residual: &SubProblem {
                 state: Arc::new(DummyState {
                     depth: 1,
-                    value: 42,
+                    value: 2,
                 }),
-                value: 42,
+                value: 2,
                 path: vec![Arc::new(Decision {
                     variable: Variable(0),
-                    value: 42,
+                    value: 2,
                     state: None,
                 })],
                 ub: isize::MAX,
@@ -2078,7 +2265,7 @@ mod test_default_mdd {
             mdd.path_to_root,
             vec![Arc::new(Decision {
                 variable: Variable(0),
-                value: 42,
+                value: 2,
                 state: None
             })]
         );
@@ -2089,7 +2276,7 @@ mod test_default_mdd {
             mdd.path_to_root,
             vec![Arc::new(Decision {
                 variable: Variable(0),
-                value: 42,
+                value: 2,
                 state: None
             })]
         );
@@ -2100,7 +2287,7 @@ mod test_default_mdd {
             mdd.path_to_root,
             vec![Arc::new(Decision {
                 variable: Variable(0),
-                value: 42,
+                value: 2,
                 state: None
             })]
         );
@@ -2473,6 +2660,7 @@ mod test_default_mdd {
         assert!(result.is_ok());
 
         let mut cutset = vec![];
+        println!("lel is {}",mdd.lel.0);
         mdd.drain_cutset(|n| cutset.push(n));
         assert_eq!(cutset.len(), 3); // L1 was not squashed even though it was 3 wide
     }
@@ -3805,7 +3993,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
 
-        let dot = include_str!("../../../../resources/visualisation_tests/default_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/default_viz_mapped.dot");
         let config = VizConfigBuilder::default().build().unwrap();
         let s = mdd.as_graphviz(&config);
         assert_eq!(strip_format(dot), strip_format(&s));
@@ -3838,7 +4026,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
 
-        let dot = include_str!("../../../../resources/visualisation_tests/terse_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/terse_viz_mapped.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(false)
@@ -3878,7 +4066,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
 
-        let dot = include_str!("../../../../resources/visualisation_tests/deleted_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/deleted_viz_mapped.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(true)
@@ -3918,7 +4106,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
 
-        let dot = include_str!("../../../../resources/visualisation_tests/clusters_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/clusters_viz_mapped.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(true)

@@ -1,0 +1,29 @@
+digraph {
+	ranksep = 3;
+
+	node_0_0 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="root",label="'r'\nval: 0\nlocb: 16\nrub: 30\ntheta: 0"];
+	node_1_0 [shape=circle,style=filled,color=red,peripheries=4,group="0",label="'a'\nval: 10\nlocb: 6\nrub: 20\ntheta: 10"];
+	node_0_0 -> node_1_0 [penwidth=3,label="(x0 = 10)\ncost = 10"];
+	node_1_1 [shape=circle,style=filled,color=red,peripheries=4,group="0",label="'b'\nval: 7\nlocb: 7\nrub: 20\ntheta: 7"];
+	node_0_0 -> node_1_1 [penwidth=3,label="(x0 = 7)\ncost = 7"];
+	node_2_2 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="1",label="'e'\nval: 13\nlocb: 0\nrub: 10\ntheta: 13"];
+	node_1_1 -> node_2_2 [penwidth=3,label="(x1 = 6)\ncost = 6"];
+	node_2_3 [shape=circle,style=filled,color="#99ccff",peripheries=1,group="1",label="'f'\nval: 12\nlocb: 2\nrub: 10\ntheta: 12"];
+	node_1_1 -> node_2_3 [penwidth=3,label="(x1 = 5)\ncost = 5"];
+	node_2_4 [shape=square,style=filled,color=yellow,peripheries=1,group="1",label="'M'\nval: 12\nlocb: 4\nrub: 10\ntheta: +inf"];
+	node_1_1 -> node_2_4 [penwidth=1,label="(x1 = 3)\ncost = 3"];
+	node_1_0 -> node_2_4 [penwidth=3,label="(x1 = 2)\ncost = 2"];
+	node_3_0 [shape=circle,style=filled,color=red,peripheries=4,group="2",label="'h'\nval: 13\nlocb: 0\nrub: 0\ntheta: 13"];
+	node_2_3 -> node_3_0 [penwidth=3,label="(x2 = 1)\ncost = 1"];
+	node_2_2 -> node_3_0 [penwidth=1,label="(x2 = 0)\ncost = 0"];
+	node_3_1 [shape=circle,style=filled,color=red,peripheries=4,group="2",label="'i'\nval: 14\nlocb: 0\nrub: 0\ntheta: 14"];
+	node_2_3 -> node_3_1 [penwidth=3,label="(x2 = 2)\ncost = 2"];
+	node_3_2 [shape=square,style=filled,color=yellow,peripheries=1,group="2",label="'g'\nval: 16\nlocb: 0\nrub: 0\ntheta: +inf"];
+	node_2_4 -> node_3_2 [penwidth=3,label="(x2 = 4)\ncost = 4"];
+	node_4_0 [shape=square,style=filled,color=yellow,peripheries=1,group="0",label="'t'\nval: 16\nlocb: 0\nrub: +inf\ntheta: +inf"];
+	node_3_1 -> node_4_0 [penwidth=1,label="(x0 = 0)\ncost = 0"];
+	node_3_2 -> node_4_0 [penwidth=3,label="(x0 = 0)\ncost = 0"];
+	node_3_0 -> node_4_0 [penwidth=1,label="(x0 = 0)\ncost = 0"];
+	terminal [shape="circle", label="", style="filled", color="black", group="terminal"];
+	node_4_0 -> terminal [penwidth=3];
+}

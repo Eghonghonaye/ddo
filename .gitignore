@@ -7,3 +7,5 @@
 launch.json
 /py_ddo/.env
 *.profraw
+experiments/*
+knapsack_subset/*

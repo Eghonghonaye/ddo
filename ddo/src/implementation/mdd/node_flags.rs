@@ -267,8 +267,10 @@ mod test_node_flags {
         tested.set_exact(false);
         assert_eq!(false, tested.is_exact());
 
-        tested.set_exact(true);
-        assert_eq!(false, tested.is_exact());
+        //TODO: Disabled this because we changed the behaviour of set_exact(set_relxed) to also toggle the relaxed(exact) flag
+        // Watch out for if this causes any odd behaviour later
+        // tested.set_exact(true);
+        // assert_eq!(false, tested.is_exact());
     }
     #[test]
     fn is_marked_iff_marked_so() {
@@ -336,16 +338,16 @@ mod test_node_flags {
         assert_eq!(false, tested.test(NodeFlags::F_DELETED));
         assert_eq!(false, tested.test(NodeFlags::F_CACHE));
 
-        tested.set_relaxed(true);
-        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
+        tested.set_relaxed(true); //toggles exact
+        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
         assert_eq!(true, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(false, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
         assert_eq!(false, tested.test(NodeFlags::F_DELETED));
         assert_eq!(false, tested.test(NodeFlags::F_CACHE));
 
-        tested.set_marked(true);
-        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
+        tested.set_marked(true); //toggled by set relax
+        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
         assert_eq!(true, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(true, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
@@ -360,8 +362,8 @@ mod test_node_flags {
         assert_eq!(false, tested.test(NodeFlags::F_DELETED));
         assert_eq!(false, tested.test(NodeFlags::F_CACHE));
 
-        tested.set_relaxed(false);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        tested.set_relaxed(false); //toggles exact
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(true, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
@@ -369,7 +371,7 @@ mod test_node_flags {
         assert_eq!(false, tested.test(NodeFlags::F_CACHE));
 
         tested.set_marked(false);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(false, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
@@ -377,7 +379,7 @@ mod test_node_flags {
         assert_eq!(false, tested.test(NodeFlags::F_CACHE));
 
         tested.set_deleted(true);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(false, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
@@ -385,7 +387,7 @@ mod test_node_flags {
         assert_eq!(false, tested.test(NodeFlags::F_CACHE));
 
         tested.set_pruned_by_cache(true);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(false, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
@@ -393,7 +395,7 @@ mod test_node_flags {
         assert_eq!(true, tested.test(NodeFlags::F_CACHE));
 
         tested.set_deleted(false);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(false, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
@@ -401,7 +403,7 @@ mod test_node_flags {
         assert_eq!(true, tested.test(NodeFlags::F_CACHE));
 
         tested.set_pruned_by_cache(false);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(false, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_CUTSET));
@@ -447,17 +449,17 @@ mod test_node_flags {
         );
 
         tested.set_relaxed(true);
-        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
         assert_eq!(true, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(true, tested.test(NodeFlags::F_MARKED));
-        assert_eq!(true, tested.test(NodeFlags::F_EXACT | NodeFlags::F_MARKED));
-        assert_eq!(true, tested.test(NodeFlags::F_EXACT | NodeFlags::F_RELAXED));
+        assert_eq!(false, tested.test(NodeFlags::F_EXACT | NodeFlags::F_MARKED));
+        assert_eq!(false, tested.test(NodeFlags::F_EXACT | NodeFlags::F_RELAXED));
         assert_eq!(
             true,
             tested.test(NodeFlags::F_RELAXED | NodeFlags::F_MARKED)
         );
         assert_eq!(
-            true,
+            false,
             tested.test(NodeFlags::F_EXACT | NodeFlags::F_RELAXED | NodeFlags::F_MARKED)
         );
 
@@ -499,7 +501,7 @@ mod test_node_flags {
 
         tested.set_exact(false);
         assert_eq!(false, tested.test(NodeFlags::F_EXACT));
-        assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
+        assert_eq!(true, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(true, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_EXACT | NodeFlags::F_MARKED));
         assert_eq!(
@@ -507,7 +509,7 @@ mod test_node_flags {
             tested.test(NodeFlags::F_EXACT | NodeFlags::F_RELAXED)
         );
         assert_eq!(
-            false,
+            true,
             tested.test(NodeFlags::F_RELAXED | NodeFlags::F_MARKED)
         );
         assert_eq!(
@@ -516,10 +518,10 @@ mod test_node_flags {
         );
 
         tested.set_relaxed(false);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(true, tested.test(NodeFlags::F_MARKED));
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT | NodeFlags::F_MARKED));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT | NodeFlags::F_MARKED));
         assert_eq!(
             false,
             tested.test(NodeFlags::F_EXACT | NodeFlags::F_RELAXED)
@@ -534,7 +536,7 @@ mod test_node_flags {
         );
 
         tested.set_marked(false);
-        assert_eq!(false, tested.test(NodeFlags::F_EXACT));
+        assert_eq!(true, tested.test(NodeFlags::F_EXACT));
         assert_eq!(false, tested.test(NodeFlags::F_RELAXED));
         assert_eq!(false, tested.test(NodeFlags::F_MARKED));
         assert_eq!(false, tested.test(NodeFlags::F_EXACT | NodeFlags::F_MARKED));

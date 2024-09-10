@@ -27,7 +27,7 @@
 //! The cost of a transition is the distance between the new mark and the previous last one.
 //! The cost of a solution is thus the position of the last mark.
 //!
-use std::{time::Duration, Instant};
+use std::{time::Duration, time::Instant};
 use std::ops::Range;
 use smallbitset::Set256;
 

@@ -2328,7 +2328,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDD::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/default_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/default_viz_clean.dot");
         let config = VizConfigBuilder::default().build().unwrap();            
         let s = mdd.as_graphviz(&config); 
         //println!("{}", s)
@@ -2362,7 +2362,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDD::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/terse_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/terse_viz_clean.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(false)
@@ -2401,7 +2401,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDD::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/deleted_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/deleted_viz_clean.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(true)
@@ -2440,7 +2440,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDD::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/clusters_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/clusters_viz_clean.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(true)

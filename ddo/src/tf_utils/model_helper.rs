@@ -11,35 +11,45 @@ pub struct Model{
     output_name: String,
 }
 
-pub trait ModelHelper{
+impl Model {
+    pub fn new<P: AsRef<Path>>(model_path:P,input_name:String,output_name:String) -> Self {
+        // let mut graph = Graph::new();
+        // let mut bundle = SavedModelBundle::new();
+        let (graph,bundle) = Self::load_model(model_path);
 
-    type State;
-    type DecisionState;
-    // type OutputTensor where Self::OutputTensor: Copy;
-    type OutputTensor;
+        Model{
+            graph, 
+            bundle, 
+            input_name,
+            output_name}
+    }
 
     //TODO who creates the initial model
-    fn load_model<P: AsRef<Path>>(model_path: P, model: &mut Model) {
+    pub fn load_model<P: AsRef<Path>>(model_path: P) -> (Graph,SavedModelBundle) {
         // Initialize an empty graph
         let mut graph = Graph::new();
         // Load saved model bundle (session state + meta_graph data)
         let bundle = 
             SavedModelBundle::load(&SessionOptions::new(), &["serve"], &mut graph, model_path)
             .expect("Can't load saved model");
-
-        model.graph = graph;
-        model.bundle = bundle;
+        (graph,bundle)
     }
+}
+pub trait ModelHelper{
 
-    fn state_to_input_tensor(&self,state: Self::State) -> Tensor<f32>;
+    type State;
+    type DecisionState;
+    // type OutputTensor where Self::OutputTensor: Copy;
+    // type OutputTensor;
 
-    fn perform_inference(&self, model:Model, state: Self::State) -> <Self as ModelHelper>::OutputTensor
-    where <Self as ModelHelper>::OutputTensor: TensorType + Copy {
-        let signature_input_parameter_name = model.input_name;
-        let signature_output_parameter_name = model.output_name;
+    fn state_to_input_tensor(&self,state: &Self::State) -> Result<Tensor<f32>, tensorflow::Status>;
+
+    fn perform_inference(&self, model:&Model, state: &Self::State) -> Tensor<f32> {
+        let signature_input_parameter_name = &model.input_name;
+        let signature_output_parameter_name = &model.output_name;
 
         // initialise inout tensor
-        let tensor: Tensor<f32> = self.state_to_input_tensor(state);
+        let tensor: Tensor<f32> = self.state_to_input_tensor(state).unwrap();
 
         // Get the session from the loaded model bundle
         let session = &model.bundle.session;
@@ -75,11 +85,10 @@ pub trait ModelHelper{
             .expect("Error occurred during calculations");
 
         // Fetch outputs after graph execution
-        let out_res: Self::OutputTensor = args.fetch(out).unwrap()[0];
+        let out_res = args.fetch(out).unwrap();
 
         return out_res;
     }
 
-    fn extract_decision_from_model_output(&self, output: Self::OutputTensor) -> Decision<Self::DecisionState>
-    where <Self as ModelHelper>::OutputTensor: Copy;
+    fn extract_decision_from_model_output(&self, state: &Self::State, output: Tensor<f32>) -> Option<Decision<Self::DecisionState>>;
 }

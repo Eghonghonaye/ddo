@@ -96,15 +96,14 @@ pub trait Problem {
         false
     }
 
-    /// Given a state and all its incoming decisions, this method should split/ partition them
+    /// Given a state and all its incoming decisions, this method should split/ partition them into at most the specified number of partiitons
     /// Decisions are passed as a tuple of an id and the decision
     /// We expect a return of vectors of the id only forming each clusters 
     /// This implements the splitting heuristic in an incementally refined decision diagram
     /// 
     /// This is also an optional trait as a default heuristic is implemented
     /// TODO implement default heuristic
-    fn split_state_edges(&self, _state:&Self::State, _decisions:&mut dyn Iterator<Item = (usize,isize,&Decision<Self::DecisionState>)>) -> Vec<Vec<usize>>
-    {
+    fn split_edges(&self, _decisions:&mut dyn Iterator<Item = (usize,isize,&Decision<Self::DecisionState>)>,_how_many:usize) -> Vec<Vec<usize>>{
         vec![]
     }
 

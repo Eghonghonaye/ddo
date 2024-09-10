@@ -5,7 +5,7 @@
 //! ``Decision Diagram-Based Branch-and-Bound with Caching
 //! for Dominance and Suboptimality Detection''.
 
-use std::{sync::Arc, hash::Hash, collections::hash_map::Entry, fmt::Debug};
+use std::{collections::hash_map::Entry, fmt::Debug, fs, hash::Hash, sync::Arc};
 
 use derive_builder::Builder;
 use fxhash::FxHashMap;
@@ -353,8 +353,8 @@ macro_rules! detach_edge_from {
 
 impl<T, X, const CUTSET_TYPE: CutsetType> Default for Mdd<T, X,{CUTSET_TYPE}>
 where
-    T: Eq + PartialEq + Hash + Clone,
-    X: Eq + PartialEq + Hash + Clone,
+    T: Eq + PartialEq + Hash + Clone + Debug,
+    X: Eq + PartialEq + Hash + Clone + Debug,
 {
     fn default() -> Self {
         Self::new()
@@ -363,8 +363,8 @@ where
 
 impl<T, X, const CUTSET_TYPE: CutsetType> DecisionDiagram for Mdd<T, X, {CUTSET_TYPE}>
 where
-    T: Eq + PartialEq + Hash + Clone,
-    X: Eq + PartialEq + Hash + Clone,
+    T: Eq + PartialEq + Hash + Clone + Debug,
+    X: Eq + PartialEq + Hash + Clone + Debug,
 {
     type State = T;
     type DecisionState = X;
@@ -406,8 +406,8 @@ where
 
 impl<T, X, const CUTSET_TYPE: CutsetType> Mdd<T, X, {CUTSET_TYPE}>
 where
-    T: Eq + PartialEq + Hash + Clone,
-    X: Eq + PartialEq + Hash + Clone,
+    T: Eq + PartialEq + Hash + Clone + Debug,
+    X: Eq + PartialEq + Hash + Clone + Debug,
 {
     pub fn new() -> Self {
         Self {
@@ -518,13 +518,28 @@ where
                 self.nodes[node_id.0].rub = rub;
                 let ub = rub.saturating_add(self.nodes[node_id.0].value_top);
                 if ub > input.best_lb {
-                    input.problem.for_each_in_domain(var, state.as_ref(), &mut |decision| {
-                        self._branch_on(*node_id, decision, input.problem)
+                    let is_must_keep_match = |(var,value)| {
+                        let must_keep_decision:Option<Decision<X>> = input.problem.perform_ml_decision_inference(&state);
+                        match must_keep_decision {
+                            Some(dec) => return (dec.variable,dec.value) == (var,value),
+                            None => return false};
+                    };
+
+                    input.problem.for_each_in_domain(var, state.as_ref(), &mut |decision: Arc<Decision<X>>| {
+                        let decision_tuple = (decision.variable,decision.value);
+                        self._branch_on(*node_id, decision, input.problem,is_must_keep_match(decision_tuple))
                     })
                 }
             }
 
             self.curr_depth += 1;
+
+            let mut config = VizConfigBuilder::default().build().unwrap();
+            config.show_deleted = true;
+            config.group_merged = true;
+            print!("compilng\n");
+            let s = self.as_graphviz(&config);
+            fs::write("incremental.dot", s).expect("Unable to write file");
         }
 
         self._finalize(input);
@@ -1012,6 +1027,7 @@ where
         from_id: NodeId,
         decision: Arc<Decision<X>>, //TODO why do I only take the type by refernece? matched definitions of functions transition and transiton_cost in dp.rs but why
         problem: &dyn Problem<State = T, DecisionState = X>,
+        must_keep: bool 
     ) {
         let state = get!(node from_id, self).state.as_ref();
         let next_state = Arc::new(problem.transition(state, decision.as_ref()));
@@ -1023,6 +1039,7 @@ where
                 let node_id = NodeId(self.nodes.len());
                 let mut flags = NodeFlags::new_exact();
                 flags.set_exact(parent.flags.is_exact());
+                flags.set_must_keep(must_keep);
 
                 self.nodes.push(Node {
                     state: next_state,
@@ -1111,10 +1128,13 @@ where
 
     fn _restrict(&mut self, input: &CompilationInput<T,X>, curr_l: &mut Vec<NodeId>) {
         curr_l.sort_unstable_by(|a, b| {
+            get!(node a, self).flags.is_must_keep().cmp(&get!(node b, self).flags.is_must_keep()) // make sure any must_keep nodes are higher in the ranking
+            .then_with(|| {
             get!(node a, self).value_top
                 .cmp(&get!(node b, self).value_top)
-                .then_with(|| input.ranking.compare(get!(node a, self).state.as_ref(), get!(node b, self).state.as_ref()))
-                .reverse()
+                .then_with(|| input.ranking.compare(get!(node a, self).state.as_ref(), get!(node b, self).state.as_ref())) 
+            })
+            .reverse()
         }); // reverse because greater means more likely to be kept
 
         for drop_id in curr_l.iter().skip(input.max_width).copied() {
@@ -1315,7 +1335,8 @@ where
         let mut after_split:Vec<(Arc<T>,Vec<usize>)> = vec![]; // this usize is actually an edge id
         // let node_to_split = get!(mut node node_to_split_id, self);
         let split_state = get!(node node_to_split_id, self).state.as_ref();
-        let split_state_edges = input.problem.split_state_edges(split_state,inbound_edges);
+        // TODO: make a macro to specify explicitly this deafult behaviour?
+        let split_state_edges = input.problem.split_edges(inbound_edges,2); // by default tries to split into 2
 
         // create n_split new nodes and redirect edges
         for cluster in &split_state_edges{
@@ -1557,7 +1578,7 @@ where T: Debug + Eq + PartialEq + Hash + Clone,
 
 #[cfg(test)]
 mod test_default_mdd {
-    use std::cmp::Ordering;
+    use std::{cmp::Ordering, fs};
     use std::ops::Range;
     use std::sync::Arc;
 
@@ -1939,6 +1960,7 @@ mod test_default_mdd {
         assert!(result.is_ok());
         
         let mut cutset = vec![];
+        println!("lel is {:?}",mdd.lel);
         mdd.drain_cutset(|n| cutset.push(n));
         assert_eq!(cutset.len(), 3); // L1 was not squashed even though it was 3 wide
     }
@@ -2924,8 +2946,8 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/default_viz.dot");
-        let config = VizConfigBuilder::default().build().unwrap();            
+        let dot = include_str!("../../../../resources/visualisation_tests/default_viz_clean.dot");
+        let config = VizConfigBuilder::default().build().unwrap();   
         let s = mdd.as_graphviz(&config); 
         //println!("{}", s)
         assert_eq!(strip_format(dot), strip_format(&s));
@@ -2958,7 +2980,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/terse_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/terse_viz_clean.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(false)
@@ -2997,7 +3019,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/deleted_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/deleted_viz_clean.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(true)
@@ -3036,7 +3058,7 @@ mod test_default_mdd {
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
         
-        let dot = include_str!("../../../../resources/visualisation_tests/clusters_viz.dot");
+        let dot = include_str!("../../../../resources/visualisation_tests/clusters_viz_clean.dot");
         let config = VizConfigBuilder::default()
             .show_value(false)
             .show_deleted(true)
