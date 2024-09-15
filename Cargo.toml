@@ -13,4 +13,3 @@ lto              = 'fat'
 panic            = 'abort'
 opt-level        = 3
 incremental      = true
-
