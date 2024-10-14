@@ -6,7 +6,7 @@
 /examples/target
 launch.json
 /py_ddo/.env
-experiments/*
+# experiments/*
 resources/knapsack_subset/*
 venv/*
 perf.*

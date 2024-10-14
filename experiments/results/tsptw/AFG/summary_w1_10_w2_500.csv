@@ -1,0 +1,10 @@
+Name,Lower,Upper,Duration,Aborted,Cluster,Solver,Width,Gap,Objective
+rbg016b,             +inf,             922.00,             0.061,            false,             false,            IR,            500,            1.000,            0.00
+rbg016a,             +inf,             1694.00,             0.031,            false,             false,            IR,            500,            1.000,            0.00
+rbg010a,             +inf,             1518.00,             0.011,            false,             false,            IR,            500,            1.000,            0.00
+rbg016b,             +inf,             922.00,             31.483,            false,             true,            IR,            500,            1.000,            0.00
+rbg016a,             +inf,             666.00,             5.766,            false,             true,            IR,            500,            1.000,            0.00
+rbg010a,             +inf,             1076.00,             0.416,            false,             true,            IR,            500,            1.000,            0.00
+rbg016b,             2094.00,             2094.00,             0.006,            false,             false,            TD,            500,            0.000,            2094.00
+rbg016a,             2596.00,             2596.00,             0.001,            false,             false,            TD,            500,            0.000,            2596.00
+rbg010a,             3840.00,             3840.00,             0.000,            false,             false,            TD,            500,            0.000,            3840.00

@@ -112,11 +112,12 @@ impl ModelHelper for Knapsack{
 pub struct StateClusterHelper {
     pub id: usize,
     pub state: KnapsackState,
+    pub cost: isize
 }
 
 impl StateClusterHelper {
-    fn new(id: usize, state: KnapsackState) -> Self {
-        StateClusterHelper { id, state }
+    fn new(id: usize, cost: isize, state: KnapsackState) -> Self {
+        StateClusterHelper { id, cost, state }
     }
 
     // fn from_capacity(depth: usize, capacity: usize) -> Self {
@@ -133,7 +134,8 @@ impl clustering::Elem for StateClusterHelper {
     }
 
     fn at(&self, _i: usize) -> f64 {
-        self.state.capacity as f64
+        // self.state.capacity as f64
+        self.cost as f64
     }
 }
 
@@ -208,7 +210,7 @@ impl Problem for Knapsack {
         if self.clustering {
             // println!("splitting {:?}", decisions.clone().map(|(a,b,_c)| (a,b)).collect::<Vec<_>>());
             let all_decision_state_capacities = decisions
-                .map(|(id, _cost, _d,s)| StateClusterHelper::new(id, *s))
+                .map(|(id, cost, _d,s)| StateClusterHelper::new(id, cost,*s))
                 .collect::<Vec<_>>();
             let nclusters = usize::min(
                 how_many,
