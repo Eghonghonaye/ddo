@@ -1,1 +1,1 @@
-{"Aborted":"false","Cluster":"true","Duration":"0.029","Gap":"0.966","Lower Bnd":"35","Objective":"35","Solution":"[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]","Solver":"IR","Upper Bnd":"1024","Width":"50"}
+{"Aborted":"false","Cluster":"true","Duration":"0.005","Gap":"0.966","Lower Bnd":"35","Objective":"35","Solution":"[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]","Solver":"IR","Upper Bnd":"1024","Width":"50"}

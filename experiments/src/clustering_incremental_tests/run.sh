@@ -5,26 +5,27 @@ IFS=$(echo -en "\n\b")
 
 function knapsack {
 	F="/home/eaeigbe/Documents/PhD/ddo/resources/knapsack_subset/*"
-	for t_width in {50,100,500}; do
-	# # for t_width in {50}; do
-	# # t_width=500
-	# 	# rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_1_w1_10_w2_$t_width
-	# 	rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_0_w1_10_w2_$t_width
-	# 	# rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_w_$t_width
-	# 	# rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_B_n_B
+	# for t_width in {20,30,40,50,70}; do
+	for t_width in {100,200,500}; do
+	# for t_width in {50}; do
+	# t_width=500
+		rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_1_w1_10_w2_$t_width
+		rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_0_w1_10_w2_$t_width
+		rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_w_$t_width
+		rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_B_n_B
 
-	# 	# mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_1_w1_10_w2_$t_width
-	# 	mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_0_w1_10_w2_$t_width
-	# 	# mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_w_$t_width
-	# 	# mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_B_n_B
+		mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_1_w1_10_w2_$t_width
+		mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_0_w1_10_w2_$t_width
+		mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_w_$t_width
+		mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_B_n_B
 
-	# 	for f in $F; do
-	# 		echo -e "\n"$f
-	# 		# ./target/release/examples/knapsack $f -s IR -w $t_width -c -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_1_w1_10_w2_$t_width/"
-	# 		./target/release/examples/knapsack $f -s IR -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_0_w1_10_w2_$t_width/"
-	# 		# ./target/release/examples/knapsack $f -s TD -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_w_$t_width/"
-	# 		# ./target/release/examples/knapsack $f -j -s BB -d 30 -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_B_n_B/"
-	# 	done
+		for f in $F; do
+			echo -e "\n"$f
+			./target/release/examples/knapsack $f -s IR -w $t_width -c -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_1_w1_10_w2_$t_width/"
+			./target/release/examples/knapsack $f -s IR -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/c_0_w1_10_w2_$t_width/"
+			./target/release/examples/knapsack $f -s TD -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_w_$t_width/"
+			./target/release/examples/knapsack $f -j -s BB -d 30 -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/TD_B_n_B/"
+		done
 
 		rm /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/summary_w1_10_w2_$t_width.csv
 		echo Name,Lower,Upper,Duration,Aborted,Cluster,Solver,Width,Gap,Objective > /home/eaeigbe/Documents/PhD/ddo/experiments/results/knapsack/summary_w1_10_w2_$t_width.csv
