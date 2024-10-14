@@ -422,18 +422,18 @@ where
 
         self._finalize(input);
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("after compile \n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-        // // ***********************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("after compile \n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // ***********************************************
+        // */
 
         Ok(Completion { 
             is_exact: self.is_exact(), 
@@ -467,18 +467,18 @@ where
 
         self._finalize(input);
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("after refine \n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-        // // ***********************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("after refine \n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // ***********************************************
+        // */
 
         Ok(Completion {
             is_exact: self.is_exact(),
@@ -724,7 +724,9 @@ where
             let final_layer_id = LayerId(self.nodes.len() - 1);
             // self.final_l = (0..get!(layer final_layer_id, self).len()).map(|id| NodeId(final_layer_id.0, id)).collect::<Vec<_>>();
             self.final_l = (0..get!(layer final_layer_id, self).len())
-                            .filter_map(|id| (!get!(node NodeId(final_layer_id.0, id), self).flags.is_deleted())
+                            .filter_map(|id| (!get!(node NodeId(final_layer_id.0, id), self).flags.is_deleted() &&
+                                                        !get!(node NodeId(final_layer_id.0, id), self).flags.is_pruned_by_dominance() && 
+                                                        !get!(node NodeId(final_layer_id.0, id), self).flags.is_pruned_by_cache())
                             .then_some(NodeId(final_layer_id.0, id))).collect::<Vec<_>>();
             }
         }
@@ -839,6 +841,7 @@ where
                 let DominanceCheckResult { dominated, threshold } = input.dominance.is_dominated_or_insert(node.state.clone(), node.depth, node.value_top);
                 if dominated {
                     node.flags.set_pruned_by_dominance(true);
+                    node.outgoing = vec![];
                     node.theta = threshold;
                     false
                 } else {
@@ -957,6 +960,7 @@ where
             if inbound.is_empty(){
                 // set node as deleted and remove from layer
                 get!(mut node node_id, self).flags.set_deleted(true);
+                get!(mut node node_id, self).outgoing = vec![];
             }
             else{
                 get!(mut node node_id, self).incoming = inbound;
@@ -1197,18 +1201,18 @@ where
         curr_layer_id: usize,
     ) -> bool {
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("before split layer {curr_layer_id}\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file"); 
-        // // *************************************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("before split layer {curr_layer_id}\n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file"); 
+        // *************************************************************
+        // */
 
         // order vec node by ranking
 
@@ -1260,18 +1264,18 @@ where
             .set_deleted(true);
         }
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("after split layer {curr_layer_id}\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-        // // *************************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("after split layer {curr_layer_id}\n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // *************************************************
+        // */
 
         fully_split
     }
