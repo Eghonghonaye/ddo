@@ -20,7 +20,14 @@
 //! This example show how to implement a solver for the knapsack problem using ddo.
 //! It is a fairly simple example but  features most of the aspects you will want to
 //! copy when implementing your own solver.
-use std::{fs::{self, File}, io::{BufRead, BufReader}, num::ParseIntError, path::Path, sync::Arc, time::{Duration, Instant}};
+use std::{
+    fs::{self, File},
+    io::{BufRead, BufReader},
+    num::ParseIntError,
+    path::Path,
+    sync::Arc,
+    time::{Duration, Instant},
+};
 
 use clap::Parser;
 use clustering::{kmeans, Elem};
@@ -32,7 +39,7 @@ use tensorflow::Tensor;
 #[cfg(test)]
 mod tests;
 
-/// In our DP model, we consider a state that simply consists of the remaining 
+/// In our DP model, we consider a state that simply consists of the remaining
 /// capacity in the knapsack. Additionally, we also consider the *depth* (number
 /// of assigned variables) as part of the state since it useful when it comes to
 /// determine the next variable to branch on.
@@ -43,13 +50,13 @@ pub struct KnapsackState {
     depth: usize,
     /// the remaining capacity in the knapsack. That is the maximum load the sack
     /// can bear without cracking **given what is already in the sack**.
-    capacity: usize
+    capacity: usize,
 }
 
 /// This structure represents a particular instance of the knapsack problem.
 /// This is the structure that will implement the knapsack model.
-/// 
-/// The problem definition is quite easy to understand: there is a knapsack having 
+///
+/// The problem definition is quite easy to understand: there is a knapsack having
 /// a maximum (weight) capacity, and a set of items to chose from. Each of these
 /// items having a weight and a profit, the goal is to select the best subset of
 /// the items to place them in the sack so as to maximize the profit.
@@ -65,44 +72,70 @@ pub struct Knapsack {
     /// Whether we split edges by clustering,
     clustering: bool,
     // Optional ml model to support decision making
-    ml_model: Option<TfModel>
+    ml_model: Option<TfModel>,
 }
 
 impl Knapsack {
-    pub fn new(capacity: usize, profit: Vec<isize>, weight: Vec<usize>, clustering: bool, ml_model:Option<TfModel>) -> Self {
+    pub fn new(
+        capacity: usize,
+        profit: Vec<isize>,
+        weight: Vec<usize>,
+        clustering: bool,
+        ml_model: Option<TfModel>,
+    ) -> Self {
         let mut order = (0..profit.len()).collect::<Vec<usize>>();
-        order.sort_unstable_by_key(|i| OrderedFloat(- profit[*i] as f64 / weight[*i] as f64));
+        order.sort_unstable_by_key(|i| OrderedFloat(-profit[*i] as f64 / weight[*i] as f64));
 
-        Knapsack { capacity, profit, weight, order, clustering, ml_model }
+        Knapsack {
+            capacity,
+            profit,
+            weight,
+            order,
+            clustering,
+            ml_model,
+        }
     }
 }
 
-impl ModelHelper for Knapsack{
+impl ModelHelper for Knapsack {
     type State = KnapsackState;
     //TODO - Calculate selection status properly
-    fn state_to_input_tensor(&self,state: &Self::State) -> Result<Tensor<f32>, tensorflow::Status>{
+    fn state_to_input_tensor(
+        &self,
+        state: &Self::State,
+    ) -> Result<Tensor<f32>, tensorflow::Status> {
         let values = self.profit.clone();
         let weights = self.weight.clone();
         let capacity = [state.capacity as isize];
-        let selection_status = [1,1,1,1,1,0,0,0,0,0];
-        let input: Vec<f32> = values.iter().map(|x| *x as f32).
-                                chain(weights.iter().map(|x| *x as f32)).
-                                chain(capacity.iter().map(|x| *x as f32)).
-                                chain(selection_status.iter().map(|x| *x as f32)).
-                                collect();
+        let selection_status = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0];
+        let input: Vec<f32> = values
+            .iter()
+            .map(|x| *x as f32)
+            .chain(weights.iter().map(|x| *x as f32))
+            .chain(capacity.iter().map(|x| *x as f32))
+            .chain(selection_status.iter().map(|x| *x as f32))
+            .collect();
 
-        let tensor = Tensor::new(&[1,(3*values.len()+1) as u64]).with_values(&input)?;
+        let tensor = Tensor::new(&[1, (3 * values.len() + 1) as u64]).with_values(&input)?;
         println!("Output tensor is {:?}", tensor);
         Ok(tensor)
     }
 
-    fn extract_decision_from_model_output(&self, state: &Self::State, output: Tensor<f32>) -> Option<Decision>{
+    fn extract_decision_from_model_output(
+        &self,
+        state: &Self::State,
+        output: Tensor<f32>,
+    ) -> Option<Decision> {
         //TODO - Am I interpreting model output correctly?
-        if let Some(variable) = self.next_variable(state.depth, &mut vec![].iter()){
+        if let Some(variable) = self.next_variable(state.depth, &mut vec![].iter()) {
             return Some(Decision {
                 variable,
-                value: if output[variable.0] > 0.5{TAKE_IT} else {LEAVE_IT_OUT},
-                })
+                value: if output[variable.0] > 0.5 {
+                    TAKE_IT
+                } else {
+                    LEAVE_IT_OUT
+                },
+            });
         }
         None
     }
@@ -112,7 +145,7 @@ impl ModelHelper for Knapsack{
 pub struct StateClusterHelper {
     pub id: usize,
     pub state: KnapsackState,
-    pub cost: isize
+    pub cost: isize,
 }
 
 impl StateClusterHelper {
@@ -151,7 +184,7 @@ const LEAVE_IT_OUT: isize = 0;
 /// This is how you implement the labeled transition system (LTS) semantics of
 /// a simple dynamic program solving the knapsack problem. The definition of
 /// each of the methods should be pretty clear and easy to grasp. Should you
-/// want more details on the role of each of these methods, then you are 
+/// want more details on the role of each of these methods, then you are
 /// encouraged to go checking the documentation of the `Problem` trait.
 impl Problem for Knapsack {
     type State = KnapsackState;
@@ -159,24 +192,37 @@ impl Problem for Knapsack {
     fn nb_variables(&self) -> usize {
         self.profit.len()
     }
-    fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback)
-    {
+    fn for_each_in_domain(
+        &self,
+        variable: Variable,
+        state: &Self::State,
+        f: &mut dyn DecisionCallback,
+    ) {
         if state.capacity >= self.weight[variable.id()] {
-            f.apply(Decision { variable, value: TAKE_IT });
+            f.apply(Decision {
+                variable,
+                value: TAKE_IT,
+            });
         }
-        f.apply(Decision { variable, value: LEAVE_IT_OUT });
+        f.apply(Decision {
+            variable,
+            value: LEAVE_IT_OUT,
+        });
     }
     fn initial_state(&self) -> Self::State {
-        KnapsackState{ depth: 0, capacity: self.capacity }
+        KnapsackState {
+            depth: 0,
+            capacity: self.capacity,
+        }
     }
     fn initial_value(&self) -> isize {
         0
     }
     fn transition(&self, state: &Self::State, dec: Decision) -> Self::State {
         let mut ret = *state;
-        ret.depth  += 1;
-        if dec.value == TAKE_IT { 
-            ret.capacity -= self.weight[dec.variable.id()] 
+        ret.depth += 1;
+        if dec.value == TAKE_IT {
+            ret.capacity -= self.weight[dec.variable.id()]
         }
         ret
     }
@@ -184,7 +230,11 @@ impl Problem for Knapsack {
         self.profit[dec.variable.id()] * dec.value
     }
 
-    fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
+    fn next_variable(
+        &self,
+        depth: usize,
+        _: &mut dyn Iterator<Item = &Self::State>,
+    ) -> Option<Variable> {
         let n = self.nb_variables();
         if depth < n {
             Some(Variable(self.order[depth]))
@@ -194,12 +244,11 @@ impl Problem for Knapsack {
     }
 
     fn filter(&self, state: &Self::State, decision: &Decision) -> bool {
-        if decision.value == TAKE_IT{
+        if decision.value == TAKE_IT {
             self.weight[decision.variable.id()] > state.capacity
-        }
-        else{
+        } else {
             false //we're always allowed to leave an item
-        }  
+        }
     }
 
     fn split_edges(
@@ -223,7 +272,7 @@ impl Problem for Knapsack {
 
             while result.len() < nclusters {
                 result.sort_unstable_by(|a, b| (a.0 as isize).cmp(&(b.0 as isize)).reverse());
-                let (c, largest) = result[0].clone();
+                let (c, largest) = result.iter().find(|t| t.1.len() > 1).unwrap().clone();
                 // println!("in while with {:?} of {:?} clusters and largest {:?}", result.len(),nclusters,largest);
 
                 // remove largest from cluster
@@ -280,37 +329,41 @@ impl Problem for Knapsack {
         }
     }
 
-    fn perform_ml_decision_inference(&self, _var: Variable, state:&Self::State) -> Option<Decision>{
+    fn perform_ml_decision_inference(
+        &self,
+        _var: Variable,
+        state: &Self::State,
+    ) -> Option<Decision> {
         if let Some(model) = &self.ml_model {
-            let output = self.perform_inference(&model,state);
-            self.extract_decision_from_model_output(state,output)
-        }
-        else{
+            let output = self.perform_inference(&model, state);
+            self.extract_decision_from_model_output(state, output)
+        } else {
             None
         }
-        
     }
 }
 
-/// In addition to a dynamic programming (DP) model of the problem you want to solve, 
+/// In addition to a dynamic programming (DP) model of the problem you want to solve,
 /// the branch and bound with MDD algorithm (and thus ddo) requires that you provide
 /// an additional relaxation allowing to control the maximum amount of space used by
-/// the decision diagrams that are compiled. 
-/// 
-/// That relaxation requires two operations: one to merge several nodes into one 
+/// the decision diagrams that are compiled.
+///
+/// That relaxation requires two operations: one to merge several nodes into one
 /// merged node that acts as an over approximation of the other nodes. The second
-/// operation is used to possibly offset some weight that would otherwise be lost 
+/// operation is used to possibly offset some weight that would otherwise be lost
 /// to the arcs entering the newly created merged node.
-/// 
+///
 /// The role of this very simple structure is simply to provide an implementation
 /// of that relaxation.
-/// 
+///
 /// # Note:
 /// In addition to the aforementioned two operations, the KPRelax structure implements
-/// an optional `fast_upper_bound` method. Which one provides a useful bound to 
+/// an optional `fast_upper_bound` method. Which one provides a useful bound to
 /// prune some portions of the state-space as the decision diagrams are compiled.
 /// (aka rough upper bound pruning).
-pub struct KPRelax<'a>{pub pb: &'a Knapsack}
+pub struct KPRelax<'a> {
+    pub pb: &'a Knapsack,
+}
 impl Relaxation for KPRelax<'_> {
     type State = KnapsackState;
 
@@ -318,7 +371,14 @@ impl Relaxation for KPRelax<'_> {
         states.max_by_key(|node| node.capacity).copied().unwrap()
     }
 
-    fn relax(&self, _source: &Self::State, _dest: &Self::State, _merged: &Self::State, _decision: Decision, cost: isize) -> isize {
+    fn relax(
+        &self,
+        _source: &Self::State,
+        _dest: &Self::State,
+        _merged: &Self::State,
+        _decision: Decision,
+        cost: isize,
+    ) -> isize {
         cost
     }
 
@@ -420,17 +480,17 @@ struct Args {
     #[clap(short, long, action)]
     json_output: bool,
     /// Path to write output file to
-    #[clap(short='x', long, default_value = "")]
+    #[clap(short = 'x', long, default_value = "")]
     outfolder: String,
     /// Solver to use
-    #[clap(short='s', long, default_value = "IR")]
+    #[clap(short = 's', long, default_value = "IR")]
     solver: String,
 }
 
 /// This enumeration simply groups the kind of errors that might occur when parsing a
 /// knapsack instance from file. There can be io errors (file unavailable ?), format error
-/// (e.g. the file is not a knapsack instance but contains the text of your next paper), 
-/// or parse int errors (which are actually a variant of the format error since it tells 
+/// (e.g. the file is not a knapsack instance but contains the text of your next paper),
+/// or parse int errors (which are actually a variant of the format error since it tells
 /// you that the parser expected an integer number but got ... something else).
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
@@ -447,11 +507,11 @@ pub enum Error {
 
 /// This function is used to read a knapsack instance from file. It returns either a
 /// knapsack instance if everything went on well or an error describing the problem.
-fn read_instance(args:&Args) -> Result<Knapsack, Error> {
+fn read_instance(args: &Args) -> Result<Knapsack, Error> {
     let f = File::open(&args.fname)?;
     let f = BufReader::new(f);
     let clustering = args.cluster;
-    
+
     let mut is_first = true;
     let mut n = 0;
     let mut count = 0;
@@ -479,13 +539,27 @@ fn read_instance(args:&Args) -> Result<Knapsack, Error> {
             count += 1;
         }
     }
-    let model: Option<TfModel> = if !args.model.is_empty(){Some(read_model(&args.model,"test_input".to_string(),"test_output".to_string()).unwrap())} 
-                                else {None};
+    let model: Option<TfModel> = if !args.model.is_empty() {
+        Some(
+            read_model(
+                &args.model,
+                "test_input".to_string(),
+                "test_output".to_string(),
+            )
+            .unwrap(),
+        )
+    } else {
+        None
+    };
     Ok(Knapsack::new(capa, profit, weight, clustering, model))
 }
 
-pub fn read_model<P: AsRef<Path>>(model_path: P,input: String, output:String) -> Result<TfModel, Error>{
-    Ok(TfModel::new(model_path,input,output))
+pub fn read_model<P: AsRef<Path>>(
+    model_path: P,
+    input: String,
+    output: String,
+) -> Result<TfModel, Error> {
+    Ok(TfModel::new(model_path, input, output))
 }
 /// An utility function to return an max width heuristic that can either be a fixed width
 /// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
@@ -503,14 +577,14 @@ fn max_width<T>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T> +
 fn main() {
     let args = Args::parse();
     let problem = read_instance(&args).unwrap();
-    let relaxation= KPRelax{pb: &problem};
-    let heuristic= KPRanking;
+    let relaxation = KPRelax { pb: &problem };
+    let heuristic = KPRanking;
     let width = max_width(problem.nb_variables(), args.width);
     let dominance = SimpleDominanceChecker::new(KPDominance, problem.nb_variables());
-    let cutoff = TimeBudget::new(Duration::from_secs(args.duration));//NoCutoff;
+    let cutoff = TimeBudget::new(Duration::from_secs(args.duration)); //NoCutoff;
     let mut fringe = SimpleFringe::new(MaxUB::new(&heuristic));
 
-    fn run_solve<T:Solver>(args:&Args, mut solver:T,) -> serde_json::Value{
+    fn run_solve<T: Solver>(args: &Args, mut solver: T) -> serde_json::Value {
         let start = Instant::now();
         let Completion {
             is_exact,
@@ -554,7 +628,7 @@ fn main() {
 
     // let start = Instant::now();
     // let Completion{ is_exact, best_value } = solver.maximize();
-    
+
     // let duration = start.elapsed();
     // let upper_bound = solver.best_upper_bound();
     // let lower_bound = solver.best_lower_bound();
@@ -583,8 +657,8 @@ fn main() {
                 &cutoff,
                 &mut fringe,
             );
-            run_solve(&args,solver)
-        },
+            run_solve(&args, solver)
+        }
         "IR" => {
             let solver = SeqIncrementalSolver::new(
                 &problem,
@@ -595,8 +669,8 @@ fn main() {
                 &cutoff,
                 &mut fringe,
             );
-            run_solve(&args,solver)
-        },
+            run_solve(&args, solver)
+        }
         "BB" => {
             let solver = SeqCachingSolverLel::new(
                 &problem,
@@ -607,17 +681,21 @@ fn main() {
                 &cutoff,
                 &mut fringe,
             );
-            run_solve(&args,solver)
-        },
-        _ => panic!("suplied unknown solver")};
-    
-    
+            run_solve(&args, solver)
+        }
+        _ => panic!("suplied unknown solver"),
+    };
+
     println!("{}", result.to_string());
-    if args.json_output{
+    if args.json_output {
         let mut outfile = args.outfolder.to_owned();
-        let instance_name = if let Some(x) = &args.fname.split("/").collect::<Vec<_>>().last() {x} else {"_"};
+        let instance_name = if let Some(x) = &args.fname.split("/").collect::<Vec<_>>().last() {
+            x
+        } else {
+            "_"
+        };
         outfile.push_str(&instance_name);
         outfile.push_str(".json");
-        fs::write(outfile,result.to_string()).expect("unable to write json");
+        fs::write(outfile, result.to_string()).expect("unable to write json");
     }
 }
