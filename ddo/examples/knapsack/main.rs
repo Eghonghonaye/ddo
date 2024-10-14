@@ -263,15 +263,15 @@ impl Problem for Knapsack {
                 .collect::<Vec<_>>();
             let nclusters = usize::min(how_many, all_decision_state_capacities.len());
             let clustering = kmeans(nclusters, &all_decision_state_capacities, 100);
-            let mut result = vec![(0_f64, Vec::new()); nclusters];
+            let mut result = vec![(0_isize, Vec::new()); nclusters];
             for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
-                result[label].0 = h.at(0);
+                result[label].0 = h.at(0) as isize;
                 result[label].1.push(h.id);
             }
             result.retain(|v| !v.1.is_empty());
 
             while result.len() < nclusters {
-                result.sort_unstable_by(|a, b| (a.0 as isize).cmp(&(b.0 as isize)).reverse());
+                result.sort_unstable_by(|a, b| a.0.cmp(&b.0).reverse());
                 let (c, largest) = result.iter().find(|t| t.1.len() > 1).unwrap().clone();
                 // println!("in while with {:?} of {:?} clusters and largest {:?}", result.len(),nclusters,largest);
 
@@ -280,7 +280,7 @@ impl Problem for Knapsack {
 
                 // extend what is left
                 let diff = (nclusters - result.len()).min(largest.len());
-                let mut split = vec![(0_f64, vec![]); diff];
+                let mut split = vec![(0_isize, vec![]); diff];
 
                 for (i, val) in largest.iter().copied().enumerate() {
                     split[i.min(diff - 1)].0 = c;
@@ -299,33 +299,7 @@ impl Problem for Knapsack {
                 .map(|(_centroid, cluster)| cluster)
                 .collect()
         } else {
-            //TODO use split at mut logic of earlier, order, split at mut and them map into 2 vectors instead -- check keep merge art of code
-
-            let mut all_decisions = decisions.collect::<Vec<_>>();
-            //TODO confirm behaviour of ordering
-            all_decisions.sort_unstable_by(
-                |(_a_id, a_cost, _a_dec, a_state), (_b_id, b_cost, _b_dec, b_state)| {
-                    a_cost
-                        .cmp(b_cost)
-                        .then_with(|| KPRanking.compare(a_state, b_state))
-                        .reverse()
-                },
-            ); //reverse because greater means more likely to be uniquely represented
-
-            let nclusters = usize::min(how_many, all_decisions.len());
-            // reserve split vector lengths
-            let mut split = vec![vec![]; nclusters];
-            for (i, (d_id, _d_cost, _, _)) in all_decisions.iter().copied().enumerate() {
-                split[i.min(nclusters - 1)].push(d_id);
-            }
-            split
-            // let split_point = all_decisions.len() - 1;
-            // let (a, b) = all_decisions.split_at_mut(split_point);
-
-            // let split_a = a.iter().map(|(x, _,_)| *x).collect();
-            // let split_b = b.iter().map(|(x, _,_)| *x).collect();
-
-            // vec![split_a, split_b]
+            default_split_edges(self, decisions, how_many)
         }
     }
 

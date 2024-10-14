@@ -54,22 +54,21 @@ impl Variable {
 /// This denotes a decision that was made during the search. It affects a given
 /// `value` to the specified `variable`. Any given `Decision` should be
 /// understood as ```[[ variable = value ]]````
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Copy, Clone, Debug, Hash, Eq, PartialEq, Ord, PartialOrd)]
 pub struct Decision {
-    pub variable : Variable,
-    pub value    : isize
+    pub variable: Variable,
+    pub value: isize,
 }
-
 
 // ----------------------------------------------------------------------------
 // --- SUBPROBLEM -------------------------------------------------------------
 // ----------------------------------------------------------------------------
 /// A subproblem is a residual problem that must be solved in order to complete the
-/// resolution of the original problem which had been defined. 
-/// 
+/// resolution of the original problem which had been defined.
+///
 /// # Note:
-/// Sub-problems are automatically instantiated from nodes in the exact cut-sets 
-/// of relaxed decision diagrams. If you are only discovering the API, rest 
+/// Sub-problems are automatically instantiated from nodes in the exact cut-sets
+/// of relaxed decision diagrams. If you are only discovering the API, rest
 /// assured.. you don't need to implement any subproblem yourself.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SubProblem<T> {
@@ -107,7 +106,7 @@ pub struct Threshold {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum Reason {
     /// It stopped because the configured cutoff criterion was met
-    CutoffOccurred
+    CutoffOccurred,
 }
 
 /// The outcome of an mdd development
@@ -119,7 +118,6 @@ pub struct Completion {
     /// if present the value of the best solution derived from this mdd
     pub best_value: Option<isize>,
 }
-
 
 // ############################################################################
 // #### TESTS #################################################################

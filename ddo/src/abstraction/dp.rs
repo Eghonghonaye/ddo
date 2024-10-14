@@ -24,7 +24,7 @@
 //! The most important abstractions that should be provided by a client are
 //! `Problem` and `Relaxation`.
 
-use crate::{Variable, Decision};
+use crate::{Decision, Variable};
 
 /// This trait defines the "contract" of what defines an optimization problem
 /// solvable with the branch-and-bound with DD paradigm. An implementation of
@@ -47,23 +47,31 @@ pub trait Problem {
     fn transition(&self, state: &Self::State, decision: Decision) -> Self::State;
     /// This method is an implementation of the transition cost function mentioned
     /// in the mathematical model of a DP formulation for some problem.
-    fn transition_cost(&self, source: &Self::State, dest: &Self::State, decision: Decision) -> isize;
+    fn transition_cost(
+        &self,
+        source: &Self::State,
+        dest: &Self::State,
+        decision: Decision,
+    ) -> isize;
     /// Any problem needs to be able to specify an ordering on the variables
     /// in order to decide which variable should be assigned next. This choice
     /// is an **heuristic** choice. The variable ordering does not need to be
     /// fixed either. It may simply depend on the depth of the next layer or
     /// on the nodes that constitute it. These nodes are made accessible to this
     /// method as an iterator.
-    fn next_variable(&self, depth: usize, next_layer: &mut dyn Iterator<Item = &Self::State>)
-        -> Option<Variable>;
-    /// This method calls the function `f` for any value in the domain of 
+    fn next_variable(
+        &self,
+        depth: usize,
+        next_layer: &mut dyn Iterator<Item = &Self::State>,
+    ) -> Option<Variable>;
+    /// This method calls the function `f` for any value in the domain of
     /// variable `var` when in state `state`.  The function `f` is a function
     /// (callback, closure, ..) that accepts one decision.
     fn for_each_in_domain(&self, var: Variable, state: &Self::State, f: &mut dyn DecisionCallback);
     /// This method returns false iff this node can be moved forward to the next
     /// layer without making any decision about the variable `_var`.
-    /// When that is the case, a default decision is to be assumed about the 
-    /// variable. Implementing this method is only ever useful if you intend to 
+    /// When that is the case, a default decision is to be assumed about the
+    /// variable. Implementing this method is only ever useful if you intend to
     /// compile a decision diagram that comprises long arcs.
     fn is_impacted_by(&self, _var: Variable, _state: &Self::State) -> bool {
         true
@@ -73,7 +81,7 @@ pub trait Problem {
     /// This implements the filtering rules in an incementally refined decision diagram
     /// The method returns true if the edge transition is infeasible and should be filtered out
     /// Returns false otherwise
-    fn filter(&self, _state:&Self::State, _decision: &Decision) -> bool {
+    fn filter(&self, _state: &Self::State, _decision: &Decision) -> bool {
         false
     }
     /// Given an incoming decision, and an outgoing decision, this method should mark whether the
@@ -84,30 +92,57 @@ pub trait Problem {
         false
     }
 
-    /// Given a state and all its incoming decisions, this method should split/ partition them into at most the specified number of partiitons
+    /// Given a state and all its incoming decisions, this method should split/ partition them into exactly the specified number of partitions
+    /// The number of partitions is guaranteed to be less than the number of decisions passed in
     /// Decisions are passed as a tuple of an id and the decision
-    /// We expect a return of vectors of the id only forming each clusters 
-    /// This implements the splitting heuristic in an incementally refined decision diagram
-    /// 
+    /// We expect a return of vectors of the id only forming each clusters
+    /// This implements the splitting heuristic in an incrementally refined decision diagram
+    ///
     /// This is also an optional trait as a default heuristic is implemented
-    /// TODO implement default heuristic
-    fn split_edges(&self, _decisions:&mut dyn Iterator<Item = (usize,isize,&Decision,&Self::State)>,_how_many:usize) -> Vec<Vec<usize>>{
-        vec![]
+    fn split_edges(
+        &self,
+        decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &Self::State)>,
+        how_many: usize,
+    ) -> Vec<Vec<usize>> {
+        default_split_edges(self, decisions, how_many)
     }
 
     // This function can be implemented by a problem that provides some kind of learned oracle to provide decision support
-    fn perform_ml_decision_inference(&self, _var: Variable, _state:&Self::State) -> Option<Decision>{
+    fn perform_ml_decision_inference(
+        &self,
+        _var: Variable,
+        _state: &Self::State,
+    ) -> Option<Decision> {
         None
     }
 }
 
+pub fn default_split_edges<P: Problem + ?Sized>(
+    p: &P,
+    decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &P::State)>,
+    how_many: usize,
+) -> Vec<Vec<usize>> {
+    let mut all_decisions = decisions.collect::<Vec<_>>();
+    all_decisions.sort_unstable_by(
+        |(_a_id, a_cost, _a_dec, _a_state), (_b_id, b_cost, _b_dec, _b_state)| {
+            a_cost.cmp(b_cost).reverse()
+        },
+    );
+
+    let mut split = vec![vec![]; how_many];
+    for (i, (d_id, _d_cost, _, _)) in all_decisions.iter().enumerate() {
+        split[i.min(how_many - 1)].push(*d_id);
+    }
+    split
+}
+
 /// A relaxation encapsulates the relaxation $\Gamma$ and $\oplus$ which are
 /// necessary when compiling relaxed DDs. These operators respectively relax
-/// the weight of an arc towards a merged node, and merges the staet of two or 
+/// the weight of an arc towards a merged node, and merges the staet of two or
 /// more nodes so as to create a new inexact node.
 pub trait Relaxation {
     /// Similar to the DP model of the problem it relaxes, a relaxation operates
-    /// on a set of states (the same as the problem). 
+    /// on a set of states (the same as the problem).
     type State;
 
     /// This method implements the merge operation: it combines several `states`
@@ -115,10 +150,10 @@ pub trait Relaxation {
     /// merged states. In the mathematical model, this operation was denoted
     /// with the $\oplus$ operator.
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State;
-    
+
     /// This method relaxes the cost associated to a particular decision. It
-    /// is called for any arc labeled `decision` whose weight needs to be 
-    /// adjusted because it is redirected from connecting `src` with `dst` to 
+    /// is called for any arc labeled `decision` whose weight needs to be
+    /// adjusted because it is redirected from connecting `src` with `dst` to
     /// connecting `src` with `new`. In the mathematical model, this operation
     /// is denoted by the operator $\Gamma$.
     fn relax(
@@ -130,7 +165,7 @@ pub trait Relaxation {
         cost: isize,
     ) -> isize;
 
-    /// Returns a very rough estimation (upper bound) of the optimal value that 
+    /// Returns a very rough estimation (upper bound) of the optimal value that
     /// could be reached if state were the initial state
     fn fast_upper_bound(&self, _state: &Self::State) -> isize {
         isize::MAX
@@ -138,7 +173,7 @@ pub trait Relaxation {
 }
 
 /// This trait basically defines a callback which is passed on to the problem
-/// so as to let it efficiently enumerate the domain values of some given 
+/// so as to let it efficiently enumerate the domain values of some given
 /// variable.
 pub trait DecisionCallback {
     /// executes the callback using the given decision
@@ -146,7 +181,7 @@ pub trait DecisionCallback {
 }
 /// The simplest and most natural callback implementation is to simply use
 /// a closure.
-impl <X: FnMut(Decision)> DecisionCallback for X {
+impl<X: FnMut(Decision)> DecisionCallback for X {
     fn apply(&mut self, decision: Decision) {
         self(decision)
     }
@@ -154,8 +189,8 @@ impl <X: FnMut(Decision)> DecisionCallback for X {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Relaxation, DecisionCallback, Decision, Problem};
-    
+    use crate::{Decision, DecisionCallback, Problem, Relaxation};
+
     #[test]
     fn by_default_fast_upperbound_yields_positive_max() {
         let rlx = DummyRelax;
@@ -175,8 +210,11 @@ mod tests {
             *chg = true;
         };
 
-        closure.apply(Decision{variable: crate::Variable(0), value: 4});
-        
+        closure.apply(Decision {
+            variable: crate::Variable(0),
+            value: 4,
+        });
+
         assert!(changed);
     }
 
@@ -199,11 +237,19 @@ mod tests {
         fn transition_cost(&self, _: &Self::State, _: &Self::State, _: Decision) -> isize {
             todo!()
         }
-        fn next_variable(&self, _: usize, _: &mut dyn Iterator<Item = &Self::State>)
-            -> Option<crate::Variable> {
+        fn next_variable(
+            &self,
+            _: usize,
+            _: &mut dyn Iterator<Item = &Self::State>,
+        ) -> Option<crate::Variable> {
             todo!()
         }
-        fn for_each_in_domain(&self, _: crate::Variable, _: &Self::State, _: &mut dyn DecisionCallback) {
+        fn for_each_in_domain(
+            &self,
+            _: crate::Variable,
+            _: &Self::State,
+            _: &mut dyn DecisionCallback,
+        ) {
             todo!()
         }
     }
