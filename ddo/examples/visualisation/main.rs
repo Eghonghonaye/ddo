@@ -274,6 +274,7 @@ fn main() {
      };
     let input = CompilationInput {
         comp_type: CompilationType::Relaxed,
+        comp_strategy: crate::CompilationStrategy::TopDown,
         problem: &problem,
         relaxation: &relaxation,
         ranking: &ranking,

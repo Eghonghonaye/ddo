@@ -20,15 +20,17 @@
 //! This is the main entry point of the program. This is what gets compiled to
 //! the tsptw binary.
 
-use std::{fs::File, path::Path, time::{Duration, Instant}};
+use std::{fs::{self, File}, path::Path, time::{Duration, Instant}};
 
 use clap::Parser;
-use ddo::{Completion, TimeBudget, NoDupFringe, MaxUB, Solution, SimpleDominanceChecker, Problem, DefaultCachingSolver, Solver};
+use ddo::{Completion, DefaultCachingSolver, MaxUB, NoDupFringe, Problem, SeqCachingSolverLel, SeqIncrementalSolver, SimpleDominanceChecker, Solution, Solver, TDCompile, TimeBudget};
 use dominance::TsptwDominance;
 use heuristics::{TsptwWidth, TsptwRanking};
+use ddo::{WidthHeuristic, FixedWidth, NbUnassignedWidth};
 use instance::TsptwInstance;
 use model::Tsptw;
 use relax::TsptwRelax;
+use serde_json::json;
 
 mod instance;
 mod state;
@@ -65,40 +67,151 @@ struct Args {
     /// (in seconds)
     #[clap(short, long)]
     duration: Option<u64>,
+    /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
+    #[clap(short, long, action)]
+    cluster: bool,
+    /// Whether or not to write output to json file
+    #[clap(short, long, action)]
+    json_output: bool,
+    /// Path to write output file to
+    #[clap(short='x', long, default_value = "")]
+    outfolder: String,
+    /// Solver to use
+    #[clap(short='s', long, default_value = "IR")]
+    solver: String,
+}
+
+/// An utility function to return an max width heuristic that can either be a fixed width
+/// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
+/// in the overall problem.
+fn max_width<T>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T> + Send + Sync> {
+    if let Some(w) = w {
+        Box::new(FixedWidth(w))
+    } else {
+        Box::new(NbUnassignedWidth(nb_vars))
+    }
 }
 
 fn main() {
     let args = Args::parse();
     let inst = TsptwInstance::from(File::open(&args.instance).unwrap());
-    let pb = Tsptw::new(inst);
+    let pb = Tsptw::new(inst,args.cluster);
     let relax    = TsptwRelax::new(&pb);
-    let width = TsptwWidth::new(pb.nb_variables(), args.width.unwrap_or(1));
+    // let width = TsptwWidth::new(pb.nb_variables(), args.width.unwrap_or(1));
+    let width = max_width(pb.nb_variables(), args.width);
     let dominance = SimpleDominanceChecker::new(TsptwDominance, pb.nb_variables());
     let cutoff = TimeBudget::new(Duration::from_secs(args.duration.unwrap_or(u64::MAX)));
     let mut fringe = NoDupFringe::new(MaxUB::new(&TsptwRanking));
-    let mut solver = DefaultCachingSolver::custom(
-        &pb, 
-        &relax,
-        &TsptwRanking,
-        &width,
-        &dominance,
-        &cutoff,
-        &mut fringe,
-        args.threads.unwrap_or(num_cpus::get())
-    );
+    
+    
+    fn run_solve<T:Solver>(args:&Args, mut solver:T, problem:&Tsptw) -> serde_json::Value{
+        let start = Instant::now();
+        let Completion {
+            is_exact,
+            best_value,
+        } = solver.maximize();
 
-    let start    = Instant::now();
-    let outcome  = solver.maximize();
-    let finish   = Instant::now();
+        let duration = start.elapsed();
+        let upper_bound = objective(solver.best_upper_bound());
+        let lower_bound = objective(solver.best_lower_bound());
+        let gap = solver.gap();
+        // let best_solution = solver.best_solution().map(|mut decisions| {
+        //     decisions.sort_unstable_by_key(|d| d.variable.id());
+        //     decisions.iter().map(|d| d.value).collect::<Vec<_>>()
+        // });
 
-    let instance = instance_name(&args.instance);
-    let nb_vars   = pb.nb_variables();
-    let lb       = objective(solver.best_lower_bound());
-    let ub       = objective(solver.best_upper_bound());
-    let solution = solver.best_solution();
-    let duration = finish - start;
+        let result = json!({
+            "Duration": format!("{:.3}", duration.as_secs_f32()),
+            "Objective":  format!("{}", objective(best_value.unwrap_or(-1))),
+            "Upper Bnd":  format!("{}", upper_bound),
+            "Lower Bnd":  format!("{}", lower_bound),
+            "Gap":        format!("{:.3}", gap),
+            "Aborted":    format!("{}", !is_exact),
+            "Cluster":    format!("{}", args.cluster),
+            "Solver":    format!("{}", args.solver),
+            "Width":    format!("{}", args.width.unwrap_or(problem.nb_variables())),
+            "Solution":   format!("{:?}", solution_to_string(problem.nb_variables(), solver.best_solution()))
+        });
 
-    print_solution(&instance, nb_vars, outcome, &lb, &ub, duration, solution);
+        result
+    }
+    
+    let result = match args.solver.as_str() {
+        "TD" => {
+            let solver = TDCompile::new(
+                &pb,
+                &relax,
+                &TsptwRanking,
+                width.as_ref(),
+                &dominance,
+                &cutoff,
+                &mut fringe,
+            );
+            run_solve(&args,solver,&pb)
+        },
+        "IR" => {
+            let solver = SeqIncrementalSolver::new(
+                &pb,
+                &relax,
+                &TsptwRanking,
+                width.as_ref(),
+                &dominance,
+                &cutoff,
+                &mut fringe,
+            );
+            run_solve(&args,solver,&pb)
+        },
+        "BB" => {
+            let solver = SeqCachingSolverLel::new(
+                &pb,
+                &relax,
+                &TsptwRanking,
+                width.as_ref(),
+                &dominance,
+                &cutoff,
+                &mut fringe,
+            );
+            run_solve(&args,solver,&pb)
+        },
+        "PBB" => {
+            let solver = DefaultCachingSolver::custom(
+                &pb, 
+                &relax,
+                &TsptwRanking,
+                width.as_ref(),
+                &dominance,
+                &cutoff,
+                &mut fringe,
+                args.threads.unwrap_or(num_cpus::get())
+            );
+            run_solve(&args,solver,&pb)
+        },
+        _ => panic!("suplied unknown solver")};
+    
+    
+    println!("{}", result.to_string());
+    if args.json_output{
+        let mut outfile = args.outfolder.to_owned();
+        let instance_name = if let Some(x) = &args.instance.split("/").collect::<Vec<_>>().last() {x} else {"_"};
+        outfile.push_str(&instance_name);
+        outfile.push_str(".json");
+        fs::write(outfile,result.to_string()).expect("unable to write json");
+    }
+    
+    
+
+    // let start    = Instant::now();
+    // let outcome  = solver.maximize();
+    // let finish   = Instant::now();
+
+    // let instance = instance_name(&args.instance);
+    // let nb_vars   = pb.nb_variables();
+    // let lb       = objective(solver.best_lower_bound());
+    // let ub       = objective(solver.best_upper_bound());
+    // let solution = solver.best_solution();
+    // let duration = finish - start;
+
+    // print_solution(&instance, nb_vars, outcome, &lb, &ub, duration, solution);
 }
 fn print_solution(name: &str, n: usize, completion: Completion, lb: &str, ub: &str, duration: Duration, solution: Option<Solution>) {
     println!("instance : {name}");

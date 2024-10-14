@@ -404,6 +404,7 @@ where
         let width = shared.width_heu.max_width(&node);
         let mut compilation = CompilationInput {
             comp_type: CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             max_width: width,
             problem: shared.problem,
             relaxation: shared.relaxation,

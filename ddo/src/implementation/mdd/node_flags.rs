@@ -45,24 +45,26 @@
 /// By default, a node is considered exact, not relaxed and not feasible (because
 /// this field is not set until local bounds computation).
 #[derive(Debug, Copy, Clone, Eq, PartialEq)]
-pub struct NodeFlags(u8);
+pub struct NodeFlags(u16);
 impl NodeFlags {
     /// The position of the exact flag
-    pub const F_EXACT: u8 = 1;
+    pub const F_EXACT: u16 = 1;
     /// The position of the relaxed flag
-    pub const F_RELAXED: u8 = 2;
+    pub const F_RELAXED: u16 = 2;
     /// The position of the marked flag.
-    pub const F_MARKED: u8 = 4;
+    pub const F_MARKED: u16 = 4;
     /// The position of the cut-set flag.
-    pub const F_CUTSET: u8 = 8;
+    pub const F_CUTSET: u16 = 8;
     /// The position of the deleted flag.
-    pub const F_DELETED: u8 = 16;
+    pub const F_DELETED: u16 = 16;
     /// The position of the cache flag.
-    pub const F_CACHE: u8 = 32;
+    pub const F_CACHE: u16 = 32;
     /// The position of the above cut-set flag.
-    pub const F_ABOVE_CUTSET: u8 = 64;
+    pub const F_ABOVE_CUTSET: u16 = 64;
     /// The position of the must keep flag - signifies that node should not be pruned or merged away if possible
-    pub const F_MUST_KEEP: u8 = 128;
+    pub const F_MUST_KEEP: u16 = 128;
+    /// The position of the dominance flag - signifies node has been dominated
+    pub const F_DOMINANCE: u16 = 256;
 
     /// Creates a new set of flags, either initialized with exact on or with
     /// relaxed on.
@@ -120,6 +122,11 @@ impl NodeFlags {
     pub fn is_pruned_by_cache(self) -> bool {
         self.test(NodeFlags::F_CACHE)
     }
+    /// Returns true iff the cache flag is turned on
+    #[inline]
+    pub fn is_pruned_by_dominance(self) -> bool {
+        self.test(NodeFlags::F_DOMINANCE)
+    }
     /// Returns true iff the must keep flag is turned on
     #[inline]
     pub fn is_must_keep(self) -> bool {
@@ -158,6 +165,11 @@ impl NodeFlags {
     pub fn set_pruned_by_cache(&mut self, cache: bool) {
         self.set(NodeFlags::F_CACHE, cache)
     }
+    /// Sets the cache flag to the given value
+    #[inline]
+    pub fn set_pruned_by_dominance(&mut self, dom: bool) {
+        self.set(NodeFlags::F_DOMINANCE, dom)
+    }
     /// Sets the must keep flag to the given value
     #[inline]
     pub fn set_must_keep(&mut self, must_keep: bool) {
@@ -166,12 +178,12 @@ impl NodeFlags {
     /// Checks whether all the flags encoded in the given mask are turned on.
     /// Otherwise, it returns false
     #[inline]
-    pub fn test(self, mask: u8) -> bool {
+    pub fn test(self, mask: u16) -> bool {
         self.0 & mask == mask
     }
     /// Sets the value of a given flag to the selected polarity
     #[inline]
-    pub fn set(&mut self, flag: u8, value: bool) {
+    pub fn set(&mut self, flag: u16, value: bool) {
         if value {
             self.add(flag)
         } else {
@@ -180,12 +192,12 @@ impl NodeFlags {
     }
     /// Turns the given flag(s) on.
     #[inline]
-    pub fn add(&mut self, flags: u8) {
+    pub fn add(&mut self, flags: u16) {
         self.0 |= flags;
     }
     /// Turns the given flag(s) off.
     #[inline]
-    pub fn remove(&mut self, flags: u8) {
+    pub fn remove(&mut self, flags: u16) {
         self.0 &= !flags;
     }
 }

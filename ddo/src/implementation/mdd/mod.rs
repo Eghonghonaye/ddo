@@ -29,10 +29,12 @@
 mod node_flags;
 mod clean;
 mod pooled;
+mod vector;
 
 pub use node_flags::*;
 pub use clean::*;
 pub use pooled::*;
+pub use vector::*;
 
 use crate::{LAST_EXACT_LAYER, FRONTIER};
 
@@ -54,3 +56,6 @@ pub type DefaultMDDLEL<T> = Mdd<T, LAST_EXACT_LAYER>;
 /// 
 /// This is the variant implementation that produces a frontier cut-set when asked
 pub type DefaultMDDFC<T> = Mdd<T, FRONTIER>;
+
+
+pub type DefaultVectorLEL<T> = VectorMdd<T, LAST_EXACT_LAYER>;

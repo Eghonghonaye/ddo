@@ -47,10 +47,23 @@ pub enum CompilationType {
     Restricted,
 }
 
+/// What strategy are we using to compile the decision diagram ? 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CompilationStrategy{
+    /// If you want to compile a DD by top down construction
+    TopDown,
+    /// If you want to compile a DD by incremental refinement 
+    /// NB: this cannot start from an empty diagram
+    /// At least a skinny with top down diagram to start
+    Refinement,
+}
+
 /// The set of parameters used to tweak the compilation of a MDD
 pub struct CompilationInput<'a, State> {   
     /// How is the mdd being compiled ?
     pub comp_type: CompilationType,
+    // According to what strategy?
+    pub comp_strategy: CompilationStrategy,
     /// A reference to the original problem we try to maximize
     pub problem: &'a dyn Problem<State = State>,
     /// The relaxation which we use to merge nodes in a relaxed dd
@@ -81,6 +94,12 @@ pub trait DecisionDiagram {
     /// compilation input (compilation type, and root subproblem)
     fn compile(&mut self, input: &CompilationInput<Self::State>) 
         -> Result<Completion, Reason>;
+    /// Optional function that implements refinement. Can be populated in DD implementations
+    /// that build incremental refinement solvers
+    /// 
+    fn refine(&mut self, _input: &CompilationInput<Self::State> ) -> Result<Completion, Reason>  {
+        Ok(Completion{is_exact: bool::default(), best_value: None})
+    }
     /// Returns true iff the DD which has been compiled is an exact DD.
     fn is_exact(&self) -> bool;
     /// Returns the optimal value of the objective function or None when no 

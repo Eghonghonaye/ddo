@@ -18,12 +18,17 @@
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 //! This module provide the solver implementation.
+mod td;
 mod parallel;
 mod sequential;
+mod incremental;
+pub use td::*;
 pub use parallel::*;
 pub use sequential::*;
+pub use incremental::*;
 
-use crate::{DefaultMDDLEL, EmptyCache, SimpleCache, DefaultMDDFC, Pooled};
+use crate::{DefaultMDDLEL, EmptyCache, SimpleCache, DefaultMDDFC, Pooled, DefaultVectorLEL};
+
 
 /// A type alias to emphasize that this is the solver that should be used by default.
 pub type DefaultSolver<'a, State>        = ParNoCachingSolverLel<'a, State>;
@@ -45,3 +50,17 @@ pub type SeqNoCachingSolverPooled<'a, State>= SequentialSolver<'a, State, Pooled
 pub type SeqCachingSolverLel<'a, State>   = SequentialSolver<'a, State, DefaultMDDLEL<State>, SimpleCache<State>>;
 pub type SeqCachingSolverFc<'a, State>    = SequentialSolver<'a, State, DefaultMDDFC<State>,  SimpleCache<State>>;
 pub type SeqCachingSolverPooled<'a, State>= SequentialSolver<'a, State, Pooled<State>,        SimpleCache<State>>;
+
+
+pub type SeqIncrementalSolver<'a, State> = IncrementalSolver<
+    'a,
+    State,
+    DefaultVectorLEL<State>,
+    EmptyCache<State>,
+>;
+pub type TDCompile<'a, State> = TDSolver<
+    'a,
+    State,
+    DefaultVectorLEL<State>,
+    EmptyCache<State>,
+>;

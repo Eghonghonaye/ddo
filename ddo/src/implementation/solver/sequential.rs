@@ -346,6 +346,7 @@ where
         let restriction_width = self.width_heu.restriction_width(&node);
         let compilation = CompilationInput {
             comp_type: CompilationType::Restricted,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             max_width: restriction_width,
             problem: self.problem,
             relaxation: self.relaxation,
@@ -369,6 +370,7 @@ where
         let relaxation_width = self.width_heu.relaxation_width(&node);
         let compilation = CompilationInput {
             comp_type: CompilationType::Relaxed,
+            comp_strategy: crate::CompilationStrategy::TopDown,
             max_width: relaxation_width,
             problem: self.problem,
             relaxation: self.relaxation,

@@ -20,11 +20,13 @@
 //! This example show how to implement a solver for the knapsack problem using ddo.
 //! It is a fairly simple example but  features most of the aspects you will want to
 //! copy when implementing your own solver.
-use std::{path::Path, fs::File, io::{BufReader, BufRead}, time::{Duration, Instant}, num::ParseIntError, sync::Arc};
+use std::{fs::{self, File}, io::{BufRead, BufReader}, num::ParseIntError, path::Path, sync::Arc, time::{Duration, Instant}};
 
 use clap::Parser;
+use clustering::kmeans;
 use ddo::*;
 use ordered_float::OrderedFloat;
+use serde_json::json;
 use tensorflow::Tensor;
 
 #[cfg(test)]
@@ -60,16 +62,18 @@ pub struct Knapsack {
     weight: Vec<usize>,
     /// the order in which the items are considered
     order: Vec<usize>,
+    /// Whether we split edges by clustering,
+    clustering: bool,
     // Optional ml model to support decision making
     ml_model: Option<TfModel>
 }
 
 impl Knapsack {
-    pub fn new(capacity: usize, profit: Vec<isize>, weight: Vec<usize>, ml_model:Option<TfModel>) -> Self {
+    pub fn new(capacity: usize, profit: Vec<isize>, weight: Vec<usize>, clustering: bool, ml_model:Option<TfModel>) -> Self {
         let mut order = (0..profit.len()).collect::<Vec<usize>>();
         order.sort_unstable_by_key(|i| OrderedFloat(- profit[*i] as f64 / weight[*i] as f64));
 
-        Knapsack { capacity, profit, weight, order, ml_model }
+        Knapsack { capacity, profit, weight, order, clustering, ml_model }
     }
 }
 
@@ -101,6 +105,35 @@ impl ModelHelper for Knapsack{
                 })
         }
         None
+    }
+}
+
+#[derive(Eq, PartialEq, Clone, Copy, Debug)]
+pub struct StateClusterHelper {
+    pub id: usize,
+    pub state: KnapsackState,
+}
+
+impl StateClusterHelper {
+    fn new(id: usize, state: KnapsackState) -> Self {
+        StateClusterHelper { id, state }
+    }
+
+    // fn from_capacity(depth: usize, capacity: usize) -> Self {
+    //     StateClusterHelper {
+    //         id: 0,
+    //         state: KnapsackState { depth, capacity },
+    //     }
+    // }
+}
+
+impl clustering::Elem for StateClusterHelper {
+    fn dimensions(&self) -> usize {
+        1
+    }
+
+    fn at(&self, _i: usize) -> f64 {
+        self.state.capacity as f64
     }
 }
 
@@ -157,6 +190,93 @@ impl Problem for Knapsack {
             None
         }
     }
+
+    fn filter(&self, state: &Self::State, decision: &Decision) -> bool {
+        if decision.value == TAKE_IT{
+            self.weight[decision.variable.id()] > state.capacity
+        }
+        else{
+            false //we're always allowed to leave an item
+        }  
+    }
+
+    fn split_edges(
+        &self,
+        decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &Self::State)>,
+        how_many: usize,
+    ) -> Vec<Vec<usize>> {
+        if self.clustering {
+            // println!("splitting {:?}", decisions.clone().map(|(a,b,_c)| (a,b)).collect::<Vec<_>>());
+            let all_decision_state_capacities = decisions
+                .map(|(id, _cost, _d,s)| StateClusterHelper::new(id, *s))
+                .collect::<Vec<_>>();
+            let nclusters = usize::min(
+                how_many,
+                all_decision_state_capacities.len(),
+            );
+            let clustering = kmeans(nclusters, &all_decision_state_capacities, 100);
+            let mut result = vec![Vec::new(); nclusters];
+            for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
+                result[label].push(h.id);
+            }
+            result.retain(|v| !v.is_empty()); 
+
+            while result.len() < nclusters {
+                
+                result.sort_unstable_by(|a,b|a.len().cmp(&b.len()).reverse());
+                let largest = result[0].clone();
+                // println!("in while with {:?} of {:?} clusters and largest {:?}", result.len(),nclusters,largest);
+                
+                // remove largest from cluster
+                result.remove(0);
+
+                // extend what is left
+                let diff = (nclusters - result.len()).min(largest.len());
+                let mut split = vec![vec![]; diff];
+
+                for (i, val) in largest.iter().copied().enumerate() {
+                    split[i.min(diff-1)].push(val);
+                }
+                result.append(&mut split);
+                
+                // println!(
+                //             "split into sizes: {:?}",
+                //             result.iter().map(Vec::len).collect::<Vec<_>>()
+                //         );
+
+            }
+
+            result
+        } else {
+            //TODO use split at mut logic of earlier, order, split at mut and them map into 2 vectors instead -- check keep merge art of code
+
+            let mut all_decisions = decisions.collect::<Vec<_>>();
+            //TODO confirm behaviour of ordering
+            all_decisions.sort_unstable_by(|(_a_id, a_cost, _a_dec,a_state), (_b_id, b_cost, _b_dec,b_state)| 
+                {a_cost.cmp(b_cost)
+                .then_with(|| KPRanking.compare(a_state, b_state)) 
+                .reverse()}); //reverse because greater means more likely to be uniquely represented
+
+            let nclusters = usize::min(
+                how_many,
+                all_decisions.len(),
+            );
+            // reserve split vector lengths
+            let mut split = vec![vec![]; nclusters];
+            for (i, (d_id,_d_cost,_,_)) in all_decisions.iter().copied().enumerate() {
+                split[i.min(nclusters-1)].push(d_id);
+            }
+            split
+            // let split_point = all_decisions.len() - 1;
+            // let (a, b) = all_decisions.split_at_mut(split_point);
+
+            // let split_a = a.iter().map(|(x, _,_)| *x).collect();
+            // let split_b = b.iter().map(|(x, _,_)| *x).collect();
+
+            // vec![split_a, split_b]
+        }
+    }
+
     fn perform_ml_decision_inference(&self, _var: Variable, state:&Self::State) -> Option<Decision>{
         if let Some(model) = &self.ml_model {
             let output = self.perform_inference(&model,state);
@@ -280,12 +400,15 @@ struct Args {
     #[clap(short, long, default_value = "8")]
     threads: usize,
     /// The maximum amount of time you would like this solver to run
-    #[clap(short, long, default_value = "30")]
+    #[clap(short, long, default_value = "3000")]
     duration: u64,
     /// The maximum width of a layer when solving an instance. By default, it will allow
     /// as many nodes in a layer as there are unassigned variables in the global problem.
     #[clap(short, long)]
     width: Option<usize>,
+    /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
+    #[clap(short, long, action)]
+    cluster: bool,
     /// Option to use ML model for restriction builidng
     /// Path to pb file for model
     #[clap(short, long, default_value = "")]
@@ -296,6 +419,9 @@ struct Args {
     /// Path to write output file to
     #[clap(short='x', long, default_value = "")]
     outfolder: String,
+    /// Solver to use
+    #[clap(short='s', long, default_value = "IR")]
+    solver: String,
 }
 
 /// This enumeration simply groups the kind of errors that might occur when parsing a
@@ -321,6 +447,7 @@ pub enum Error {
 fn read_instance(args:&Args) -> Result<Knapsack, Error> {
     let f = File::open(&args.fname)?;
     let f = BufReader::new(f);
+    let clustering = args.cluster;
     
     let mut is_first = true;
     let mut n = 0;
@@ -351,7 +478,7 @@ fn read_instance(args:&Args) -> Result<Knapsack, Error> {
     }
     let model: Option<TfModel> = if !args.model.is_empty(){Some(read_model(&args.model,"test_input".to_string(),"test_output".to_string()).unwrap())} 
                                 else {None};
-    Ok(Knapsack::new(capa, profit, weight,model))
+    Ok(Knapsack::new(capa, profit, weight, clustering, model))
 }
 
 pub fn read_model<P: AsRef<Path>>(model_path: P,input: String, output:String) -> Result<TfModel, Error>{
@@ -377,36 +504,117 @@ fn main() {
     let heuristic= KPRanking;
     let width = max_width(problem.nb_variables(), args.width);
     let dominance = SimpleDominanceChecker::new(KPDominance, problem.nb_variables());
-    let cutoff = TimeBudget::new(Duration::from_secs(15));//NoCutoff;
+    let cutoff = TimeBudget::new(Duration::from_secs(args.duration));//NoCutoff;
     let mut fringe = SimpleFringe::new(MaxUB::new(&heuristic));
 
-    let mut solver = DefaultCachingSolver::new(
-        &problem, 
-        &relaxation, 
-        &heuristic, 
-        width.as_ref(), 
-        &dominance,
-        &cutoff, 
-        &mut fringe,
-    );
+    fn run_solve<T:Solver>(args:&Args, mut solver:T,) -> serde_json::Value{
+        let start = Instant::now();
+        let Completion {
+            is_exact,
+            best_value,
+        } = solver.maximize();
 
-    let start = Instant::now();
-    let Completion{ is_exact, best_value } = solver.maximize();
+        let duration = start.elapsed();
+        let upper_bound = solver.best_upper_bound();
+        let lower_bound = solver.best_lower_bound();
+        let gap = solver.gap();
+        let best_solution = solver.best_solution().map(|mut decisions| {
+            decisions.sort_unstable_by_key(|d| d.variable.id());
+            decisions.iter().map(|d| d.value).collect::<Vec<_>>()
+        });
+
+        let result = json!({
+            "Duration": format!("{:.3}", duration.as_secs_f32()),
+            "Objective":  format!("{}", best_value.unwrap_or(-1)),
+            "Upper Bnd":  format!("{}", upper_bound),
+            "Lower Bnd":  format!("{}", lower_bound),
+            "Gap":        format!("{:.3}", gap),
+            "Aborted":    format!("{}", !is_exact),
+            "Cluster":    format!("{}", args.cluster),
+            "Solver":    format!("{}", args.solver),
+            "Width":    format!("{}", args.width.unwrap_or(0)),
+            "Solution":   format!("{:?}", best_solution.unwrap_or_default())
+        });
+
+        result
+    }
+
+    // let mut solver = SeqIncrementalSolver::new(
+    //     &problem,
+    //     &relaxation,
+    //     &heuristic,
+    //     width.as_ref(),
+    //     &dominance,
+    //     &cutoff,
+    //     &mut fringe,
+    // );
+
+    // let start = Instant::now();
+    // let Completion{ is_exact, best_value } = solver.maximize();
     
-    let duration = start.elapsed();
-    let upper_bound = solver.best_upper_bound();
-    let lower_bound = solver.best_lower_bound();
-    let gap = solver.gap();
-    let best_solution  = solver.best_solution().map(|mut decisions|{
-        decisions.sort_unstable_by_key(|d| d.variable.id());
-        decisions.iter().map(|d| d.value).collect::<Vec<_>>()
-    });
+    // let duration = start.elapsed();
+    // let upper_bound = solver.best_upper_bound();
+    // let lower_bound = solver.best_lower_bound();
+    // let gap = solver.gap();
+    // let best_solution  = solver.best_solution().map(|mut decisions|{
+    //     decisions.sort_unstable_by_key(|d| d.variable.id());
+    //     decisions.iter().map(|d| d.value).collect::<Vec<_>>()
+    // });
 
-    println!("Duration:   {:.3} seconds", duration.as_secs_f32());
-    println!("Objective:  {}",            best_value.unwrap_or(-1));
-    println!("Upper Bnd:  {}",            upper_bound);
-    println!("Lower Bnd:  {}",            lower_bound);
-    println!("Gap:        {:.3}",         gap);
-    println!("Aborted:    {}",            !is_exact);
-    println!("Solution:   {:?}",          best_solution.unwrap_or_default());
+    // println!("Duration:   {:.3} seconds", duration.as_secs_f32());
+    // println!("Objective:  {}",            best_value.unwrap_or(-1));
+    // println!("Upper Bnd:  {}",            upper_bound);
+    // println!("Lower Bnd:  {}",            lower_bound);
+    // println!("Gap:        {:.3}",         gap);
+    // println!("Aborted:    {}",            !is_exact);
+    // println!("Solution:   {:?}",          best_solution.unwrap_or_default());
+
+    let result = match args.solver.as_str() {
+        "TD" => {
+            let solver = TDCompile::new(
+                &problem,
+                &relaxation,
+                &heuristic,
+                width.as_ref(),
+                &dominance,
+                &cutoff,
+                &mut fringe,
+            );
+            run_solve(&args,solver)
+        },
+        "IR" => {
+            let solver = SeqIncrementalSolver::new(
+                &problem,
+                &relaxation,
+                &heuristic,
+                width.as_ref(),
+                &dominance,
+                &cutoff,
+                &mut fringe,
+            );
+            run_solve(&args,solver)
+        },
+        "BB" => {
+            let solver = SeqCachingSolverLel::new(
+                &problem,
+                &relaxation,
+                &heuristic,
+                width.as_ref(),
+                &dominance,
+                &cutoff,
+                &mut fringe,
+            );
+            run_solve(&args,solver)
+        },
+        _ => panic!("suplied unknown solver")};
+    
+    
+    println!("{}", result.to_string());
+    if args.json_output{
+        let mut outfile = args.outfolder.to_owned();
+        let instance_name = if let Some(x) = &args.fname.split("/").collect::<Vec<_>>().last() {x} else {"_"};
+        outfile.push_str(&instance_name);
+        outfile.push_str(".json");
+        fs::write(outfile,result.to_string()).expect("unable to write json");
+    }
 }

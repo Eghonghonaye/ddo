@@ -50,3 +50,4 @@ impl WidthHeuristic<TsptwState> for TsptwWidth {
         self.nb_vars * (state.depth + 1) * self.factor
     }
 }
+

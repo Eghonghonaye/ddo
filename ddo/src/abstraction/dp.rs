@@ -68,6 +68,33 @@ pub trait Problem {
     fn is_impacted_by(&self, _var: Variable, _state: &Self::State) -> bool {
         true
     }
+
+    /// Given a state and an outgoing decision, this method should filter out infeasible decisions
+    /// This implements the filtering rules in an incementally refined decision diagram
+    /// The method returns true if the edge transition is infeasible and should be filtered out
+    /// Returns false otherwise
+    fn filter(&self, _state:&Self::State, _decision: &Decision) -> bool {
+        false
+    }
+    /// Given an incoming decision, and an outgoing decision, this method should mark whether the
+    /// outgoing decision is infeasible. In that case return true. This will be used for a conflict
+    /// count to split highly conflicted states first.
+    /// Return false otherwise
+    fn check_conflict(&self, _in_state: &Self::State, _out_state: &Self::State) -> bool {
+        false
+    }
+
+    /// Given a state and all its incoming decisions, this method should split/ partition them into at most the specified number of partiitons
+    /// Decisions are passed as a tuple of an id and the decision
+    /// We expect a return of vectors of the id only forming each clusters 
+    /// This implements the splitting heuristic in an incementally refined decision diagram
+    /// 
+    /// This is also an optional trait as a default heuristic is implemented
+    /// TODO implement default heuristic
+    fn split_edges(&self, _decisions:&mut dyn Iterator<Item = (usize,isize,&Decision,&Self::State)>,_how_many:usize) -> Vec<Vec<usize>>{
+        vec![]
+    }
+
     // This function can be implemented by a problem that provides some kind of learned oracle to provide decision support
     fn perform_ml_decision_inference(&self, _var: Variable, _state:&Self::State) -> Option<Decision>{
         None
