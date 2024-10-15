@@ -235,6 +235,20 @@ impl Problem for Sop {
             split
         }
     }
+
+    fn check_conflict(
+        &self,
+        in_state: &Self::State,
+        _in_decision: &Decision,
+        _out_state: &Self::State,
+        out_decision: &Decision,
+    ) -> bool {
+        let maybe_scheduled = match &in_state.maybe_schedule {
+            Some(maybes) => in_state.must_schedule.union(*maybes).flip(),
+            None => in_state.must_schedule.flip(),
+        };
+        maybe_scheduled.contains_all(self.instance.predecessors[out_decision.value as usize])
+    }
 }
 
 impl Sop {

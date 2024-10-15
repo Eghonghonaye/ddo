@@ -315,6 +315,20 @@ impl Problem for Knapsack {
             None
         }
     }
+
+    fn check_conflict(
+        &self,
+        in_state: &Self::State,
+        _in_decision: &Decision,
+        _out_state: &Self::State,
+        out_decision: &Decision,
+    ) -> bool {
+        if out_decision.value == TAKE_IT {
+            self.weight[out_decision.variable.id()] > in_state.capacity
+        } else {
+            false
+        }
+    }
 }
 
 /// In addition to a dynamic programming (DP) model of the problem you want to solve,

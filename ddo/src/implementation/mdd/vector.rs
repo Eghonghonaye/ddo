@@ -195,9 +195,9 @@ macro_rules! get {
     };
 }
 
-/// This macro performs an action for each incoming edge of a given node in the dd
-macro_rules! foreachincoming {
-    (edge of $id:expr, $dd:expr, $action:expr) => {
+/// This macro performs an action for each incoming/outgoing edge of a given node in the dd
+macro_rules! foreach {
+    (incoming edge of $id:expr, $dd:expr, $action:expr) => {
         let mut index = 0;
         while index < get!(node $id, $dd).incoming.len() {
             let edge_id = get!(node $id, $dd).incoming[index];
@@ -206,11 +206,7 @@ macro_rules! foreachincoming {
             index += 1;
         }
     };
-}
-
-/// This macro performs an action for each outgoing edge of a given node in the dd
-macro_rules! foreachoutgoing {
-    (edge of $id:expr, $dd:expr, $action:expr) => {
+    (outgoing edge of $id:expr, $dd:expr, $action:expr) => {
         let mut index = 0;
         while index < get!(node $id, $dd).outgoing.len() {
             let edge_id = get!(node $id, $dd).outgoing[index];
@@ -616,7 +612,7 @@ where
                     let node = get!(node id, self);
                     let value = node.value_bot;
                     if node.flags.is_marked() {
-                        foreachincoming!(edge of id, self, |edge: Edge<T>| {
+                        foreach!(incoming edge of id, self, |edge: Edge<T>| {
                             let using_edge = value.saturating_add(edge.cost);
                             let parent = get!(mut node edge.from, self);
                             parent.flags.set_marked(true);
@@ -678,7 +674,7 @@ where
                     }
                     // only propagate if you have an actual threshold
                     if let Some(my_theta) = node.theta {
-                        foreachincoming!(edge of id, self, |edge: Edge<T>| {
+                        foreach!(incoming edge of id, self, |edge: Edge<T>| {
                             let parent = get!(mut node edge.from, self);
                             let theta  = parent.theta.unwrap_or(isize::MAX);
                             parent.theta = Some(theta.min(my_theta.saturating_sub(edge.cost)));
@@ -753,7 +749,7 @@ where
                 if node.flags.is_exact() {
                     node.flags.set_above_cutset(true);
                 } else {
-                    foreachincoming!(edge of id, self, |edge: Edge<T>| {
+                    foreach!(incoming edge of id, self, |edge: Edge<T>| {
                         let parent = get!(mut node edge.from, self);
                         if parent.flags.is_exact() && !parent.flags.is_cutset() {
                             self.cutset.push(edge.from);
@@ -1375,7 +1371,7 @@ where
         for drop_id in merge {
             get!(mut node drop_id, self).flags.set_deleted(true);
 
-            foreachincoming!(edge of drop_id, self, |edge: Edge<T>| {
+            foreach!(incoming edge of drop_id, self, |edge: Edge<T>| {
                 // let edge = get!(edge edge_id, self);
                 let src   = get!(node edge.from, self).state.as_ref();
                 let dst   = get!(node edge.to,   self).state.as_ref();
@@ -1731,10 +1727,13 @@ where
 
             redirect_edge!(self, EdgeId(*edge_id), get!(edge EdgeId(*edge_id), self));
 
-            for outbound_edge in outbound_edges {
+            for outbound_edge_id in outbound_edges {
+                let outbound_edge = get!(edge EdgeId(outbound_edge_id.0), self);
                 if input.problem.check_conflict(
+                    &edge.state,
                     &edge.decision,
-                    &get!(edge EdgeId(outbound_edge.0), self).decision,
+                    &outbound_edge.state,
+                    &outbound_edge.decision,
                 ) {
                     conflict_count += 1;
                 }
@@ -1822,10 +1821,10 @@ where
                     node.value_top = value;
                 }
 
-                foreachoutgoing!(edge of node_id, self, |out_edge: Edge<T>| {
+                foreach!(outgoing edge of node_id, self, |out_edge: Edge<T>| {
                     if input
                         .problem
-                        .check_conflict(&in_edge.decision, &out_edge.decision)
+                        .check_conflict(&in_edge.state, &in_edge.decision, &out_edge.state, &out_edge.decision)
                     {
                         get!(mut node node_id, self).conflict_count += 1;
                     }
@@ -1940,7 +1939,7 @@ where
     /// Creates a string representation of the edges incident to one node
     fn edges_of(&self, id: NodeId) -> String {
         let mut out = String::new();
-        foreachincoming!(edge of id, self, |edge: Edge<T>| {
+        foreach!(incoming edge of id, self, |edge: Edge<T>| {
             let Edge{from, to, decision, cost,..} = &edge; //TODO is this clone expensive?
             let best = get!(node id, self).best;
             out.push_str(&Self::edge(from, to, decision, *cost, best.map_or(false, |eid| *get!(edge eid, self) == edge)));
