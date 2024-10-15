@@ -72,6 +72,7 @@ pub struct IncrementalSolver<
     /// Data structure containing info about past compilations used to prune the search
     cache: C,
     dominance: &'a (dyn DominanceChecker<State = State>),
+    pub binary_split: bool,
 }
 
 impl<'a, State, D, C> IncrementalSolver<'a, State, D, C>
@@ -88,9 +89,17 @@ where
         dominance: &'a (dyn DominanceChecker<State = State>),
         cutoff: &'a (dyn Cutoff),
         fringe: &'a mut (dyn Fringe<State = State>),
+        binary_split: bool,
     ) -> Self {
         Self::custom(
-            problem, relaxation, ranking, width, dominance, cutoff, fringe,
+            problem,
+            relaxation,
+            ranking,
+            width,
+            dominance,
+            cutoff,
+            fringe,
+            binary_split,
         )
     }
 
@@ -102,6 +111,7 @@ where
         dominance: &'a (dyn DominanceChecker<State = State>),
         cutoff: &'a (dyn Cutoff),
         fringe: &'a mut (dyn Fringe<State = State>),
+        binary_split: bool,
     ) -> Self {
         IncrementalSolver {
             problem,
@@ -122,6 +132,7 @@ where
             mdd: D::default(),
             cache: C::default(),
             dominance,
+            binary_split,
         }
     }
 
@@ -145,7 +156,7 @@ where
             residual: &root,
             //
             best_lb,
-            binary_split: false,
+            binary_split: self.binary_split,
         };
 
         // compile initial narrow width diagram
@@ -238,6 +249,7 @@ where
         let width = self.width_heu.max_width(&root);
         self.maybe_update_best();
         let mut iteration_count = 0;
+        #[allow(clippy::never_loop)]
         loop {
             if self.mdd.is_exact(){
                 // println!("ended as exact");

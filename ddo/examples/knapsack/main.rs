@@ -459,6 +459,9 @@ struct Args {
     /// Solver to use
     #[clap(short = 's', long, default_value = "IR")]
     solver: String,
+    /// Have nodes split into two instead of a whole layer split
+    #[clap(short = 'b', long, action)]
+    binary_split: bool,
 }
 
 /// This enumeration simply groups the kind of errors that might occur when parsing a
@@ -642,6 +645,7 @@ fn main() {
                 &dominance,
                 &cutoff,
                 &mut fringe,
+                args.binary_split,
             );
             run_solve(&args, solver)
         }

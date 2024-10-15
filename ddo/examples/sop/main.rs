@@ -69,6 +69,9 @@ struct Args {
     /// Solver to use
     #[clap(short='s', long, default_value = "IR")]
     solver: String,
+    /// Have nodes split into two instead of a whole layer split
+    #[clap(short = 'b', long, action)]
+    binary_split: bool,
 }
 
 /// An utility function to return a cutoff heuristic that can either be a time budget policy
@@ -222,6 +225,7 @@ fn main() {
                 &dominance,
                 cutoff.as_ref(),
                 &mut fringe,
+                args.binary_split,
             );
             run_solve(&args,solver)
         },
