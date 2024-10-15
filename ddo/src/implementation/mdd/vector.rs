@@ -1220,7 +1220,7 @@ where
                     let mut fully_split = false;
                     while curr_l.len() < input.max_width {
                         if input.binary_split {
-                            fully_split = self._split_layer(input, curr_l, curr_layer_id);
+                            fully_split = self._split_binary(input, curr_l, curr_layer_id);
                         } else {
                             fully_split = self._split(input, curr_l, curr_layer_id);
                         }
@@ -1487,7 +1487,7 @@ where
         fully_split
     }
 
-    fn _split_layer(
+    fn _split_binary(
         &mut self,
         input: &CompilationInput<T>,
         curr_l: &mut Vec<NodeId>,
