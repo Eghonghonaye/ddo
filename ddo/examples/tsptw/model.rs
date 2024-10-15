@@ -20,13 +20,13 @@
 //! This module contains the definition of the dynamic programming formulation 
 //! of the TSP+TW. (Implementation of the `Problem` trait).
 
-use ddo::{Decision, Problem, StateRanking, Variable};
+use ddo::{default_split_edges, Decision, Problem, StateRanking, Variable};
 use smallbitset::Set256;
 
 use crate::{instance::TsptwInstance, state::{ElapsedTime, Position, TsptwState}};
 
 use crate::heuristics::TsptwRanking;
-use clustering::kmeans;
+use clustering::{kmeans, Elem};
 
 
 
@@ -77,18 +77,18 @@ impl clustering::Elem for StateClusterHelper {
         1
     }
 
-    fn at(&self, i: usize) -> f64 {
-        // self.cost as f64
-        match i {
-            0 => match self.state.elapsed {
-                ElapsedTime::FixedAmount{duration} => 
-                    duration as f64,
-                ElapsedTime::FuzzyAmount{earliest,latest:_} =>
-                    earliest as f64
-            },
-            1 => self.cost as f64,
-            _ => 0 as f64
-        }
+    fn at(&self, _i: usize) -> f64 {
+        self.cost as f64
+        // match i {
+        //     0 => match self.state.elapsed {
+        //         ElapsedTime::FixedAmount{duration} => 
+        //             duration as f64,
+        //         ElapsedTime::FuzzyAmount{earliest,latest:_} =>
+        //             earliest as f64
+        //     },
+        //     1 => self.cost as f64,
+        //     _ => 0 as f64
+        // }
     }
 }
 
@@ -225,6 +225,80 @@ impl Problem for Tsptw {
         }
     }
 
+    // fn split_edges(
+    //     &self,
+    //     decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &Self::State)>,
+    //     how_many: usize,
+    // ) -> Vec<Vec<usize>> {
+    //     if self.clustering {
+    //         // println!("splitting {:?}", decisions.clone().map(|(a,b,_c)| (a,b)).collect::<Vec<_>>());
+    //         let all_decision_state_capacities = decisions
+    //             .map(|(id, cost, _d,s)| StateClusterHelper::new(id, cost, s.clone()))
+    //             .collect::<Vec<_>>();
+    //         let nclusters = usize::min(
+    //             how_many,
+    //             all_decision_state_capacities.len(),
+    //         );
+    //         let clustering = kmeans(nclusters, &all_decision_state_capacities, 100);
+    //         let mut result = vec![Vec::new(); nclusters];
+    //         for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
+    //             result[label].push(h.id);
+    //         }
+    //         result.retain(|v| !v.is_empty()); 
+
+    //         while result.len() < nclusters {
+                
+    //             result.sort_unstable_by(|a,b|a.len().cmp(&b.len()).reverse());
+    //             let largest = result[0].clone();
+    //             // println!("in while with {:?} of {:?} clusters and largest {:?}", result.len(),nclusters,largest);
+                
+    //             // remove largest from cluster
+    //             result.remove(0);
+
+    //             // extend what is left
+    //             let diff = (nclusters - result.len()).min(largest.len());
+    //             let mut split = vec![vec![]; diff];
+
+    //             for (i, val) in largest.iter().copied().enumerate() {
+    //                 split[i.min(diff-1)].push(val);
+    //             }
+    //             result.append(&mut split);
+                
+    //             // println!(
+    //             //             "split into sizes: {:?}",
+    //             //             result.iter().map(Vec::len).collect::<Vec<_>>()
+    //             //         );
+
+    //         }
+
+    //         result
+    //     } else {
+    //         //TODO use split at mut logic of earlier, order, split at mut and them map into 2 vectors instead -- check keep merge art of code
+
+    //         let mut all_decisions = decisions.collect::<Vec<_>>();
+    //         //TODO confirm behaviour of ordering
+    //         // all_decisions.sort_unstable_by(|(_a_id, a_cost, _a_dec,a_state), (_b_id, b_cost, _b_dec,b_state)| 
+    //         //     {a_cost.cmp(b_cost)
+    //         //     .then_with(|| TsptwRanking.compare(a_state, b_state)) 
+    //         //     .reverse()}); //reverse because greater means more likely to be uniquely represented
+
+    //         all_decisions.sort_unstable_by(|(_a_id, a_cost, _a_dec,a_state), (_b_id, b_cost, _b_dec,b_state)| 
+    //             {a_cost.cmp(b_cost)
+    //             .reverse()}); //reverse because greater means more likely to be uniquely represented
+
+    //         let nclusters = usize::min(
+    //             how_many,
+    //             all_decisions.len(),
+    //         );
+    //         // reserve split vector lengths
+    //         let mut split = vec![vec![]; nclusters];
+    //         for (i, (d_id,_d_cost,_,_)) in all_decisions.iter().copied().enumerate() {
+    //             split[i.min(nclusters-1)].push(d_id);
+    //         }
+    //         split
+    //     }
+    // }
+
     fn split_edges(
         &self,
         decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &Self::State)>,
@@ -233,69 +307,42 @@ impl Problem for Tsptw {
         if self.clustering {
             // println!("splitting {:?}", decisions.clone().map(|(a,b,_c)| (a,b)).collect::<Vec<_>>());
             let all_decision_state_capacities = decisions
-                .map(|(id, cost, _d,s)| StateClusterHelper::new(id, cost, s.clone()))
+                .map(|(id, cost, _d, s)| StateClusterHelper::new(id, cost, s.clone()))
                 .collect::<Vec<_>>();
-            let nclusters = usize::min(
-                how_many,
-                all_decision_state_capacities.len(),
-            );
+            let nclusters = usize::min(how_many, all_decision_state_capacities.len());
             let clustering = kmeans(nclusters, &all_decision_state_capacities, 100);
-            let mut result = vec![Vec::new(); nclusters];
+            let mut result = vec![(0_isize, Vec::new()); nclusters];
             for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
-                result[label].push(h.id);
+                result[label].0 = h.at(0) as isize;
+                result[label].1.push(h.id);
             }
-            result.retain(|v| !v.is_empty()); 
+            result.retain(|v| !v.1.is_empty());
 
             while result.len() < nclusters {
-                
-                result.sort_unstable_by(|a,b|a.len().cmp(&b.len()).reverse());
-                let largest = result[0].clone();
+                result.sort_unstable_by(|a, b| a.0.cmp(&b.0).reverse());
+                let (c, largest) = result.iter().find(|t| t.1.len() > 1).unwrap().clone();
                 // println!("in while with {:?} of {:?} clusters and largest {:?}", result.len(),nclusters,largest);
-                
+
                 // remove largest from cluster
                 result.remove(0);
 
                 // extend what is left
                 let diff = (nclusters - result.len()).min(largest.len());
-                let mut split = vec![vec![]; diff];
+                let mut split = vec![(0_isize, vec![]); diff];
 
                 for (i, val) in largest.iter().copied().enumerate() {
-                    split[i.min(diff-1)].push(val);
+                    split[i.min(diff - 1)].0 = c;
+                    split[i.min(diff - 1)].1.push(val);
                 }
                 result.append(&mut split);
-                
-                // println!(
-                //             "split into sizes: {:?}",
-                //             result.iter().map(Vec::len).collect::<Vec<_>>()
-                //         );
-
             }
 
             result
+                .into_iter()
+                .map(|(_centroid, cluster)| cluster)
+                .collect()
         } else {
-            //TODO use split at mut logic of earlier, order, split at mut and them map into 2 vectors instead -- check keep merge art of code
-
-            let mut all_decisions = decisions.collect::<Vec<_>>();
-            //TODO confirm behaviour of ordering
-            // all_decisions.sort_unstable_by(|(_a_id, a_cost, _a_dec,a_state), (_b_id, b_cost, _b_dec,b_state)| 
-            //     {a_cost.cmp(b_cost)
-            //     .then_with(|| TsptwRanking.compare(a_state, b_state)) 
-            //     .reverse()}); //reverse because greater means more likely to be uniquely represented
-
-            all_decisions.sort_unstable_by(|(_a_id, a_cost, _a_dec,a_state), (_b_id, b_cost, _b_dec,b_state)| 
-                {a_cost.cmp(b_cost)
-                .reverse()}); //reverse because greater means more likely to be uniquely represented
-
-            let nclusters = usize::min(
-                how_many,
-                all_decisions.len(),
-            );
-            // reserve split vector lengths
-            let mut split = vec![vec![]; nclusters];
-            for (i, (d_id,_d_cost,_,_)) in all_decisions.iter().copied().enumerate() {
-                split[i.min(nclusters-1)].push(d_id);
-            }
-            split
+            default_split_edges(self, decisions, how_many)
         }
     }
 }

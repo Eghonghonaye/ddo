@@ -1,1 +1,1 @@
-{"Aborted":"false","Cluster":"false","Duration":"0.004","Gap":"0.000","Lower Bnd":"4689.00","Objective":"4689.00","Solution":"\" 1 2 3 4 5 6 7 8 9 11 10 12 19 13 14 15 16 17 18 20 0\"","Solver":"BB","Upper Bnd":"4689.00"}
+{"Aborted":"false","Cluster":"false","Duration":"0.006","Gap":"0.000","Lower Bnd":"4689.00","Objective":"4689.00","Solution":"\" 1 2 3 4 5 6 7 8 9 11 10 12 19 13 14 15 16 17 18 20 0\"","Solver":"BB","Upper Bnd":"4689.00","Width":"21"}

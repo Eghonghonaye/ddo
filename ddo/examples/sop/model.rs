@@ -144,7 +144,7 @@ impl Problem for Sop {
     fn transition_cost(&self, state: &SopState, _: &Self::State, d: Decision) -> isize {
         // Sop is a minimization problem but the solver works with a 
         // maximization perspective. So we have to negate the cost.
-
+        println!("state previous {:?} ", state.previous);
         - self.min_distance_to(state, d.value as usize)
     }
 

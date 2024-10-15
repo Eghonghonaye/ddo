@@ -453,18 +453,18 @@ where
 
         self._finalize(input);
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("after compile \n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-        // // ***********************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("after compile \n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // ***********************************************
+        // */
 
         Ok(Completion { 
             is_exact: self.is_exact(), 
@@ -498,18 +498,18 @@ where
 
         self._finalize(input);
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("after refine \n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-        // // ***********************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("after refine \n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // ***********************************************
+        // */
 
         Ok(Completion {
             is_exact: self.is_exact(),
@@ -864,46 +864,46 @@ where
         } else {
             if curr_layer_id != 0 {
                 self._filter_with_cache(input, &mut curr_l);
-                //  // /* 
-                // // ***************** visualise *****************
-                // // *********************************************
-                // let mut config = VizConfigBuilder::default().build().unwrap();
-                // // config.show_deleted = true;
-                // // config.show_deleted = true;
-                // config.group_merged = true;
-                // print!("before split layer {curr_layer_id}\n");
-                // let s = self.as_graphviz(&config);
-                // fs::write("incremental.dot", s).expect("Unable to write file"); 
-                // // *************************************************************
-                // // */
+                 // /* 
+                // ***************** visualise *****************
+                // *********************************************
+                let mut config = VizConfigBuilder::default().build().unwrap();
+                // config.show_deleted = true;
+                // config.show_deleted = true;
+                config.group_merged = true;
+                print!("before split layer {curr_layer_id}\n");
+                let s = self.as_graphviz(&config);
+                fs::write("incremental.dot", s).expect("Unable to write file"); 
+                // *************************************************************
+                // */
                 self._filter_constraints(input, &mut curr_l); // the root has no incoming so cannot filter
-                //  // /* 
-                // // ***************** visualise *****************
-                // // *********************************************
-                // let mut config = VizConfigBuilder::default().build().unwrap();
-                // // config.show_deleted = true;
-                // // config.show_deleted = true;
-                // config.group_merged = true;
-                // print!("before split layer {curr_layer_id}\n");
-                // let s = self.as_graphviz(&config);
-                // fs::write("incremental.dot", s).expect("Unable to write file"); 
-                // // *************************************************************
-                // // */
+                 // /* 
+                // ***************** visualise *****************
+                // *********************************************
+                let mut config = VizConfigBuilder::default().build().unwrap();
+                // config.show_deleted = true;
+                // config.show_deleted = true;
+                config.group_merged = true;
+                print!("before split layer {curr_layer_id}\n");
+                let s = self.as_graphviz(&config);
+                fs::write("incremental.dot", s).expect("Unable to write file"); 
+                // *************************************************************
+                // */
             }
             // filter the incoming edge states instead
             self._filter_with_dominance_edge_based(input, &mut curr_l);
-            //  // /* 
-            // // ***************** visualise *****************
-            // // *********************************************
-            // let mut config = VizConfigBuilder::default().build().unwrap();
-            // // config.show_deleted = true;
-            // // config.show_deleted = true;
-            // config.group_merged = true;
-            // print!("before split layer {curr_layer_id}\n");
-            // let s = self.as_graphviz(&config);
-            // fs::write("incremental.dot", s).expect("Unable to write file"); 
-            // // *************************************************************
-            // // */
+             // /* 
+            // ***************** visualise *****************
+            // *********************************************
+            let mut config = VizConfigBuilder::default().build().unwrap();
+            // config.show_deleted = true;
+            // config.show_deleted = true;
+            config.group_merged = true;
+            print!("before split layer {curr_layer_id}\n");
+            let s = self.as_graphviz(&config);
+            fs::write("incremental.dot", s).expect("Unable to write file"); 
+            // *************************************************************
+            // */
 
             self._stretch_if_needed(input, &mut curr_l, curr_layer_id);
 
@@ -1390,18 +1390,18 @@ where
         curr_layer_id: usize,
     ) -> bool {
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("before split layer {curr_layer_id}\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file"); 
-        // // *************************************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("before split layer {curr_layer_id}\n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file"); 
+        // *************************************************************
+        // */
 
         // order vec node by ranking
 
@@ -1451,6 +1451,7 @@ where
                 .split_edges(&mut inbound_edges.into_iter(), how_many)
         };
 
+        //TODO: here send things resulting in same state to same node
         let split_states: Vec<(Arc<T>, Vec<usize>)> = split_state_edges
             .into_iter()
             .map(|cluster| {
@@ -1471,18 +1472,18 @@ where
             get!(mut node node_id, self).flags.set_deleted(true);
         }
 
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("after split layer {curr_layer_id}\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-        // // *************************************************
-        // // */
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("after split layer {curr_layer_id}\n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // *************************************************
+        // */
 
         fully_split
     }
@@ -1692,7 +1693,7 @@ where
         // exactness is further corrected by edge additon which checks parent exactness too
         // TODO: when is a node exact now?
     }
-    //TODO these are not checked for duplications? What if there's already an edge like tis to that destination node?
+    //TODO these are not checked for duplications? What if there's already an edge like this to that destination node?
     fn _redirect_outgoing_edges(
         &mut self,
         input: &CompilationInput<T>,
@@ -1710,7 +1711,7 @@ where
 
                 // update edge state
                 let new_state = Arc::new(input.problem.transition(state, e.decision));
-
+                
                 // Here cost changes because the node has a different origin now
                 let cost = input.problem.transition_cost(
                     state.as_ref(),

@@ -78,23 +78,23 @@ function sop {
 
 function tsptw {
 	F="/home/eaeigbe/Documents/PhD/ddo/resources/tsptw/AFG/*"
-	t_width=500
+	for t_width in {20,30,40,50,70}; do
 		# rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_1_w1_10_w2_$t_width
 		# rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_0_w1_10_w2_$t_width
 		# rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_w_$t_width
-		# # rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B
+		# rm -r /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B
 
 		# mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_1_w1_10_w2_$t_width
 		# mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_0_w1_10_w2_$t_width
 		# mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_w_$t_width
-		# # mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B
+		# mkdir /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B
 
 		# for f in $F; do
-		# 	echo -e "\n"$f
-		# 	./target/release/examples/tsptw $f -s IR -w $t_width -c -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_1_w1_10_w2_$t_width/"
-		# 	./target/release/examples/tsptw $f -s IR -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_0_w1_10_w2_$t_width/"
-		# 	./target/release/examples/tsptw $f -s TD -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_w_$t_width/"
-		# # 	# ./target/release/examples/tsptw $f -j -s BB -d 30 -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B/"
+			# echo -e "\n"$f
+			# ./target/release/examples/tsptw $f -s IR -w $t_width -c -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_1_w1_10_w2_$t_width/"
+			# ./target/release/examples/tsptw $f -s IR -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_0_w1_10_w2_$t_width/"
+			# ./target/release/examples/tsptw $f -s TD -w $t_width -j -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_w_$t_width/"
+			# ./target/release/examples/tsptw $f -j -s BB -d 30 -x "/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B/"
 		# done
 
 		rm /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_$t_width.csv
@@ -103,15 +103,16 @@ function tsptw {
 		python /home/eaeigbe/Documents/PhD/ddo/experiments/src/clustering_incremental_tests/analyse.py -i /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_0_w1_10_w2_$t_width -o  /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_$t_width.csv
 		python /home/eaeigbe/Documents/PhD/ddo/experiments/src/clustering_incremental_tests/analyse.py -i /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/c_1_w1_10_w2_$t_width -o  /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_$t_width.csv
 		python /home/eaeigbe/Documents/PhD/ddo/experiments/src/clustering_incremental_tests/analyse.py -i /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_w_$t_width -o  /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_$t_width.csv
-		# python /home/eaeigbe/Documents/PhD/ddo/experiments/src/clustering_incremental_tests/analyse.py -i /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B -o  /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_$t_width.csv
+		python /home/eaeigbe/Documents/PhD/ddo/experiments/src/clustering_incremental_tests/analyse.py -i /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/TD_B_n_B -o  /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_$t_width.csv
 
+	done
 
 		# python /home/eaeigbe/Documents/PhD/ddo/experiments/src/clustering_incremental_tests/plot.py -i /home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_50.csv,/home/eaeigbe/Documents/PhD/ddo/experiments/results/tsptw/AFG/summary_w1_10_w2_100.csv -t min
 
 }
 
-knapsack
-# tsptw
+# knapsack
+tsptw
 # sop
 
 
