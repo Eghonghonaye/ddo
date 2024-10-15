@@ -88,7 +88,7 @@ pub trait Problem {
     /// outgoing decision is infeasible. In that case return true. This will be used for a conflict
     /// count to split highly conflicted states first.
     /// Return false otherwise
-    fn check_conflict(&self, _in_state: &Self::State, _out_state: &Self::State) -> bool {
+    fn check_conflict(&self, _in_state: &Decision, _out_state: &Decision) -> bool {
         false
     }
 

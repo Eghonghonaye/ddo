@@ -74,6 +74,8 @@ struct Node<T> {
     outgoing: Vec<EdgeId>,
     /// The state associated to this node
     state: Arc<T>,
+    /// (Under-)estimate of conflicts between in/outgoing decisions
+    conflict_count: usize,
 }
 
 /// Materializes one edge a.k.a arc from the decision diagram. It logically
@@ -199,6 +201,19 @@ macro_rules! foreachincoming {
         let mut index = 0;
         while index < get!(node $id, $dd).incoming.len() {
             let edge_id = get!(node $id, $dd).incoming[index];
+            let edge = get!(edge edge_id, $dd).clone();
+            $action(edge);
+            index += 1;
+        }
+    };
+}
+
+/// This macro performs an action for each outgoing edge of a given node in the dd
+macro_rules! foreachoutgoing {
+    (edge of $id:expr, $dd:expr, $action:expr) => {
+        let mut index = 0;
+        while index < get!(node $id, $dd).outgoing.len() {
+            let edge_id = get!(node $id, $dd).outgoing[index];
             let edge = get!(edge edge_id, $dd).clone();
             $action(edge);
             index += 1;
@@ -533,6 +548,7 @@ where
             theta: None,
             flags: NodeFlags::new_exact(),
             depth: input.residual.depth,
+            conflict_count: 0,
         };
 
         self.nodes.push(vec![root_node]);
@@ -1151,6 +1167,7 @@ where
                     theta: None,
                     flags,
                     depth: parent.depth + 1,
+                    conflict_count: 0,
                 });
                 append_edge_to!(
                     self,
@@ -1348,6 +1365,7 @@ where
                 theta: None,
                 flags: NodeFlags::new_relaxed(),
                 depth,
+                conflict_count: 0,
             });
             node_id
         });
@@ -1409,6 +1427,11 @@ where
             get!(node a, self)
                 .value_top
                 .cmp(&get!(node b, self).value_top)
+                .then_with(|| {
+                    get!(node a, self)
+                        .conflict_count
+                        .cmp(&get!(node b, self).conflict_count)
+                })
         }); // no reverse because greater means more likely to be split
 
         // send all inbound to be split into n nodes
@@ -1510,6 +1533,11 @@ where
             get!(node a, self)
                 .value_top
                 .cmp(&get!(node b, self).value_top)
+                .then_with(|| {
+                    get!(node a, self)
+                        .conflict_count
+                        .cmp(&get!(node b, self).conflict_count)
+                })
         }); // no reverse because greater means more likely to be split
 
         // select worst node and split
@@ -1638,6 +1666,7 @@ where
                     NodeFlags::new_relaxed()
                 },
                 depth,
+                conflict_count: 0,
             });
 
             let split_id = NodeId(curr_layer_id.0, curr_layer.len() - 1);
@@ -1677,11 +1706,13 @@ where
         edges_to_append: &Vec<usize>,
         state: &&Arc<T>,
         split_id: NodeId,
-        _outbound_edges: &FxHashSet<EdgeId>,
+        outbound_edges: &FxHashSet<EdgeId>,
     ) {
+        let mut conflict_count = 0;
         for edge_id in edges_to_append {
             // update edge state
-            let from_node = get!(node get!(edge EdgeId(*edge_id), self).from, self);
+            let edge = get!(edge EdgeId(*edge_id), self).clone();
+            let from_node = get!(node edge.from, self);
             let new_state = Arc::new(input.problem.transition(
                 from_node.state.as_ref(),
                 get!(edge EdgeId(*edge_id), self).decision,
@@ -1699,10 +1730,22 @@ where
             get!(mut edge EdgeId(*edge_id), self).state = new_state;
 
             redirect_edge!(self, EdgeId(*edge_id), get!(edge EdgeId(*edge_id), self));
+
+            for outbound_edge in outbound_edges {
+                if input.problem.check_conflict(
+                    &edge.decision,
+                    &get!(edge EdgeId(outbound_edge.0), self).decision,
+                ) {
+                    conflict_count += 1;
+                }
+            }
         }
         // set node to exact if some and all and relaxed otherwise
         // exactness is further corrected by edge additon which checks parent exactness too
         // TODO: when is a node exact now?
+
+        let split_node = get!(mut node split_id, self);
+        split_node.conflict_count = conflict_count;
     }
     //TODO these are not checked for duplications? What if there's already an edge like this to that destination node?
     fn _redirect_outgoing_edges(
@@ -1778,6 +1821,15 @@ where
                     node.best = Some(EdgeId(*e_id));
                     node.value_top = value;
                 }
+
+                foreachoutgoing!(edge of node_id, self, |out_edge: Edge<T>| {
+                    if input
+                        .problem
+                        .check_conflict(&in_edge.decision, &out_edge.decision)
+                    {
+                        get!(mut node node_id, self).conflict_count += 1;
+                    }
+                });
             }
         }
     }
@@ -1789,6 +1841,7 @@ where
         node.value_bot = isize::MIN;
         node.theta = None;
         node.best = None;
+        node.conflict_count = 0;
     }
 }
 
