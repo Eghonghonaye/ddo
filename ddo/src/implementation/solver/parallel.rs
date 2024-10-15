@@ -415,6 +415,7 @@ where
             best_lb,
             cache: &shared.cache,
             dominance: shared.dominance,
+            binary_split: false,
         };
 
         let Completion{is_exact, ..} = mdd.compile(&compilation)?;

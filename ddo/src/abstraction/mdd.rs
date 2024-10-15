@@ -81,6 +81,9 @@ pub struct CompilationInput<'a, State> {
     /// Data structure containing info about past compilations used to prune the search
     pub cache: &'a dyn Cache<State = State>,
     pub dominance: &'a dyn DominanceChecker<State = State>,
+    /// Set to true to toggle the usual split of nodes into two instead of this work's innovation of
+    ///  splitting nodes in more at the same time.
+    pub binary_split: bool,
 }
 
 /// This trait describes the operations that can be expected from an abstract

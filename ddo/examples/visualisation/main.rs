@@ -284,6 +284,7 @@ fn main() {
         best_lb: isize::MIN,
         cache: &cache,
         dominance: &dominance,
+        binary_split: false,
     };
 
     let mut clean = Mdd::<KnapsackState, {FRONTIER}>::new();

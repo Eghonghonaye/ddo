@@ -357,6 +357,7 @@ where
             residual: &node,
             //
             best_lb,
+            binary_split: false,
         };
 
         let Completion{is_exact, ..} = self.mdd.compile(&compilation)?;
@@ -381,6 +382,7 @@ where
             residual: &node,
             //
             best_lb,
+            binary_split: false,
         };
 
         let Completion{is_exact, ..} = self.mdd.compile(&compilation)?;

@@ -145,6 +145,7 @@ where
             residual: &root,
             //
             best_lb,
+            binary_split: false,
         };
 
         // compile initial narrow width diagram
@@ -261,6 +262,7 @@ where
                 residual: &root,
                 //
                 best_lb,
+                binary_split: false,
             };
 
             let outcome = self.mdd.refine(&compilation);

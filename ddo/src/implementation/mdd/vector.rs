@@ -1219,7 +1219,11 @@ where
                     /* for both exact and realaxed we just keep splitting and filtering */
                     let mut fully_split = false;
                     while curr_l.len() < input.max_width {
-                        fully_split = self._split(input, curr_l, curr_layer_id);
+                        if input.binary_split {
+                            fully_split = self._split_layer(input, curr_l, curr_layer_id);
+                        } else {
+                            fully_split = self._split(input, curr_l, curr_layer_id);
+                        }
 
                         // set rub
                         for node_id in curr_l.iter() {
@@ -1483,6 +1487,98 @@ where
         fully_split
     }
 
+    fn _split_layer(
+        &mut self,
+        input: &CompilationInput<T>,
+        curr_l: &mut Vec<NodeId>,
+        curr_layer_id: usize,
+    ) -> bool {
+        // order vec node by ranking
+        curr_l.sort_unstable_by(|a, b| {
+            get!(node a, self)
+                .value_top
+                .cmp(&get!(node b, self).value_top)
+        }); // no reverse because greater means more likely to be split
+
+        // select worst node and split
+        let mut index = curr_l.len();
+        while index > 0 {
+            let node_to_split_id = curr_l[index - 1];
+            let node_to_split = get!(node node_to_split_id, self);
+
+            // collect inbound and outbound edges from linked list structure
+            let mut inbound_edges = node_to_split
+                .incoming
+                .iter()
+                .map(|x| {
+                    (
+                        x.0,
+                        get!(node self.edges[x.0].from,self).value_top + self.edges[x.0].cost,
+                        &self.edges[x.0].decision,
+                        self.edges[x.0].state.as_ref(),
+                    )
+                })
+                .collect::<Vec<_>>();
+
+            if inbound_edges.len() > 1 {
+                let split_states = self._split_node(input, &mut inbound_edges.into_iter());
+
+                //Delete split node
+                get!(mut node node_to_split_id, self)
+                    .flags
+                    .set_deleted(true);
+
+                let mut new_nodes =
+                    self._redirect_edges_after_split(input, &split_states, LayerId(curr_layer_id));
+
+                curr_l.remove(index - 1);
+                curr_l.append(&mut new_nodes);
+
+                // let mut config = VizConfigBuilder::default().build().unwrap();
+                // // config.show_deleted = true;
+                // // config.show_deleted = true;
+                // config.group_merged = true;
+                // print!("after split layer {curr_layer_id}\n");
+                // let s = self.as_graphviz(&config);
+                // fs::write("incremental.dot", s).expect("Unable to write file");
+
+                return false;
+            } else {
+                index -= 1;
+                if inbound_edges.is_empty() {
+                    get!(mut node node_to_split_id, self)
+                        .flags
+                        .set_deleted(true);
+                }
+            }
+        }
+        // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
+        // config.group_merged = true;
+        // print!("after split layer {curr_layer_id}\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
+
+        true
+    }
+
+    fn _split_node(
+        &self,
+        input: &CompilationInput<T>,
+        inbound_edges: &mut dyn Iterator<Item = (usize, isize, &Decision, &T)>,
+    ) -> Vec<(Arc<T>, Vec<usize>)> {
+        // by default tries to split into 2
+        let split_state_edges = input.problem.split_edges(inbound_edges, 2);
+
+        split_state_edges
+            .into_iter()
+            .map(|cluster| {
+                let merged = self._merge_states_from_incoming_edges(input, &cluster);
+                (merged, cluster)
+            })
+            .collect()
+    }
+
     fn _merge_states_from_incoming_edges(
         &self,
         input: &CompilationInput<T>,
@@ -1538,13 +1634,7 @@ where
             let mut outbound_edges = FxHashSet::default();
             for edge_id in incoming_edges {
                 let outbound_node = get!(edge EdgeId(*edge_id), self).to;
-                //TODO - why do i need iter collect here? why cant i just extend with the vector
-                outbound_edges.extend(
-                    get!(node outbound_node, self)
-                        .outgoing
-                        .iter()
-                        .collect::<Vec<_>>(),
-                );
+                outbound_edges.extend(get!(node outbound_node, self).outgoing.iter());
             }
 
             // TODO remove duplicated outbound edges via dedup https://doc.rust-lang.org/std/vec/struct.Vec.html#method.dedup

@@ -143,6 +143,7 @@ where
             residual: &root,
             //
             best_lb,
+            binary_split: false,
         };
 
         // compile initial narrow width diagram
