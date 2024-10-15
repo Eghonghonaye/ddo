@@ -131,6 +131,7 @@ fn main() {
             "Gap":        format!("{:.3}", gap),
             "Aborted":    format!("{}", !is_exact),
             "Cluster":    format!("{}", args.cluster),
+            "Binary Split":    format!("{}", args.binary_split),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(problem.nb_variables())),
             "Solution":   format!("{:?}", solution_to_string(problem.nb_variables(), solver.best_solution()))

@@ -93,11 +93,12 @@ fn main() {
         decisions.iter().map(|d| d.value).collect::<Vec<_>>()
     });
 
-    println!("Duration:   {:.3} seconds", duration.as_secs_f32());
-    println!("Objective:  {}", best_value.unwrap_or(-1));
-    println!("Upper Bnd:  {}", upper_bound);
-    println!("Lower Bnd:  {}", lower_bound);
-    println!("Gap:        {:.3}", gap);
-    println!("Aborted:    {}", !is_exact);
-    println!("Solution:   {:?}", best_solution.unwrap_or_default());
+    println!("Duration:     {:.3} seconds", duration.as_secs_f32());
+    println!("Objective:    {}", best_value.unwrap_or(-1));
+    println!("Upper Bnd:    {}", upper_bound);
+    println!("Lower Bnd:    {}", lower_bound);
+    println!("Gap:          {:.3}", gap);
+    println!("Aborted:      {}", !is_exact);
+    println!("Cluster:      {}", cluster);
+    println!("Solution:     {:?}", best_solution.unwrap_or_default());
 }

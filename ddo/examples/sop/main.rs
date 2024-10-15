@@ -165,6 +165,7 @@ fn main() {
             "Gap":        format!("{:.3}", gap),
             "Aborted":    format!("{}", !is_exact),
             "Cluster":    format!("{}", args.cluster),
+            "Binary Split":    format!("{}", args.binary_split),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
             "Solution":   format!("{:?}", best_solution)
