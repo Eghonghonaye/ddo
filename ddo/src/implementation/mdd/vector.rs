@@ -1411,11 +1411,25 @@ where
                 .cmp(&get!(node b, self).value_top)
         }); // no reverse because greater means more likely to be split
 
-        //TODO: select the set of nodes to split - here we assume all
-        let to_split = curr_l.clone();
+        // send all inbound to be split into n nodes
+        let mut how_many = input.max_width;
+
+        let mut to_split = curr_l.clone();
+        // Don't split already exact nodes
+        to_split.retain(|node_id: &NodeId| {
+            if get!(node node_id, self).flags.is_exact() {
+                how_many -= 1;
+                false
+            } else {
+                true
+            }
+        });
+
+        // Done with figuring out which/how many to split
+        let how_many = how_many;
+        let to_split = to_split;
 
         let mut inbound_edges: Vec<(usize, isize, &Decision, &T)> = vec![];
-
         // Get all inbound edges -- already filtered at this point
         for node_id in &to_split {
             inbound_edges.extend(
@@ -1435,9 +1449,6 @@ where
             //Delete split node
             get!(mut node node_id, self).flags.set_deleted(true);
         }
-
-        // send all inbound to be split into n nodes
-        let how_many = input.max_width; //TODO: because we currently split the entire layer but replace if we do some other logic to split subset
 
         let fully_split = how_many >= inbound_edges.len();
         let split_state_edges = if fully_split {
