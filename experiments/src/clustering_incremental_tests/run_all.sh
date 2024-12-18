@@ -3,6 +3,45 @@
 SAVEIFS=$IFS
 IFS=$(echo -en "\n\b")
 
+function runOracle {
+	problemname=$1
+    folder=$2
+    problemtype=$3
+	experimenttype=$4
+	F="resources/$folder/*"
+    runmdd="./target/release/examples/$problemname"
+
+
+	#### make directories if they dont exist
+	# Define the directory path
+	DIR1="experiments/results/$experimenttype"
+	DIR2="experiments/results/$experimenttype/$folder"
+
+	# Check if the directory does not exist
+	if [ ! -d "$DIR1" ]; then
+		# Directory does not exist, so create it
+		mkdir "$DIR1"
+	else
+		IFS='/' read -ra ADDR <<< "$folder"
+		DIR2=$DIR1
+		for i in "${ADDR[@]}"; do
+			# process "$i"
+			DIR2=$DIR2/$i
+			if [ ! -d "$DIR2" ]; then
+				mkdir "$DIR2"
+			fi
+		done
+		
+	fi
+
+	#first run oracle
+	rm -r experiments/results/BnB/$folder/TD_B_n_B
+	mkdir experiments/results/BnB/$folder/TD_B_n_B
+	for f in $F; do
+		echo -e "\n"$f
+		$runmdd $f -j -s BB -d 120 -x "experiments/results/BnB/$folder/TD_B_n_B/"
+	done
+}
 
 function run {
     problemname=$1
@@ -27,7 +66,7 @@ function run {
 		DIR2=$DIR1
 		for i in "${ADDR[@]}"; do
 			# process "$i"
-			DIR2="$DIR2/$i"
+			DIR2=$DIR2/$i
 			if [ ! -d "$DIR2" ]; then
 				mkdir "$DIR2"
 			fi
@@ -35,16 +74,8 @@ function run {
 		
 	fi
 
-	# #first run oracle
-	# rm -r experiments/results/$experimenttype/$folder/TD_B_n_B
-	# mkdir experiments/results/$experimenttype/$folder/TD_B_n_B
-	# for f in $F; do
-	# 	echo -e "\n"$f
-	# 	$runmdd $f -j -s BB -d 120 -x "experiments/results/$experimenttype/$folder/TD_B_n_B/"
-	# done
-
 	# # # for t_width in {20,50,100,200,500,1000}; do
-	for t_width in {20,50,100}; do
+	for t_width in {20,50,100,200,500,1000}; do
 
 		rm -r experiments/results/$experimenttype/$folder/TD_w_$t_width
 		mkdir experiments/results/$experimenttype/$folder/TD_w_$t_width		
@@ -108,8 +139,8 @@ function run {
 		rm experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
 		echo Name,Lower,Upper,Duration,Aborted,RefineCluster,CompileCluster,Dominance,Binary,Solver,Width,Gap,Objective  > experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
 		
-		python experiments/src/clustering_incremental_tests/analyse.py -i experiments/results/$experimenttype/$folder/TD_w_$t_width -o  experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
-		python experiments/src/clustering_incremental_tests/analyse.py -i experiments/results/$experimenttype/$folder/TD_B_n_B -o  experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
+		python3 experiments/src/clustering_incremental_tests/analyse.py -i experiments/results/$experimenttype/$folder/TD_w_$t_width -o  experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
+		python3 experiments/src/clustering_incremental_tests/analyse.py -i experiments/results/BnB/$folder/TD_B_n_B -o  experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
 	done
 
 		# python experiments/src/clustering_incremental_tests/plot.py -i experiments/results/$experimenttype/$folder/summary_w1_10_w2_20.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_50.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_100.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_200.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_500.csv \
@@ -135,82 +166,82 @@ function run {
 # run "lcs" "lcs" "max" "All"
 # ################
 
-# ##############
-# run "talentsched" "talentsched" "min" "Gewoon"
-# run "srflp" "srflp" "min" "Gewoon"
-# run "tsptw" "tsptw/AFG" "min" "Gewoon"
-# run "misp" "misp" "max" "Gewoon"
-# run "sop" "sop" "min" "Gewoon"
-# run "mcp" "mcp" "max" "Gewoon"
-# run "knapsack" "knapsack" "max" "Gewoon"
-# run "max2sat" "max2sat" "max" "Gewoon"
-# run "psp" "psp/instancesWith2items" "min" "Gewoon"
-# run "lcs" "lcs" "max" "Gewoon"
-# ################
+##############
+run "talentsched" "talentsched" "min" "Gewoon"
+run "srflp" "srflp" "min" "Gewoon"
+run "tsptw" "tsptw/AFG" "min" "Gewoon"
+run "misp" "misp" "max" "Gewoon"
+run "sop" "sop" "min" "Gewoon"
+run "mcp" "mcp" "max" "Gewoon"
+run "knapsack" "knapsack" "max" "Gewoon"
+run "max2sat" "max2sat" "max" "Gewoon"
+run "psp" "psp/instancesWith2items" "min" "Gewoon"
+run "lcs" "lcs" "max" "Gewoon"
+################
 
-# ##############
-# run "talentsched" "talentsched" "min" "Cluster"
-# run "srflp" "srflp" "min" "Cluster"
-# run "tsptw" "tsptw/AFG" "min" "Cluster"
-# run "misp" "misp" "max" "Cluster"
-# run "sop" "sop" "min" "Cluster"
-# run "mcp" "mcp" "max" "Cluster"
-# run "knapsack" "knapsack" "max" "Cluster"
-# run "max2sat" "max2sat" "max" "Cluster"
-# run "psp" "psp/instancesWith2items" "min" "Cluster"
-# run "lcs" "lcs" "max" "Cluster"
-# ################
+##############
+run "talentsched" "talentsched" "min" "Cluster"
+run "srflp" "srflp" "min" "Cluster"
+run "tsptw" "tsptw/AFG" "min" "Cluster"
+run "misp" "misp" "max" "Cluster"
+run "sop" "sop" "min" "Cluster"
+run "mcp" "mcp" "max" "Cluster"
+run "knapsack" "knapsack" "max" "Cluster"
+run "max2sat" "max2sat" "max" "Cluster"
+run "psp" "psp/instancesWith2items" "min" "Cluster"
+run "lcs" "lcs" "max" "Cluster"
+################
 
-# ##############
-# run "knapsack" "knapsack" "max" "Dominance"
-# run "lcs" "lcs" "max" "Dominance"
-# run "tsptw" "tsptw/AFG" "min" "Dominance"
-# ################
+##############
+run "knapsack" "knapsack" "max" "Dominance"
+run "lcs" "lcs" "max" "Dominance"
+run "tsptw" "tsptw/AFG" "min" "Dominance"
+################
 
-# ##############
-# run "knapsack" "knapsack" "max" "RUB"
+##############
+run "knapsack" "knapsack" "max" "RUB"
 # run "talentsched" "talentsched" "min" "RUB"
 # run "sop" "sop" "min" "RUB"
-# run "misp" "misp" "max" "RUB"
-# run "max2sat" "max2sat" "max" "RUB"
+run "misp" "misp" "max" "RUB"
+run "max2sat" "max2sat" "max" "RUB"
 # run "tsptw" "tsptw/AFG" "min" "RUB"
-# ################
+################
 
-# ##############
-# run "knapsack" "knapsack" "max" "VarOrd"
-# run "misp" "misp" "max" "VarOrd"
-# run "max2sat" "max2sat" "max" "VarOrd"
-# ################
+##############
+run "knapsack" "knapsack" "max" "VarOrd"
+run "misp" "misp" "max" "VarOrd"
+run "max2sat" "max2sat" "max" "VarOrd"
+################
 
-# ##############
-# # ############## "Cluster+VarOrd"
-# run "knapsack" "knapsack" "max" "Cluster+VarOrd"
-# run "misp" "misp" "max" "Cluster+VarOrd"
-# run "max2sat" "max2sat" "max" "Cluster+VarOrd"
-# ##############
+##############
+# ############## "Cluster+VarOrd"
+run "knapsack" "knapsack" "max" "Cluster+VarOrd"
+run "misp" "misp" "max" "Cluster+VarOrd"
+run "max2sat" "max2sat" "max" "Cluster+VarOrd"
+##############
 
-# ##############
-# # ############## "Dominance+VarOrd" 
-# run "knapsack" "knapsack" "max" "Dominance+VarOrd" 
-# ##############
+##############
+# ############## "Dominance+VarOrd" 
+run "knapsack" "knapsack" "max" "Dominance+VarOrd" 
+##############
 
-# ############### 
-# # ############## "RUB+VarOrd"	
-# run "knapsack" "knapsack" "max" "RUB+VarOrd"	
-# run "misp" "misp" "max" "RUB+VarOrd"	
-# run "max2sat" "max2sat" "max" "RUB+VarOrd"	
-# ##############
+############### 
+# ############## "RUB+VarOrd"	
+run "knapsack" "knapsack" "max" "RUB+VarOrd"	
+run "misp" "misp" "max" "RUB+VarOrd"	
+run "max2sat" "max2sat" "max" "RUB+VarOrd"	
+##############
 
 
-# ##############
-# # ############## "RUB+Cluster" 
-# run "knapsack" "knapsack" "max" "RUB+Cluster" 
+##############
+# ############## "RUB+Cluster" 
+run "knapsack" "knapsack" "max" "RUB+Cluster" 
 # run "talentsched" "talentsched" "min" "RUB+Cluster" 
 # run "sop" "sop" "min" "RUB+Cluster" 
-# run "misp" "misp" "max" "RUB+Cluster" 
-# run "max2sat" "max2sat" "max" "RUB+Cluster" 
+run "misp" "misp" "max" "RUB+Cluster" 
+run "max2sat" "max2sat" "max" "RUB+Cluster" 
 # run "tsptw" "tsptw/AFG" "min" "RUB+Cluster" 
-# ##############
+##############
 
 # ##############
 # # ############## "RUB+Dominance"
@@ -220,8 +251,22 @@ function run {
 
 # ##############
 # # ############## "Dominance+Cluster" 
-# run "knapsack" "knapsack" "max" "Dominance+Cluster" 
-# run "lcs" "lcs" "max" "Dominance+Cluster" 
+run "knapsack" "knapsack" "max" "Dominance+Cluster" 
+run "lcs" "lcs" "max" "Dominance+Cluster" 
 run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster" 
 # ##############
+
+##############
+runOracle "talentsched" "talentsched" "min" "All"
+runOracle "srflp" "srflp" "min" "All"
+runOracle "tsptw" "tsptw/AFG" "min" "All"
+runOracle "misp" "misp" "max" "All"
+runOracle "sop" "sop" "min" "All"
+runOracle "mcp" "mcp" "max" "All"
+runOracle "knapsack" "knapsack" "max" "All"
+runOracle "max2sat" "max2sat" "max" "All"
+runOracle "psp" "psp/instancesWith2items" "min" "All"
+runOracle "lcs" "lcs" "max" "All"
+################
+
 			

@@ -79,13 +79,13 @@ def plot_how_many_better(args):
 
 def plot_bound_width(files,type):
     # files = args.input
-    save_path = files[0].split("summary")[0]
+    # save_path = files[0].split("summary")[0]
 
     # fig, axs = plt.subplots(ncols=len(args.input))
     all_df = []
     for index,file in enumerate(files):
         df = pd.read_csv(file,header=0)
-        
+        print(file)
 
         if type == "max":
             df["RealUpper"] = df.groupby('Name')['Upper'].transform('min')
@@ -123,7 +123,7 @@ def plot_bound_width(files,type):
     all_df['Binary'] = all_df['Binary'].map({'true': 'B', 'false': 'X'})
 
     # all_df['Label'] = all_df['Solver'] + "-" + all_df['CompileCluster'] + "-" + all_df['RefineCluster'] + "-" + all_df['Binary']
-    all_df['Label'] = all_df['Solver'] + "-" + all_df['Dominance'] + "-" + all_df['RefineCluster'] + "-" + all_df['Binary']
+    # all_df['Label'] = all_df['Solver'] + "-" + all_df['Dominance'] + "-" + all_df['RefineCluster'] + "-" + all_df['Binary']
     return(all_df)
     # print(all_df['Solver'].unique())
     # print(all_df.columns)
@@ -143,42 +143,20 @@ def plot_bound_width(files,type):
     plt.show()
     
 
-def plot_cluster(problem_names):
+
+def plot(problem_names):
     all_df = []
-    for (problem,folder,type) in problem_names:
-        print(problem)
-        path = f"/home/eaeigbe/Documents/PhD/ddo/experiments/results/Cluster/{folder}"
-        filenames = [ path+"/"+filename for filename in listdir(path) if filename.endswith( "csv" ) ]
-        df = plot_bound_width(filenames,type)
-        df["Problem"] = problem
-        # print(df.to_string())
-        all_df.append(df)
-
-    all_df = pd.concat(all_df)
-    all_df.reset_index(level=None, drop=False, inplace=True, col_level=0, col_fill="")
-
-    # print(all_df.to_string())
-    all_df = all_df.drop(all_df[all_df["Solver"] == 'incremental'].index)
-    all_df = all_df.drop(all_df[all_df["Solver"] == 'branch-bound'].index)
-    # print(all_df.to_string())
-
-    g = sns.FacetGrid(all_df, col="Problem", col_wrap=2)
-    g.map_dataframe(sns.lineplot,x="Width", y="RealGap", hue="Label").add_legend() 
-    g.set_ylabels("Normalised Bound")
-    g.set_xlabels("Width")
-    plt.show() 
-
-
-def plot_dominance(problem_names):
-    all_df = []
-    for (problem,folder,type) in problem_names:
-        print(problem)
-        path = f"/home/eaeigbe/Documents/PhD/ddo/experiments/results/Dominance/{folder}"
-        filenames = [ path+"/"+filename for filename in listdir(path) if filename.endswith( "csv" ) ]
-        df = plot_bound_width(filenames,type)
-        df["Problem"] = problem
-        # print(df.to_string())
-        all_df.append(df)
+    for (problem,subfolder,experiments,type) in problem_names:
+        for folder in experiments:
+            print(problem)
+            path = f"/home/eaeigbe/Documents/PhD/ddo/experiments/results/{folder}/{subfolder}"
+            filenames = [ path+"/"+filename for filename in listdir(path) if filename.endswith( "csv" ) ]
+            df = plot_bound_width(filenames,type)
+            df["Problem"] = problem
+            df["Conditions"] = folder
+            df['Label'] = df['Solver'] + "-->" + df['Conditions']
+            # print(df.to_string())
+            all_df.append(df)
 
     all_df = pd.concat(all_df)
     all_df.reset_index(level=None, drop=False, inplace=True, col_level=0, col_fill="")
@@ -211,8 +189,12 @@ if __name__ == "__main__":
     #     ])
     
 
-    plot_dominance([
-        ("knapsack", "knapsack", "max"),
+    # plot_dominance([
+    #     ("knapsack", "knapsack", "max"),
+    #     ])
+    
+    plot([
+        ("knapsack", "knapsack", ["Cluster","Dominance","Dominance+Cluster"], "max"),
         ])
 
 

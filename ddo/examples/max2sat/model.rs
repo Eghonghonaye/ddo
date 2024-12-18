@@ -107,6 +107,10 @@ pub struct Max2Sat {
     // only used by the relaxation, but somehow it feels cleaner to store it here
     nk: Vec<isize>,
     estimates: Vec<isize>,
+    /// Whether we use rough upper bound,
+    pub rub: bool,
+    /// Whether we use variable ordering or random,
+    pub variable_order: bool,
 }
 
 const fn idx(x: isize) -> usize {
@@ -119,7 +123,7 @@ fn mk_lit(x: isize) -> usize {
     abs + abs + sign
 }
 impl Max2Sat {
-    pub fn new(inst: Weighed2Sat) -> Max2Sat {
+    pub fn new(inst: Weighed2Sat,rub:bool,var_ord:bool) -> Max2Sat {
         let n = inst.nb_vars;
 
         let mut ret = Max2Sat {
@@ -131,6 +135,8 @@ impl Max2Sat {
             //
             nk: vec![],
             estimates: vec![],
+            rub,
+            variable_order: var_ord,
         };
         // compute the sum of clause weights
         for (clause, weight) in inst.weights.iter() {
@@ -329,21 +335,31 @@ impl Problem for Max2Sat {
 
     fn next_variable(
         &self,
-        _: usize,
+        depth: usize,
         next_layer: &mut dyn Iterator<Item = &Self::State>,
     ) -> Option<Variable> {
-        if let Some(s) = next_layer.next() {
-            let nb_var = self.nb_variables();
-            let depth = s.depth;
-            if depth < nb_var {
-                let free = nb_var - depth;
-                Some(self.vars_by_sum_of_clause_weights[free - 1])
+        if self.variable_order{
+            if let Some(s) = next_layer.next() {
+                let nb_var = self.nb_variables();
+                let depth = s.depth;
+                if depth < nb_var {
+                    let free = nb_var - depth;
+                    Some(self.vars_by_sum_of_clause_weights[free - 1])
+                } else {
+                    None
+                }
             } else {
                 None
             }
-        } else {
-            None
         }
+        else{
+            if depth == self.nb_variables() {
+                None
+            } else {
+                Some(Variable(depth))
+            } 
+        }
+        
     }
 }
 
@@ -456,6 +472,6 @@ mod tests {
 
     fn instance(id: &str) -> Max2Sat {
         let location = locate(id);
-        Max2Sat::new(read_instance(location).expect("could not parse instance"))
+        Max2Sat::new(read_instance(location).expect("could not parse instance"),false,false)
     }
 }

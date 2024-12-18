@@ -59,6 +59,10 @@ pub struct Misp {
     weight: Vec<isize>,
     /// Whether we split edges by clustering,
     clustering: bool,
+    /// Whether we use rough upper bound,
+    rub: bool,
+    /// Whether we use variable ordering or random,
+    variable_order: bool,
 }
 
 #[derive(Eq, PartialEq, Clone, Debug)]
@@ -144,49 +148,48 @@ impl Problem for Misp {
     // /// here is to limit the max width as much as possible when developing the layers since all 
     // /// nodes that are not impacted by the change on the selectd vertex are simply copied over to the
     // /// next layer.
-    // fn next_variable(&self, _: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
-    //     // The thread local stuff is possibly one of the most surprising bits of this code. It declares
-    //     // a static variable called VAR_HEURISTIC storing the counts of each vertex in the next layer.
-    //     // The fact that it is static means that it will not be re-created (re allocated) upon each
-    //     // pass. The fact that it is declared within a thread local block, means that this static var
-    //     // will be created with a potentially mutable access for each thread.
-    //     thread_local! {
-    //         static VAR_HEURISTIC: RefCell<Vec<usize>> = RefCell::new(vec![]);
-    //     }
-    //     VAR_HEURISTIC.with(|heu| {
-    //         let mut heu = heu.borrow_mut();
-    //         let heu: &mut Vec<usize> = heu.as_mut();
+    fn next_variable(&self, depth: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
+        if self.variable_order{
+            // The thread local stuff is possibly one of the most surprising bits of this code. It declares
+            // a static variable called VAR_HEURISTIC storing the counts of each vertex in the next layer.
+            // The fact that it is static means that it will not be re-created (re allocated) upon each
+            // pass. The fact that it is declared within a thread local block, means that this static var
+            // will be created with a potentially mutable access for each thread.
+            thread_local! {
+                static VAR_HEURISTIC: RefCell<Vec<usize>> = RefCell::new(vec![]);
+            }
+            VAR_HEURISTIC.with(|heu| {
+                let mut heu = heu.borrow_mut();
+                let heu: &mut Vec<usize> = heu.as_mut();
 
-    //         // initialize
-    //         heu.reserve_exact(self.nb_variables());
-    //         if heu.is_empty() {
-    //             for _ in 0..self.nb_variables() { heu.push(0); }
-    //         } else {
-    //             heu.iter_mut().for_each(|i| *i = 0);
-    //         }
-            
-    //         // count the occurrence of each var
-    //         for s in next_layer {
-    //             for sit in s.available.iter() {
-    //                 heu[sit] += 1;
-    //             }
-    //         }
+                // initialize
+                heu.reserve_exact(self.nb_variables());
+                if heu.is_empty() {
+                    for _ in 0..self.nb_variables() { heu.push(0); }
+                } else {
+                    heu.iter_mut().for_each(|i| *i = 0);
+                }
+                
+                // count the occurrence of each var
+                for s in next_layer {
+                    for sit in s.available.iter() {
+                        heu[sit] += 1;
+                    }
+                }
 
-    //         // take the one occurring the least often
-    //         heu.iter().copied().enumerate()
-    //             .filter(|(_, v)| *v > 0)
-    //             .min_by_key(|(_, v)| *v)
-    //             .map(|(x, _)| Variable(x))
-    //     })
-    // }
-
-    // simplified for now for debugging
-    fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>)
-    -> Option<Variable>{
-        if depth < self.nb_variables() {
-            Some(Variable(depth))
-        } else {
-            None
+                // take the one occurring the least often
+                heu.iter().copied().enumerate()
+                    .filter(|(_, v)| *v > 0)
+                    .min_by_key(|(_, v)| *v)
+                    .map(|(x, _)| Variable(x))
+            })
+        }
+        else{
+            if depth < self.nb_variables() {
+                Some(Variable(depth))
+            } else {
+                None
+            }
         }
     }
 
@@ -308,7 +311,12 @@ impl Relaxation for MispRelax<'_> {
     }
 
     fn fast_upper_bound(&self, state: &Self::State) -> isize {
-        state.available.iter().map(|x| self.pb.weight[x]).sum()
+        if self.pb.rub{
+            state.available.iter().map(|x| self.pb.weight[x]).sum()
+        }
+        else{
+            isize::MAX
+        }
     }
 }
 
@@ -355,6 +363,12 @@ struct Args {
     /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
     #[clap(short, long, action)]
     cluster: bool,
+    /// /// Whether or not to use fast upper bound.
+    #[clap(long, action)]
+    rub: bool,
+    /// /// Whether or not to use variable ordering.
+    #[clap(long, action)]
+    variable_order: bool,
     /// Whether or not to write output to json file
     #[clap(short, long, action)]
     json_output: bool,
@@ -395,14 +409,14 @@ enum Error {
 fn read_instance(args: &Args) -> Result<Misp, Error> {
     let f = File::open(&args.fname)?;
     let f = BufReader::new(f);
-    let clustering = args.cluster;
     
     let comment   = Regex::new(r"^c\s.*$").unwrap();
     let pb_decl   = Regex::new(r"^p\s+edge\s+(?P<vars>\d+)\s+(?P<edges>\d+)$").unwrap();
     let node_decl = Regex::new(r"^n\s+(?P<node>\d+)\s+(?P<weight>-?\d+)").unwrap();
     let edge_decl = Regex::new(r"^e\s+(?P<src>\d+)\s+(?P<dst>\d+)").unwrap();
 
-    let mut g = Misp{nb_vars: 0, neighbors: vec![], neighbors_actual: vec![], weight: vec![], clustering};
+    let mut g = Misp{nb_vars: 0, neighbors: vec![], neighbors_actual: vec![], weight: vec![], 
+                            clustering:args.cluster, rub:args.rub, variable_order:args.variable_order};
     for line in f.lines() {
         let line = line?;
         let line = line.trim();

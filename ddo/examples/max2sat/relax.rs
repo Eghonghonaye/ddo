@@ -85,6 +85,12 @@ impl Relaxation for Max2SatRelax<'_> {
 
 
     fn fast_upper_bound(&self, state: &State) -> isize {
-        self.0.fast_upper_bound(state)
+        if self.0.rub{
+            self.0.fast_upper_bound(state)
+        }
+        else{
+            isize::MAX
+        }
+        
     }
 }

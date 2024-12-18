@@ -31,6 +31,12 @@ struct Params {
     /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
     #[clap(short, long, action)]
     cluster: bool,
+    /// Whether we use rough upper bound,
+    #[clap(long, action)]
+    rub: bool,
+    /// Whether we use variable ordering or random,
+    #[clap(long, action)]
+    variable_order: bool,
     /// Whether or not to write output to json file
     #[clap(short, long, action)]
     json_output: bool,
@@ -51,7 +57,7 @@ struct Params {
 fn main() {
     // let Params{file, width, duration} = Params::parse();
     let args = Params::parse();
-    let problem = Max2Sat::new(read_instance(&args.file).unwrap());
+    let problem = Max2Sat::new(read_instance(&args.file).unwrap(),args.rub,args.variable_order);
     let relax = Max2SatRelax(&problem);
     let rank = Max2SatRanking;
     let width = max_width(&problem, args.width);
