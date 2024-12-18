@@ -121,6 +121,10 @@ pub trait Problem {
     ) -> Option<Decision> {
         None
     }
+
+    fn print_state(&self,_state: &Self::State){
+        // println!("State");
+    }
 }
 
 pub fn default_split_edges<P: Problem + ?Sized>(

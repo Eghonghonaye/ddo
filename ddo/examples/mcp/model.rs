@@ -93,6 +93,72 @@ impl Problem for Mcp {
             None
         }
     }
+
+    fn filter(&self, state: &Self::State, decision: &Decision) -> bool {
+        if state.depth == 0 && decision.value == T{ 
+            true
+        } else { 
+            false
+        }
+    }
+
+    // fn split_edges(
+    //     &self,
+    //     decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &Self::State)>,
+    //     how_many: usize,
+    // ) -> Vec<Vec<usize>> {
+    //     if self.clustering {
+    //         // println!("splitting {:?}", decisions.clone().map(|(a,b,_c)| (a,b)).collect::<Vec<_>>());
+    //         let all_decision_state_capacities = decisions
+    //             .map(|(id, cost, _d, s)| StateClusterHelper::new(id, cost, *s))
+    //             .collect::<Vec<_>>();
+    //         let nclusters = usize::min(how_many, all_decision_state_capacities.len());
+    //         let clustering = kmeans(nclusters, &all_decision_state_capacities, 100);
+    //         let mut result = vec![(0_isize, Vec::new()); nclusters];
+    //         for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
+    //             result[label].0 = h.at(0) as isize;
+    //             result[label].1.push(h.id);
+    //         }
+    //         result.retain(|v| !v.1.is_empty());
+
+    //         while result.len() < nclusters {
+
+    //             result.sort_unstable_by(|a, b| a.0.cmp(&b.0).reverse());
+    //             let largest_pos = result.iter().position(|t| t.1.len() > 1).unwrap().clone();
+    //             // remove largest from cluster
+    //             let (c, largest) = result[largest_pos].clone();
+    //             result.remove(largest_pos);
+
+    //             // result.sort_unstable_by(|a, b| a.1.len().cmp(&b.1.len()).reverse());
+    //             // let largest_pos = result.iter().position(|t| t.1.len() > 1).unwrap().clone();
+    //             // // remove largest from cluster
+    //             // let (c, largest) = result[largest_pos].clone();
+    //             // result.remove(largest_pos);
+
+    //             // extend what is left
+    //             let diff = (nclusters - result.len()).min(largest.len());
+    //             let mut split = vec![(0_isize, vec![]); diff];
+
+    //             for (i, val) in largest.iter().copied().enumerate() {
+    //                 split[i.min(diff - 1)].0 = c;
+    //                 split[i.min(diff - 1)].1.push(val);
+    //             }
+    //             result.append(&mut split);
+
+    //             // println!(
+    //             //             "split into sizes: {:?}",
+    //             //             result.iter().map(Vec::len).collect::<Vec<_>>()
+    //             //         );
+    //         }
+
+    //         result
+    //             .into_iter()
+    //             .map(|(_centroid, cluster)| cluster)
+    //             .collect()
+    //     } else {
+    //         default_split_edges(self, decisions, how_many)
+    //     }
+    // }
 }
 // private methods
 impl Mcp {

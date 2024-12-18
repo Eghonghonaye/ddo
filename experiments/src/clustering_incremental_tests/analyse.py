@@ -12,15 +12,18 @@ def main(args):
         with open(filename, 'r') as f:
             results = json.load(f)
             outputfile.write(f"""{filename.split("/")[-1].split(".")[0]}, \
-            {results["Lower Bnd"]}, \
-            {results["Upper Bnd"]}, \
+            {float(results["Lower Bnd"])}, \
+            {float(results["Upper Bnd"])}, \
             {results["Duration"]},\
             {results["Aborted"]}, \
-            {results["Cluster"]},\
+            {results["Refine Cluster"]},\
+            {results["Compile Cluster"]},\
+            {"-" if "Dominance" not in results else results["Dominance"]},\
+            {results["Binary Split"]},\
             {results["Solver"]},\
             {results["Width"]},\
             {results["Gap"]},\
-            {results["Objective"]}\n""")
+            {float(results["Objective"])}\n""")
             # {str(results["Solution"]) } \n""")
     
 

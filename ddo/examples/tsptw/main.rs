@@ -23,7 +23,7 @@
 use std::{fs::{self, File}, path::Path, time::{Duration, Instant}};
 
 use clap::Parser;
-use ddo::{Completion, DefaultCachingSolver, MaxUB, NoDupFringe, Problem, SeqCachingSolverLel, SeqIncrementalSolver, SimpleDominanceChecker, Solution, Solver, TDCompile, TimeBudget};
+use ddo::{Completion, DefaultCachingSolver, EmptyDominanceChecker, MaxUB, NoDupFringe, Problem, SeqCachingSolverLel, SeqIncrementalSolver, SimpleDominanceChecker, Solution, Solver, TDCompile, TimeBudget};
 use dominance::TsptwDominance;
 use heuristics::{TsptwWidth, TsptwRanking};
 use ddo::{WidthHeuristic, FixedWidth, NbUnassignedWidth};
@@ -31,6 +31,7 @@ use instance::TsptwInstance;
 use model::Tsptw;
 use relax::TsptwRelax;
 use serde_json::json;
+use state::TsptwState;
 
 mod instance;
 mod state;
@@ -70,6 +71,9 @@ struct Args {
     /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
     #[clap(short, long, action)]
     cluster: bool,
+    /// /// Whether or not to use dominance.
+    #[clap(long, action)]
+    dominance: bool,
     /// Whether or not to write output to json file
     #[clap(short, long, action)]
     json_output: bool,
@@ -82,6 +86,9 @@ struct Args {
     /// Have nodes split into two instead of a whole layer split
     #[clap(short = 'b', long, action)]
     binary_split: bool,
+    /// Compile top down by clustering for mwege
+    #[clap(short = 'k', long, action)]
+    cluster_compile: bool,
 }
 
 /// An utility function to return an max width heuristic that can either be a fixed width
@@ -103,6 +110,7 @@ fn main() {
     // let width = TsptwWidth::new(pb.nb_variables(), args.width.unwrap_or(1));
     let width = max_width(pb.nb_variables(), args.width);
     let dominance = SimpleDominanceChecker::new(TsptwDominance, pb.nb_variables());
+    let no_dominance:EmptyDominanceChecker<TsptwState> = EmptyDominanceChecker::default();
     let cutoff = TimeBudget::new(Duration::from_secs(args.duration.unwrap_or(u64::MAX)));
     let mut fringe = NoDupFringe::new(MaxUB::new(&TsptwRanking));
     
@@ -130,10 +138,12 @@ fn main() {
             "Lower Bnd":  format!("{}", lower_bound),
             "Gap":        format!("{:.3}", gap),
             "Aborted":    format!("{}", !is_exact),
-            "Cluster":    format!("{}", args.cluster),
+            "Refine Cluster":    format!("{}", args.cluster),
+            "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
+            "Dominance":    format!("{}", args.dominance),
             "Solver":    format!("{}", args.solver),
-            "Width":    format!("{}", args.width.unwrap_or(problem.nb_variables())),
+            "Width":    format!("{}", args.width.unwrap_or(0)),
             "Solution":   format!("{:?}", solution_to_string(problem.nb_variables(), solver.best_solution()))
         });
 
@@ -147,9 +157,10 @@ fn main() {
                 &relax,
                 &TsptwRanking,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 &cutoff,
                 &mut fringe,
+                args.cluster_compile,
             );
             run_solve(&args,solver,&pb)
         },
@@ -159,10 +170,11 @@ fn main() {
                 &relax,
                 &TsptwRanking,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 &cutoff,
                 &mut fringe,
                 args.binary_split,
+                args.cluster_compile,
             );
             run_solve(&args,solver,&pb)
         },
@@ -172,7 +184,7 @@ fn main() {
                 &relax,
                 &TsptwRanking,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 &cutoff,
                 &mut fringe,
             );
@@ -184,7 +196,7 @@ fn main() {
                 &relax,
                 &TsptwRanking,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 &cutoff,
                 &mut fringe,
                 args.threads.unwrap_or(num_cpus::get())

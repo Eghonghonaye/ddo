@@ -20,9 +20,11 @@
 //! This example show how to implement a solver for the maximum independent set problem 
 //! using ddo. It is a fairly simple example but it features most of the aspects you will
 //! want to copy when implementing your own solver.
-use std::{cell::RefCell, path::Path, fs::File, io::{BufReader, BufRead}, num::ParseIntError, time::{Duration, Instant}};
+use std::{cell::RefCell, fs::{self, File}, io::{BufRead, BufReader}, num::ParseIntError, time::{Duration, Instant}};
 
 use bit_set::BitSet;
+use serde_json::json;
+use clustering::{kmeans, Elem};
 use clap::Parser;
 use ddo::*;
 use regex::Regex;
@@ -30,6 +32,11 @@ use regex::Regex;
 #[cfg(test)]
 mod tests;
 
+#[derive(Eq, PartialEq, Hash, Clone, Debug)]
+pub struct MispState {
+    available: BitSet,
+    chosen: BitSet
+}
 /// This structure represents an instance of the Maximum Independent Set Problem. 
 /// It is this structure that implements a simple dynamic programming model for the
 /// MISP. In that model, the state is simply a bitset where each bit represents 
@@ -43,11 +50,39 @@ pub struct Misp {
     /// of this problem instance, using the complement is helpful as it allows to
     /// easily remove all the neighbors of a vertex from a state very efficiently.
     neighbors: Vec<BitSet>,
+    /// Just the actual neighbours, not the complement -- helps with intersection in filter
+    neighbors_actual: Vec<BitSet>,
     /// For each vertex 'i', the value of 'weight[i]' denotes the weight associated
     /// to vertex i in the problem instance. The goal of MISP is to select the nodes
     /// from the underlying graph such that the resulting set is an independent set
     /// where the sum of the weights of selected vertices is maximum.
     weight: Vec<isize>,
+    /// Whether we split edges by clustering,
+    clustering: bool,
+}
+
+#[derive(Eq, PartialEq, Clone, Debug)]
+pub struct StateClusterHelper {
+    pub id: usize,
+    // pub state: BitSet,
+    pub state: MispState,
+    pub cost: isize,
+}
+
+impl StateClusterHelper {
+    fn new(id: usize, cost: isize, state: MispState) -> Self {
+        StateClusterHelper { id, cost, state }
+    }
+}
+
+impl clustering::Elem for StateClusterHelper {
+    fn dimensions(&self) -> usize {
+        1
+    }
+
+    fn at(&self, _i: usize) -> f64 {
+        self.cost as f64
+    }
 }
 
 /// A constant to mean take the node in the independent set.
@@ -60,14 +95,16 @@ const NO: isize = 0;
 /// to check the implementation of the branching heuristic (next_variable method)
 /// since it does interesting stuffs. 
 impl Problem for Misp {
-    type State = BitSet;
+    // type State = BitSet;
+    type State = MispState;
 
     fn nb_variables(&self) -> usize {
         self.nb_vars
     }
 
     fn initial_state(&self) -> Self::State {
-        (0..self.nb_variables()).collect()
+        Self::State{available : (0..self.nb_variables()).collect(),
+                    chosen : BitSet::with_capacity(self.nb_variables())}
     }
 
     fn initial_value(&self) -> isize {
@@ -76,10 +113,11 @@ impl Problem for Misp {
 
     fn transition(&self, state: &Self::State, decision: Decision) -> Self::State {
         let mut res = state.clone();
-        res.remove(decision.variable.id());
+        res.available.remove(decision.variable.id());
         if decision.value == YES {
             // intersect with complement of the neighbors for fast set difference
-            res.intersect_with(&self.neighbors[decision.variable.id()]); 
+            res.available.intersect_with(&self.neighbors[decision.variable.id()]); 
+            res.chosen.insert(decision.variable.id());
         }
         res
     }
@@ -93,7 +131,7 @@ impl Problem for Misp {
     }
 
     fn for_each_in_domain(&self, variable: Variable, state: &Self::State, f: &mut dyn DecisionCallback) {
-        if state.contains(variable.id()) {
+        if state.available.contains(variable.id()) {
             f.apply(Decision{variable, value: YES});
             f.apply(Decision{variable, value: NO });
         } else {
@@ -101,49 +139,127 @@ impl Problem for Misp {
         }
     }
 
-    /// This method is (apparently) a bit more hairy. What it does is it simply decides to branch on
-    /// the variable that occurs in the least number of states present in the next layer. The intuition
-    /// here is to limit the max width as much as possible when developing the layers since all 
-    /// nodes that are not impacted by the change on the selectd vertex are simply copied over to the
-    /// next layer.
-    fn next_variable(&self, _: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
-        // The thread local stuff is possibly one of the most surprising bits of this code. It declares
-        // a static variable called VAR_HEURISTIC storing the counts of each vertex in the next layer.
-        // The fact that it is static means that it will not be re-created (re allocated) upon each
-        // pass. The fact that it is declared within a thread local block, means that this static var
-        // will be created with a potentially mutable access for each thread.
-        thread_local! {
-            static VAR_HEURISTIC: RefCell<Vec<usize>> = RefCell::new(vec![]);
-        }
-        VAR_HEURISTIC.with(|heu| {
-            let mut heu = heu.borrow_mut();
-            let heu: &mut Vec<usize> = heu.as_mut();
+    // /// This method is (apparently) a bit more hairy. What it does is it simply decides to branch on
+    // /// the variable that occurs in the least number of states present in the next layer. The intuition
+    // /// here is to limit the max width as much as possible when developing the layers since all 
+    // /// nodes that are not impacted by the change on the selectd vertex are simply copied over to the
+    // /// next layer.
+    // fn next_variable(&self, _: usize, next_layer: &mut dyn Iterator<Item = &Self::State>) -> Option<Variable> {
+    //     // The thread local stuff is possibly one of the most surprising bits of this code. It declares
+    //     // a static variable called VAR_HEURISTIC storing the counts of each vertex in the next layer.
+    //     // The fact that it is static means that it will not be re-created (re allocated) upon each
+    //     // pass. The fact that it is declared within a thread local block, means that this static var
+    //     // will be created with a potentially mutable access for each thread.
+    //     thread_local! {
+    //         static VAR_HEURISTIC: RefCell<Vec<usize>> = RefCell::new(vec![]);
+    //     }
+    //     VAR_HEURISTIC.with(|heu| {
+    //         let mut heu = heu.borrow_mut();
+    //         let heu: &mut Vec<usize> = heu.as_mut();
 
-            // initialize
-            heu.reserve_exact(self.nb_variables());
-            if heu.is_empty() {
-                for _ in 0..self.nb_variables() { heu.push(0); }
-            } else {
-                heu.iter_mut().for_each(|i| *i = 0);
-            }
+    //         // initialize
+    //         heu.reserve_exact(self.nb_variables());
+    //         if heu.is_empty() {
+    //             for _ in 0..self.nb_variables() { heu.push(0); }
+    //         } else {
+    //             heu.iter_mut().for_each(|i| *i = 0);
+    //         }
             
-            // count the occurrence of each var
-            for s in next_layer {
-                for sit in s.iter() {
-                    heu[sit] += 1;
-                }
-            }
+    //         // count the occurrence of each var
+    //         for s in next_layer {
+    //             for sit in s.available.iter() {
+    //                 heu[sit] += 1;
+    //             }
+    //         }
 
-            // take the one occurring the least often
-            heu.iter().copied().enumerate()
-                .filter(|(_, v)| *v > 0)
-                .min_by_key(|(_, v)| *v)
-                .map(|(x, _)| Variable(x))
-        })
+    //         // take the one occurring the least often
+    //         heu.iter().copied().enumerate()
+    //             .filter(|(_, v)| *v > 0)
+    //             .min_by_key(|(_, v)| *v)
+    //             .map(|(x, _)| Variable(x))
+    //     })
+    // }
+
+    // simplified for now for debugging
+    fn next_variable(&self, depth: usize, _: &mut dyn Iterator<Item = &Self::State>)
+    -> Option<Variable>{
+        if depth < self.nb_variables() {
+            Some(Variable(depth))
+        } else {
+            None
+        }
     }
 
     fn is_impacted_by(&self, var: Variable, state: &Self::State) -> bool {
-        state.contains(var.id())
+        state.available.contains(var.id())
+    }
+    fn filter(&self, state: &Self::State, decision: &Decision) -> bool {
+        if decision.value == YES {
+            //TODO how to filter stronger to confirm that my neighbours are not definitely along the path...
+            // something like chosen actual and not just neighbours actual
+            !state.available.contains(decision.variable.id()) ||
+            !state.chosen.is_disjoint(&self.neighbors_actual[decision.variable.id()])
+        } else {
+            false //we're always allowed to leave an item
+        }
+    }
+
+    fn split_edges(
+        &self,
+        decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &Self::State)>,
+        how_many: usize,
+    ) -> Vec<Vec<usize>> {
+        if self.clustering {
+            // println!("splitting {:?}", decisions.clone().map(|(a,b,_c)| (a,b)).collect::<Vec<_>>());
+            let all_decision_state_capacities = decisions
+                .map(|(id, cost, _d, s)| StateClusterHelper::new(id, cost, s.clone()))
+                .collect::<Vec<_>>();
+            let nclusters = usize::min(how_many, all_decision_state_capacities.len());
+            let clustering = kmeans(nclusters, &all_decision_state_capacities, 100);
+            let mut result = vec![(0_isize, Vec::new()); nclusters];
+            for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
+                result[label].0 = h.at(0) as isize;
+                result[label].1.push(h.id);
+            }
+            result.retain(|v| !v.1.is_empty());
+
+            // while result.len() < nclusters {
+
+            //     result.sort_unstable_by(|a, b| a.0.cmp(&b.0).reverse());
+            //     let largest_pos = result.iter().position(|t| t.1.len() > 1).unwrap().clone();
+            //     // remove largest from cluster
+            //     let (c, largest) = result[largest_pos].clone();
+            //     result.remove(largest_pos);
+
+            //     // result.sort_unstable_by(|a, b| a.1.len().cmp(&b.1.len()).reverse());
+            //     // let largest_pos = result.iter().position(|t| t.1.len() > 1).unwrap().clone();
+            //     // // remove largest from cluster
+            //     // let (c, largest) = result[largest_pos].clone();
+            //     // result.remove(largest_pos);
+
+            //     // extend what is left
+            //     let diff = (nclusters - result.len()).min(largest.len());
+            //     let mut split = vec![(0_isize, vec![]); diff];
+
+            //     for (i, val) in largest.iter().copied().enumerate() {
+            //         split[i.min(diff - 1)].0 = c;
+            //         split[i.min(diff - 1)].1.push(val);
+            //     }
+            //     result.append(&mut split);
+
+            //     // println!(
+            //     //             "split into sizes: {:?}",
+            //     //             result.iter().map(Vec::len).collect::<Vec<_>>()
+            //     //         );
+            // }
+
+            result
+                .into_iter()
+                .map(|(_centroid, cluster)| cluster)
+                .collect()
+        } else {
+            default_split_edges(self, decisions, how_many)
+        }
     }
 }
 
@@ -167,12 +283,15 @@ impl Problem for Misp {
 /// (aka rough upper bound pruning).
 pub struct MispRelax<'a>{pb: &'a Misp}
 impl Relaxation for MispRelax<'_> {
-    type State = BitSet;
+    type State = MispState;
 
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
-        let mut state = BitSet::with_capacity(self.pb.nb_variables());
+        // let mut state = BitSet::with_capacity(self.pb.nb_variables());
+        let mut state = Self::State{available : BitSet::with_capacity(self.pb.nb_variables()),
+                                                chosen : (0..self.pb.nb_variables()).collect()};
         for s in states {
-            state.union_with(s);
+            state.available.union_with(&s.available);
+            state.chosen.intersect_with(&s.chosen);
         }
         state
     }
@@ -189,7 +308,7 @@ impl Relaxation for MispRelax<'_> {
     }
 
     fn fast_upper_bound(&self, state: &Self::State) -> isize {
-        state.iter().map(|x| self.pb.weight[x]).sum()
+        state.available.iter().map(|x| self.pb.weight[x]).sum()
     }
 }
 
@@ -200,11 +319,11 @@ impl Relaxation for MispRelax<'_> {
 /// when compiling restricted and relaxed DDs.
 pub struct MispRanking;
 impl StateRanking for MispRanking {
-    type State = BitSet;
+    type State = MispState;
 
     fn compare(&self, a: &Self::State, b: &Self::State) -> std::cmp::Ordering {
-        a.len().cmp(&b.len())
-            .then_with(|| a.cmp(b))
+        a.available.len().cmp(&b.available.len())
+            .then_with(|| a.available.cmp(&b.available))
     }
 }
 
@@ -233,6 +352,24 @@ struct Args {
     /// The maximum number of nodes per layer
     #[clap(short, long)]
     width: Option<usize>,
+    /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
+    #[clap(short, long, action)]
+    cluster: bool,
+    /// Whether or not to write output to json file
+    #[clap(short, long, action)]
+    json_output: bool,
+    /// Path to write output file to
+    #[clap(short = 'x', long, default_value = "")]
+    outfolder: String,
+    /// Solver to use
+    #[clap(short = 's', long, default_value = "IR")]
+    solver: String,
+    /// Have nodes split into two instead of a whole layer split
+    #[clap(short = 'b', long, action)]
+    binary_split: bool,
+    /// Compile top down by clustering for mwege
+    #[clap(short = 'k', long, action)]
+    cluster_compile: bool,
 }
 
 /// This enumeration simply groups the kind of errors that might occur when parsing a
@@ -255,16 +392,17 @@ enum Error {
 
 /// This function is used to read a misp instance from file. It returns either a
 /// misp instance if everything went on well or an error describing the problem.
-fn read_instance<P: AsRef<Path>>(fname: P) -> Result<Misp, Error> {
-    let f = File::open(fname)?;
+fn read_instance(args: &Args) -> Result<Misp, Error> {
+    let f = File::open(&args.fname)?;
     let f = BufReader::new(f);
+    let clustering = args.cluster;
     
     let comment   = Regex::new(r"^c\s.*$").unwrap();
     let pb_decl   = Regex::new(r"^p\s+edge\s+(?P<vars>\d+)\s+(?P<edges>\d+)$").unwrap();
     let node_decl = Regex::new(r"^n\s+(?P<node>\d+)\s+(?P<weight>-?\d+)").unwrap();
     let edge_decl = Regex::new(r"^e\s+(?P<src>\d+)\s+(?P<dst>\d+)").unwrap();
 
-    let mut g = Misp{nb_vars: 0, neighbors: vec![], weight: vec![]};
+    let mut g = Misp{nb_vars: 0, neighbors: vec![], neighbors_actual: vec![], weight: vec![], clustering};
     for line in f.lines() {
         let line = line?;
         let line = line.trim();
@@ -283,6 +421,7 @@ fn read_instance<P: AsRef<Path>>(fname: P) -> Result<Misp, Error> {
 
             g.nb_vars    = n;
             g.neighbors  = vec![full; n];
+            g.neighbors_actual = vec![BitSet::new(); n];
             g.weight     = vec![1; n];
             continue;
         }
@@ -306,13 +445,16 @@ fn read_instance<P: AsRef<Path>>(fname: P) -> Result<Misp, Error> {
             g.neighbors[src].remove(dst);
             g.neighbors[dst].remove(src);
 
+            g.neighbors_actual[src].insert(dst);
+            g.neighbors_actual[dst].insert(src);
+
             continue;
         }
 
         // skip
         return Err(Error::Format)
     }
-
+    
     Ok(g)
 }
 
@@ -340,8 +482,7 @@ fn cutoff(timeout: Option<u64>) -> Box<dyn Cutoff + Send + Sync> {
 /// to create a fast an effective solver for the misp problem.
 fn main() {
     let args = Args::parse();
-    let fname = &args.fname;
-    let problem = read_instance(fname).unwrap();
+    let problem = read_instance(&args).unwrap();
     let relaxation = MispRelax {pb: &problem};
     let ranking = MispRanking;
 
@@ -350,49 +491,113 @@ fn main() {
     let cutoff = cutoff(args.duration);
     let mut fringe = NoDupFringe::new(MaxUB::new(&ranking));
 
-    // This solver compile DD that allow the definition of long arcs spanning over several layers.
-    let mut solver = ParNoCachingSolverLel::custom(
-        &problem, 
-        &relaxation, 
-        &ranking, 
-        width.as_ref(),
-        &dominance,
-        cutoff.as_ref(), 
-        &mut fringe,
-        args.threads,
-    );
+    fn run_solve<T: Solver>(args: &Args, problem: &Misp, mut solver: T) -> serde_json::Value  {
+        let start = Instant::now();
+        let Completion{ is_exact, best_value } = solver.maximize();
+        
+        let duration = start.elapsed();
+        let upper_bound = solver.best_upper_bound();
+        let lower_bound = solver.best_lower_bound();
+        let gap = solver.gap();
+        let best_solution: Option<Vec<_>>  = solver.best_solution().map(|mut decisions|{
+            decisions.sort_unstable_by_key(|d| d.variable.id());
+            decisions.iter()
+                .filter(|d| d.value == 1)
+                .map(|d| d.variable.id())
+                .collect()
+        });
 
-    let start = Instant::now();
-    let Completion{ is_exact, best_value } = solver.maximize();
-    
-    let duration = start.elapsed();
-    let upper_bound = solver.best_upper_bound();
-    let lower_bound = solver.best_lower_bound();
-    let gap = solver.gap();
-    let best_solution: Option<Vec<_>>  = solver.best_solution().map(|mut decisions|{
-        decisions.sort_unstable_by_key(|d| d.variable.id());
-        decisions.iter()
-            .filter(|d| d.value == 1)
-            .map(|d| d.variable.id())
-            .collect()
-    });
-
-    // check solution
-    if let Some(bs) = best_solution.as_ref() {
-        for (i, a) in bs.iter().copied().enumerate() {
-            for b in bs.iter().copied().skip(i+1) {
-                if !problem.neighbors[a].contains(b) {
-                    println!("not a solution ! {a} -- {b}");
+        // check solution
+        if let Some(bs) = best_solution.as_ref() {
+            for (i, a) in bs.iter().copied().enumerate() {
+                for b in bs.iter().copied().skip(i+1) {
+                    if !problem.neighbors[a].contains(b) {
+                        println!("not a solution ! {a} -- {b}");
+                    }
                 }
             }
         }
+            
+        // println!("Duration:   {:.3} seconds", duration.as_secs_f32());
+        // println!("Objective:  {}",            best_value.unwrap_or(-1));
+        // println!("Upper Bnd:  {}",            upper_bound);
+        // println!("Lower Bnd:  {}",            lower_bound);
+        // println!("Gap:        {:.3}",         gap);
+        // println!("Aborted:    {}",            !is_exact);
+        // println!("Solution:   {:?}",          best_solution.unwrap_or_default());
+
+        let result = json!({
+            "Duration": format!("{:.3}", duration.as_secs_f32()),
+            "Objective":  format!("{}", best_value.unwrap_or(-1)),
+            "Upper Bnd":  format!("{}", upper_bound),
+            "Lower Bnd":  format!("{}", lower_bound),
+            "Gap":        format!("{:.3}", gap),
+            "Aborted":    format!("{}", !is_exact),
+            "Refine Cluster":    format!("{}", args.cluster),
+            "Compile Cluster":    format!("{}", args.cluster_compile),
+            "Binary Split":    format!("{}", args.binary_split),
+            "Solver":    format!("{}", args.solver),
+            "Width":    format!("{}", args.width.unwrap_or(0)),
+            "Solution":   format!("{:?}", best_solution.unwrap_or_default())
+        });
+        result
     }
-        
-    println!("Duration:   {:.3} seconds", duration.as_secs_f32());
-    println!("Objective:  {}",            best_value.unwrap_or(-1));
-    println!("Upper Bnd:  {}",            upper_bound);
-    println!("Lower Bnd:  {}",            lower_bound);
-    println!("Gap:        {:.3}",         gap);
-    println!("Aborted:    {}",            !is_exact);
-    println!("Solution:   {:?}",          best_solution.unwrap_or_default());
+
+    let result = match args.solver.as_str() {
+        "TD" => {
+            let solver = TDCompile::new(
+                &problem,
+                &relaxation,
+                &ranking, 
+                width.as_ref(),
+                &dominance,
+                cutoff.as_ref(), 
+                &mut fringe,
+                args.cluster_compile,
+            );
+            run_solve(&args, &problem, solver)
+        }
+        "IR" => {
+            let solver = SeqIncrementalSolver::new(
+                &problem,
+                &relaxation,
+                &ranking, 
+                width.as_ref(),
+                &dominance,
+                cutoff.as_ref(), 
+                &mut fringe,
+                args.binary_split,
+                args.cluster_compile,
+            );
+            run_solve(&args, &problem, solver)
+        }
+        "BB" => {
+            // This solver compile DD that allow the definition of long arcs spanning over several layers.
+            let solver = ParNoCachingSolverLel::custom(
+                &problem, 
+                &relaxation, 
+                &ranking, 
+                width.as_ref(),
+                &dominance,
+                cutoff.as_ref(), 
+                &mut fringe,
+                args.threads,
+            );
+            run_solve(&args, &problem, solver)
+        }
+        _ => panic!("suplied unknown solver"),
+    };
+
+    println!("{}", result.to_string());
+    if args.json_output {
+        let mut outfile = args.outfolder.to_owned();
+        let instance_name = if let Some(x) = &args.fname.split("/").collect::<Vec<_>>().last() {
+            x
+        } else {
+            "_"
+        };
+        outfile.push_str(&instance_name);
+        outfile.push_str(".json");
+        fs::write(outfile, result.to_string()).expect("unable to write json");
+    }
 }

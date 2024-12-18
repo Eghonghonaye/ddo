@@ -358,6 +358,7 @@ where
             //
             best_lb,
             binary_split: false,
+            cluster_compile: false,
         };
 
         let Completion{is_exact, ..} = self.mdd.compile(&compilation)?;
@@ -383,6 +384,7 @@ where
             //
             best_lb,
             binary_split: false,
+            cluster_compile: false,
         };
 
         let Completion{is_exact, ..} = self.mdd.compile(&compilation)?;

@@ -144,7 +144,6 @@ impl Problem for Sop {
     fn transition_cost(&self, state: &SopState, _: &Self::State, d: Decision) -> isize {
         // Sop is a minimization problem but the solver works with a 
         // maximization perspective. So we have to negate the cost.
-        println!("state previous {:?} ", state.previous);
         - self.min_distance_to(state, d.value as usize)
     }
 
@@ -162,7 +161,28 @@ impl Problem for Sop {
         if state.depth as usize == self.nb_variables() - 1 {
             return decision.value != (self.instance.nb_jobs - 1) as isize;
         } else {
+
+            let definitely_scheduled = match &state.maybe_schedule {
+                Some(maybes) => (state.must_schedule.union(*maybes)).flip(),
+                None => state.must_schedule.flip(),
+            };
+
+            let maybe_scheduled = state.must_schedule.flip();
+            
+            if definitely_scheduled.contains(decision.value as usize){
+                // item is already scheduled
+                return true
+            }
+            else if maybe_scheduled.len() == state.depth && maybe_scheduled.contains(decision.value as usize){
+                // item is already scheduled
+                return true
+            }
+            else {
+                return !self.can_schedule(state,decision.value as usize);
+            }
+
             return !self.can_schedule(state,decision.value as usize);
+            
         }
     }
 
@@ -236,18 +256,23 @@ impl Problem for Sop {
         }
     }
 
-    fn check_conflict(
-        &self,
-        in_state: &Self::State,
-        _in_decision: &Decision,
-        _out_state: &Self::State,
-        out_decision: &Decision,
-    ) -> bool {
-        let maybe_scheduled = match &in_state.maybe_schedule {
-            Some(maybes) => in_state.must_schedule.union(*maybes).flip(),
-            None => in_state.must_schedule.flip(),
+    fn print_state(&self,state: &Self::State) {
+
+        println!("previous {:?}", match state.previous {
+            Previous::Job(x) => x.to_string(),
+            Previous::Virtual(xs) => xs.to_string()
+        });
+        println!("must schedule {:?}",state.must_schedule.to_string());
+        println!("maybe schedule {:?}",match state.maybe_schedule{
+            Some(x) => x.to_string(),
+            None => "None".to_string()
+        });
+        let definitely_scheduled = match &state.maybe_schedule {
+            Some(maybes) => (state.must_schedule.union(*maybes)).flip(),
+            None => state.must_schedule.flip(),
         };
-        maybe_scheduled.contains_all(self.instance.predecessors[out_decision.value as usize])
+        println!("definitely_scheduled {:?}",definitely_scheduled.to_string());
+        println!("depth {:?}",state.depth);
     }
 }
 

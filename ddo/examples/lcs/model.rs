@@ -207,6 +207,7 @@ impl Relaxation for LcsRelax<'_> {
         for char in 0..self.pb.n_chars {
             let mut in_common = isize::MAX;
             for i in 0..self.pb.n_strings {
+                // println!("{:?},{:?},{:?},",i,char,state.position[i]);
                 in_common = in_common.min(self.pb.rem[i][char][state.position[i]]);
             }
             tot += in_common;

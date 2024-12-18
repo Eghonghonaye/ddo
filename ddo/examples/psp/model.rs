@@ -82,7 +82,9 @@ impl Problem for Psp {
         ret.time -= 1;
 
         if decision.value != IDLE {
+            println!("{:?}",decision.value);
             let d        = decision.value as usize;
+            println!("{:?}",state.prev_demands[d]);
             ret.next            = decision.value;
             ret.prev_demands[d] = self.prev_demands[d][state.prev_demands[d] as usize];
         }

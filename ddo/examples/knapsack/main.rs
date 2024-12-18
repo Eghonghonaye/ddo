@@ -71,6 +71,10 @@ pub struct Knapsack {
     order: Vec<usize>,
     /// Whether we split edges by clustering,
     clustering: bool,
+    /// Whether we use rough upper bound,
+    rub: bool,
+    /// Whether we use variable ordering or random,
+    variable_order: bool,
     // Optional ml model to support decision making
     ml_model: Option<TfModel>,
 }
@@ -81,6 +85,8 @@ impl Knapsack {
         profit: Vec<isize>,
         weight: Vec<usize>,
         clustering: bool,
+        rub: bool,
+        variable_order: bool,
         ml_model: Option<TfModel>,
     ) -> Self {
         let mut order = (0..profit.len()).collect::<Vec<usize>>();
@@ -92,6 +98,8 @@ impl Knapsack {
             weight,
             order,
             clustering,
+            rub,
+            variable_order,
             ml_model,
         }
     }
@@ -235,12 +243,22 @@ impl Problem for Knapsack {
         depth: usize,
         _: &mut dyn Iterator<Item = &Self::State>,
     ) -> Option<Variable> {
-        let n = self.nb_variables();
-        if depth < n {
-            Some(Variable(self.order[depth]))
-        } else {
-            None
+        if self.variable_order{
+            let n = self.nb_variables();
+            if depth < n {
+                Some(Variable(self.order[depth]))
+            } else {
+                None
+            }
         }
+        else{
+            if depth == self.nb_variables() {
+                None
+            } else {
+                Some(Variable(depth))
+            } 
+        }
+        
     }
 
     fn filter(&self, state: &Self::State, decision: &Decision) -> bool {
@@ -271,12 +289,18 @@ impl Problem for Knapsack {
             result.retain(|v| !v.1.is_empty());
 
             while result.len() < nclusters {
-                result.sort_unstable_by(|a, b| a.0.cmp(&b.0).reverse());
-                let (c, largest) = result.iter().find(|t| t.1.len() > 1).unwrap().clone();
-                // println!("in while with {:?} of {:?} clusters and largest {:?}", result.len(),nclusters,largest);
 
+                result.sort_unstable_by(|a, b| a.0.cmp(&b.0).reverse());
+                let largest_pos = result.iter().position(|t| t.1.len() > 1).unwrap().clone();
                 // remove largest from cluster
-                result.remove(0);
+                let (c, largest) = result[largest_pos].clone();
+                result.remove(largest_pos);
+
+                // result.sort_unstable_by(|a, b| a.1.len().cmp(&b.1.len()).reverse());
+                // let largest_pos = result.iter().position(|t| t.1.len() > 1).unwrap().clone();
+                // // remove largest from cluster
+                // let (c, largest) = result[largest_pos].clone();
+                // result.remove(largest_pos);
 
                 // extend what is left
                 let diff = (nclusters - result.len()).min(largest.len());
@@ -371,27 +395,33 @@ impl Relaxation for KPRelax<'_> {
     }
 
     fn fast_upper_bound(&self, state: &Self::State) -> isize {
-        let mut depth = state.depth;
-        let mut max_profit = 0;
-        let mut capacity = state.capacity;
+        if self.pb.rub{
+            let mut depth = state.depth;
+            let mut max_profit = 0;
+            let mut capacity = state.capacity;
 
-        while capacity > 0 && depth < self.pb.profit.len() {
-            let item = self.pb.order[depth];
+            while capacity > 0 && depth < self.pb.profit.len() {
+                let item = self.pb.order[depth];
 
-            if capacity >= self.pb.weight[item] {
-                max_profit += self.pb.profit[item];
-                capacity -= self.pb.weight[item];
-            } else {
-                let item_ratio = capacity as f64 / self.pb.weight[item] as f64;
-                let item_profit = item_ratio * self.pb.profit[item] as f64;
-                max_profit += item_profit.floor() as isize;
-                capacity = 0;
+                if capacity >= self.pb.weight[item] {
+                    max_profit += self.pb.profit[item];
+                    capacity -= self.pb.weight[item];
+                } else {
+                    let item_ratio = capacity as f64 / self.pb.weight[item] as f64;
+                    let item_profit = item_ratio * self.pb.profit[item] as f64;
+                    max_profit += item_profit.floor() as isize;
+                    capacity = 0;
+                }
+
+                depth += 1;
             }
 
-            depth += 1;
+            max_profit
         }
-
-        max_profit
+        else{
+            isize::MAX
+        }
+        
     }
 }
 
@@ -460,6 +490,15 @@ struct Args {
     /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
     #[clap(short, long, action)]
     cluster: bool,
+    /// /// Whether or not to use dominance.
+    #[clap(long, action)]
+    dominance: bool,
+    /// /// Whether or not to use fast upper bound.
+    #[clap(long, action)]
+    rub: bool,
+    /// /// Whether or not to use variable ordering.
+    #[clap(long, action)]
+    variable_order: bool,
     /// Option to use ML model for restriction builidng
     /// Path to pb file for model
     #[clap(short, long, default_value = "")]
@@ -476,6 +515,9 @@ struct Args {
     /// Have nodes split into two instead of a whole layer split
     #[clap(short = 'b', long, action)]
     binary_split: bool,
+    /// Compile top down by clustering for mwege
+    #[clap(short = 'k', long, action)]
+    cluster_compile: bool,
 }
 
 /// This enumeration simply groups the kind of errors that might occur when parsing a
@@ -542,7 +584,7 @@ fn read_instance(args: &Args) -> Result<Knapsack, Error> {
     } else {
         None
     };
-    Ok(Knapsack::new(capa, profit, weight, clustering, model))
+    Ok(Knapsack::new(capa, profit, weight, args.cluster,args.rub,args.variable_order, model))
 }
 
 pub fn read_model<P: AsRef<Path>>(
@@ -572,6 +614,7 @@ fn main() {
     let heuristic = KPRanking;
     let width = max_width(problem.nb_variables(), args.width);
     let dominance = SimpleDominanceChecker::new(KPDominance, problem.nb_variables());
+    let no_dominance:EmptyDominanceChecker<KnapsackState> = EmptyDominanceChecker::default();
     let cutoff = TimeBudget::new(Duration::from_secs(args.duration)); //NoCutoff;
     let mut fringe = SimpleFringe::new(MaxUB::new(&heuristic));
 
@@ -598,8 +641,10 @@ fn main() {
             "Lower Bnd":  format!("{}", lower_bound),
             "Gap":        format!("{:.3}", gap),
             "Aborted":    format!("{}", !is_exact),
-            "Cluster":    format!("{}", args.cluster),
+            "Refine Cluster":    format!("{}", args.cluster),
+            "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
+            "Dominance":    format!("{}", args.dominance),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
             "Solution":   format!("{:?}", best_solution.unwrap_or_default())
@@ -645,9 +690,10 @@ fn main() {
                 &relaxation,
                 &heuristic,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 &cutoff,
                 &mut fringe,
+                args.cluster_compile,
             );
             run_solve(&args, solver)
         }
@@ -657,10 +703,11 @@ fn main() {
                 &relaxation,
                 &heuristic,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 &cutoff,
                 &mut fringe,
                 args.binary_split,
+                args.cluster_compile,
             );
             run_solve(&args, solver)
         }
@@ -670,7 +717,7 @@ fn main() {
                 &relaxation,
                 &heuristic,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 &cutoff,
                 &mut fringe,
             );

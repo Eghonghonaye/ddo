@@ -72,7 +72,10 @@ pub struct IncrementalSolver<
     /// Data structure containing info about past compilations used to prune the search
     cache: C,
     dominance: &'a (dyn DominanceChecker<State = State>),
+    // option to refine nodes by splitting into two
     pub binary_split: bool,
+    // option to merge in top down compile by clustering
+    pub cluster_compile: bool,
 }
 
 impl<'a, State, D, C> IncrementalSolver<'a, State, D, C>
@@ -90,6 +93,7 @@ where
         cutoff: &'a (dyn Cutoff),
         fringe: &'a mut (dyn Fringe<State = State>),
         binary_split: bool,
+        cluster_compile: bool
     ) -> Self {
         Self::custom(
             problem,
@@ -100,6 +104,7 @@ where
             cutoff,
             fringe,
             binary_split,
+            cluster_compile,
         )
     }
 
@@ -112,6 +117,7 @@ where
         cutoff: &'a (dyn Cutoff),
         fringe: &'a mut (dyn Fringe<State = State>),
         binary_split: bool,
+        cluster_compile: bool,
     ) -> Self {
         IncrementalSolver {
             problem,
@@ -133,6 +139,7 @@ where
             cache: C::default(),
             dominance,
             binary_split,
+            cluster_compile,
         }
     }
 
@@ -157,6 +164,7 @@ where
             //
             best_lb,
             binary_split: self.binary_split,
+            cluster_compile: self.cluster_compile,
         };
 
         // compile initial narrow width diagram
@@ -275,6 +283,7 @@ where
                 //
                 best_lb,
                 binary_split: false,
+                cluster_compile: self.cluster_compile,
             };
 
             let outcome = self.mdd.refine(&compilation);

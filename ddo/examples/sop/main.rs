@@ -72,6 +72,9 @@ struct Args {
     /// Have nodes split into two instead of a whole layer split
     #[clap(short = 'b', long, action)]
     binary_split: bool,
+    /// Compile top down by clustering for mwege
+    #[clap(short = 'k', long, action)]
+    cluster_compile: bool,
 }
 
 /// An utility function to return a cutoff heuristic that can either be a time budget policy
@@ -129,6 +132,16 @@ fn cutoff(timeout: Option<u64>) -> Box<dyn Cutoff + Send + Sync> {
 //     println!("Solution:   {:?}",          best_solution);
 // }
 
+/// An utility function to return an max width heuristic that can either be a fixed width
+/// policy (if w is fixed) or an adaptive policy returning the number of unassigned variables
+/// in the overall problem.
+fn max_width<T>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T> + Send + Sync> {
+    if let Some(w) = w {
+        Box::new(FixedWidth(w))
+    } else {
+        Box::new(NbUnassignedWidth(nb_vars))
+    }
+}
 
 fn main() {
     let args = Args::parse();
@@ -138,7 +151,8 @@ fn main() {
     let relaxation = SopRelax::new(&problem);
     let ranking = SopRanking;
 
-    let width = SopWidth::new(problem.nb_variables(), args.width.unwrap_or(1));
+    // let width = SopWidth::new(problem.nb_variables(), args.width.unwrap_or(1));
+    let width = max_width(problem.nb_variables(), args.width);
     let dominance = EmptyDominanceChecker::default();
     let cutoff = cutoff(args.duration);
     let mut fringe = NoDupFringe::new(MaxUB::new(&ranking));
@@ -151,20 +165,21 @@ fn main() {
         } = solver.maximize();
 
         let duration = start.elapsed();
-        let upper_bound = solver.best_upper_bound();
-        let lower_bound = solver.best_lower_bound();
+        let upper_bound = objective(solver.best_upper_bound());
+        let lower_bound = objective(solver.best_lower_bound());
         let gap = solver.gap();
         let best_solution = solver.best_solution().unwrap_or_default()
         .iter().map(|d| d.value).collect::<Vec<isize>>();
 
         let result = json!({
             "Duration": format!("{:.3}", duration.as_secs_f32()),
-            "Objective":  format!("{}", best_value.unwrap_or(-1)),
+            "Objective":  format!("{}", objective(best_value.unwrap_or(-1))),
             "Upper Bnd":  format!("{}", upper_bound),
             "Lower Bnd":  format!("{}", lower_bound),
             "Gap":        format!("{:.3}", gap),
             "Aborted":    format!("{}", !is_exact),
-            "Cluster":    format!("{}", args.cluster),
+            "Refine Cluster":    format!("{}", args.cluster),
+            "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
@@ -210,10 +225,11 @@ fn main() {
                 &problem,
                 &relaxation,
                 &ranking,
-                &width,
+                width.as_ref(),
                 &dominance,
                 cutoff.as_ref(),
                 &mut fringe,
+                args.cluster_compile,
             );
             run_solve(&args,solver)
         },
@@ -222,11 +238,12 @@ fn main() {
                 &problem,
                 &relaxation,
                 &ranking,
-                &width,
+                width.as_ref(),
                 &dominance,
                 cutoff.as_ref(),
                 &mut fringe,
                 args.binary_split,
+                args.cluster_compile,
             );
             run_solve(&args,solver)
         },
@@ -235,7 +252,7 @@ fn main() {
                 &problem,
                 &relaxation,
                 &ranking,
-                &width,
+                width.as_ref(),
                 &dominance,
                 cutoff.as_ref(),
                 &mut fringe,
@@ -252,5 +269,13 @@ fn main() {
         outfile.push_str(&instance_name);
         outfile.push_str(".json");
         fs::write(outfile,result.to_string()).expect("unable to write json");
+    }
+}
+
+fn objective(x: isize) -> String {
+    match x {
+        isize::MIN => "+inf".to_string(),
+        isize::MAX => "-inf".to_string(),
+        _ => format!("{:.2}", -(x as f32))
     }
 }

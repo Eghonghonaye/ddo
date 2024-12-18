@@ -285,6 +285,7 @@ fn main() {
         cache: &cache,
         dominance: &dominance,
         binary_split: false,
+        cluster_compile: false,
     };
 
     let mut clean = Mdd::<KnapsackState, {FRONTIER}>::new();

@@ -84,6 +84,8 @@ pub struct CompilationInput<'a, State> {
     /// Set to true to toggle the usual split of nodes into two instead of this work's innovation of
     ///  splitting nodes in more at the same time.
     pub binary_split: bool,
+    // Set to true to use clustering for merging in top down compilation
+    pub cluster_compile: bool,
 }
 
 /// This trait describes the operations that can be expected from an abstract

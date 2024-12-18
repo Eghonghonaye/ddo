@@ -200,7 +200,7 @@ impl Problem for Tsptw {
             else {
                 return false
             }
-    }
+        }
 
         if state.must_visit.contains(decision.value as usize) {
             // for i in state.must_visit.iter() {
@@ -320,11 +320,12 @@ impl Problem for Tsptw {
 
             while result.len() < nclusters {
                 result.sort_unstable_by(|a, b| a.0.cmp(&b.0).reverse());
-                let (c, largest) = result.iter().find(|t| t.1.len() > 1).unwrap().clone();
+                let largest_pos = result.iter().position(|t| t.1.len() > 1).unwrap().clone();
                 // println!("in while with {:?} of {:?} clusters and largest {:?}", result.len(),nclusters,largest);
 
                 // remove largest from cluster
-                result.remove(0);
+                let (c, largest) = result[largest_pos].clone();
+                result.remove(largest_pos);
 
                 // extend what is left
                 let diff = (nclusters - result.len()).min(largest.len());

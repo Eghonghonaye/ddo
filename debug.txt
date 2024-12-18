@@ -1,0 +1,4650 @@
+after compile 
+pure new layer 2
+cost is 1
+pure new layer 2
+cost is 0
+pure new layer 3
+cost is 1
+pure new layer 3
+cost is 2
+pure new layer 3
+cost is 1
+pure new layer 3
+cost is 0
+pure new layer 3
+cost is 1
+off to cluster EdgeId(1265) with cost 2
+off to cluster EdgeId(1266) with cost 1
+off to cluster EdgeId(1268) with cost 2
+off to cluster EdgeId(1270) with cost 1
+off to cluster EdgeId(1271) with cost 1
+off to cluster EdgeId(1273) with cost 0
+off to cluster EdgeId(1267) with cost 3
+off to cluster EdgeId(1269) with cost 2
+off to cluster EdgeId(1272) with cost 1
+pure new layer 4
+cost is 1
+cost is 1
+cost is 1
+cost is 1
+pure new layer 4
+cost is 3
+pure new layer 4
+cost is 2
+cost is 2
+cost is 2
+pure new layer 4
+cost is 0
+off to cluster EdgeId(1278) with cost 1
+off to cluster EdgeId(1274) with cost 1
+off to cluster EdgeId(1275) with cost 2
+off to cluster EdgeId(1276) with cost 4
+off to cluster EdgeId(1277) with cost 3
+off to cluster EdgeId(1279) with cost 0
+off to cluster EdgeId(1280) with cost 3
+off to cluster EdgeId(1281) with cost 2
+pure new layer 5
+cost is 2
+cost is 2
+pure new layer 5
+cost is 4
+pure new layer 5
+cost is 0
+found similar state node layer 5
+similar new
+cost is 0
+similar existing
+cost is 1
+cost is 1
+pure new layer 5
+cost is 3
+cost is 3
+off to cluster EdgeId(1282) with cost 3
+off to cluster EdgeId(1285) with cost 4
+off to cluster EdgeId(1286) with cost 2
+off to cluster EdgeId(1283) with cost 2
+off to cluster EdgeId(1284) with cost 3
+off to cluster EdgeId(1287) with cost 1
+off to cluster EdgeId(1288) with cost 4
+pure new layer 6
+cost is 3
+cost is 3
+pure new layer 6
+cost is 1
+pure new layer 6
+cost is 4
+cost is 4
+pure new layer 6
+cost is 2
+cost is 2
+off to cluster EdgeId(1290) with cost 3
+off to cluster EdgeId(1292) with cost 2
+off to cluster EdgeId(1289) with cost 2
+off to cluster EdgeId(1291) with cost 4
+off to cluster EdgeId(1293) with cost 1
+off to cluster EdgeId(1294) with cost 3
+pure new layer 7
+cost is 1
+pure new layer 7
+cost is 4
+pure new layer 7
+cost is 3
+cost is 3
+found similar state node layer 7
+similar new
+cost is 1
+similar existing
+cost is 2
+cost is 2
+pure new layer 8
+cost is 3
+pure new layer 8
+cost is 4
+pure new layer 8
+cost is 2
+pure new layer 8
+cost is 3
+pure new layer 8
+cost is 4
+off to cluster EdgeId(1301) with cost 3
+off to cluster EdgeId(1302) with cost 4
+off to cluster EdgeId(1304) with cost 4
+off to cluster EdgeId(1305) with cost 3
+off to cluster EdgeId(1307) with cost 2
+off to cluster EdgeId(1300) with cost 4
+off to cluster EdgeId(1303) with cost 5
+off to cluster EdgeId(1306) with cost 3
+pure new layer 9
+cost is 3
+cost is 3
+cost is 3
+pure new layer 9
+cost is 5
+pure new layer 9
+cost is 4
+cost is 4
+cost is 4
+found similar state node layer 9
+similar new
+cost is 3
+cost is 3
+cost is 3
+similar existing
+cost is 2
+pure new layer 10
+cost is 5
+pure new layer 10
+cost is 3
+pure new layer 10
+cost is 4
+pure new layer 10
+cost is 4
+off to cluster EdgeId(1312) with cost 5
+off to cluster EdgeId(1313) with cost 5
+off to cluster EdgeId(1314) with cost 4
+off to cluster EdgeId(1315) with cost 3
+off to cluster EdgeId(1316) with cost 4
+off to cluster EdgeId(1317) with cost 5
+off to cluster EdgeId(1318) with cost 4
+pure new layer 11
+cost is 5
+cost is 5
+cost is 5
+pure new layer 11
+cost is 3
+pure new layer 11
+cost is 4
+cost is 4
+cost is 4
+off to cluster EdgeId(1319) with cost 6
+off to cluster EdgeId(1320) with cost 5
+off to cluster EdgeId(1321) with cost 4
+off to cluster EdgeId(1322) with cost 5
+off to cluster EdgeId(1323) with cost 3
+off to cluster EdgeId(1324) with cost 4
+pure new layer 12
+cost is 3
+pure new layer 12
+cost is 6
+pure new layer 12
+cost is 5
+cost is 5
+found similar state node layer 12
+similar new
+cost is 3
+similar existing
+cost is 4
+cost is 4
+off to cluster EdgeId(1325) with cost 4
+off to cluster EdgeId(1328) with cost 6
+off to cluster EdgeId(1330) with cost 5
+off to cluster EdgeId(1326) with cost 5
+off to cluster EdgeId(1327) with cost 7
+off to cluster EdgeId(1329) with cost 6
+pure new layer 13
+cost is 5
+cost is 5
+pure new layer 13
+cost is 7
+pure new layer 13
+cost is 4
+pure new layer 13
+cost is 6
+cost is 6
+off to cluster EdgeId(1334) with cost 5
+off to cluster EdgeId(1331) with cost 6
+off to cluster EdgeId(1332) with cost 7
+off to cluster EdgeId(1333) with cost 4
+off to cluster EdgeId(1335) with cost 5
+off to cluster EdgeId(1336) with cost 6
+off to cluster EdgeId(1337) with cost 7
+off to cluster EdgeId(1338) with cost 8
+pure new layer 14
+cost is 5
+cost is 5
+pure new layer 14
+cost is 8
+pure new layer 14
+cost is 6
+cost is 6
+pure new layer 14
+cost is 7
+cost is 7
+pure new layer 14
+cost is 4
+off to cluster EdgeId(1340) with cost 8
+off to cluster EdgeId(1341) with cost 5
+off to cluster EdgeId(1344) with cost 4
+off to cluster EdgeId(1346) with cost 7
+off to cluster EdgeId(1348) with cost 6
+off to cluster EdgeId(1339) with cost 9
+off to cluster EdgeId(1342) with cost 6
+off to cluster EdgeId(1343) with cost 5
+off to cluster EdgeId(1345) with cost 8
+off to cluster EdgeId(1347) with cost 7
+pure new layer 15
+cost is 7
+cost is 6
+cost is 6
+cost is 7
+pure new layer 15
+cost is 4
+pure new layer 15
+cost is 9
+pure new layer 15
+cost is 8
+cost is 8
+found similar state node layer 15
+similar new
+cost is 4
+similar existing
+cost is 5
+cost is 5
+off to cluster EdgeId(1349) with cost 9
+off to cluster EdgeId(1350) with cost 8
+off to cluster EdgeId(1351) with cost 7
+off to cluster EdgeId(1352) with cost 8
+off to cluster EdgeId(1353) with cost 6
+off to cluster EdgeId(1354) with cost 5
+off to cluster EdgeId(1355) with cost 9
+pure new layer 16
+cost is 6
+pure new layer 16
+cost is 9
+cost is 9
+pure new layer 16
+cost is 8
+cost is 8
+pure new layer 16
+cost is 7
+pure new layer 16
+cost is 5
+off to cluster EdgeId(1357) with cost 8
+off to cluster EdgeId(1358) with cost 6
+off to cluster EdgeId(1360) with cost 9
+off to cluster EdgeId(1363) with cost 7
+off to cluster EdgeId(1364) with cost 5
+off to cluster EdgeId(1356) with cost 9
+off to cluster EdgeId(1359) with cost 7
+off to cluster EdgeId(1361) with cost 10
+off to cluster EdgeId(1362) with cost 8
+off to cluster EdgeId(1365) with cost 6
+pure new layer 17
+cost is 8
+cost is 7
+cost is 7
+cost is 8
+pure new layer 17
+cost is 5
+pure new layer 17
+cost is 10
+pure new layer 17
+cost is 6
+cost is 6
+pure new layer 17
+cost is 9
+cost is 9
+off to cluster EdgeId(1371) with cost 6
+off to cluster EdgeId(1366) with cost 10
+off to cluster EdgeId(1367) with cost 9
+off to cluster EdgeId(1368) with cost 10
+off to cluster EdgeId(1369) with cost 8
+off to cluster EdgeId(1370) with cost 9
+off to cluster EdgeId(1372) with cost 5
+off to cluster EdgeId(1373) with cost 7
+off to cluster EdgeId(1374) with cost 6
+pure new layer 18
+cost is 9
+cost is 8
+cost is 9
+pure new layer 18
+cost is 5
+pure new layer 18
+cost is 7
+pure new layer 18
+cost is 6
+cost is 6
+pure new layer 18
+cost is 10
+cost is 10
+off to cluster EdgeId(1375) with cost 6
+off to cluster EdgeId(1378) with cost 10
+off to cluster EdgeId(1380) with cost 9
+off to cluster EdgeId(1382) with cost 5
+off to cluster EdgeId(1384) with cost 7
+off to cluster EdgeId(1376) with cost 7
+off to cluster EdgeId(1377) with cost 11
+off to cluster EdgeId(1379) with cost 10
+off to cluster EdgeId(1381) with cost 6
+off to cluster EdgeId(1383) with cost 8
+pure new layer 19
+cost is 11
+pure new layer 19
+cost is 5
+pure new layer 19
+cost is 7
+cost is 7
+cost is 8
+pure new layer 19
+cost is 6
+cost is 6
+pure new layer 19
+cost is 10
+cost is 9
+cost is 10
+off to cluster EdgeId(1391) with cost 6
+off to cluster EdgeId(1385) with cost 11
+off to cluster EdgeId(1386) with cost 12
+off to cluster EdgeId(1387) with cost 9
+off to cluster EdgeId(1388) with cost 8
+off to cluster EdgeId(1389) with cost 6
+off to cluster EdgeId(1390) with cost 7
+off to cluster EdgeId(1392) with cost 5
+off to cluster EdgeId(1393) with cost 11
+off to cluster EdgeId(1394) with cost 10
+pure new layer 20
+cost is 6
+cost is 6
+cost is 7
+cost is 5
+pure new layer 20
+cost is 12
+pure new layer 20
+cost is 9
+cost is 10
+pure new layer 20
+cost is 11
+cost is 11
+pure new layer 20
+cost is 8
+off to cluster EdgeId(1395) with cost 8
+off to cluster EdgeId(1397) with cost 12
+off to cluster EdgeId(1400) with cost 7
+off to cluster EdgeId(1401) with cost 10
+off to cluster EdgeId(1403) with cost 11
+off to cluster EdgeId(1396) with cost 9
+off to cluster EdgeId(1398) with cost 13
+off to cluster EdgeId(1399) with cost 8
+off to cluster EdgeId(1402) with cost 11
+off to cluster EdgeId(1404) with cost 12
+pure new layer 21
+cost is 12
+cost is 13
+cost is 12
+pure new layer 21
+cost is 7
+found similar state node layer 21
+similar new
+cost is 7
+similar existing
+cost is 10
+cost is 9
+pure new layer 21
+cost is 8
+cost is 8
+pure new layer 21
+cost is 11
+cost is 11
+off to cluster EdgeId(1405) with cost 11
+off to cluster EdgeId(1406) with cost 10
+off to cluster EdgeId(1407) with cost 13
+off to cluster EdgeId(1408) with cost 11
+off to cluster EdgeId(1409) with cost 12
+off to cluster EdgeId(1410) with cost 9
+off to cluster EdgeId(1411) with cost 8
+pure new layer 22
+cost is 9
+cost is 8
+pure new layer 22
+cost is 13
+pure new layer 22
+cost is 11
+cost is 11
+pure new layer 22
+cost is 10
+pure new layer 22
+cost is 12
+off to cluster EdgeId(1413) with cost 9
+off to cluster EdgeId(1415) with cost 10
+off to cluster EdgeId(1417) with cost 13
+off to cluster EdgeId(1418) with cost 11
+off to cluster EdgeId(1420) with cost 12
+off to cluster EdgeId(1412) with cost 10
+off to cluster EdgeId(1414) with cost 11
+off to cluster EdgeId(1416) with cost 14
+off to cluster EdgeId(1419) with cost 12
+off to cluster EdgeId(1421) with cost 13
+pure new layer 23
+cost is 10
+cost is 11
+cost is 10
+cost is 11
+pure new layer 23
+cost is 14
+pure new layer 23
+cost is 12
+cost is 12
+pure new layer 23
+cost is 9
+pure new layer 23
+cost is 13
+cost is 13
+off to cluster EdgeId(1428) with cost 10
+off to cluster EdgeId(1422) with cost 11
+off to cluster EdgeId(1423) with cost 12
+off to cluster EdgeId(1424) with cost 14
+off to cluster EdgeId(1425) with cost 13
+off to cluster EdgeId(1426) with cost 12
+off to cluster EdgeId(1427) with cost 13
+off to cluster EdgeId(1429) with cost 9
+pure new layer 24
+cost is 14
+cost is 13
+cost is 13
+pure new layer 24
+cost is 9
+pure new layer 24
+cost is 11
+pure new layer 24
+cost is 10
+pure new layer 24
+cost is 12
+cost is 12
+off to cluster EdgeId(1431) with cost 11
+off to cluster EdgeId(1432) with cost 9
+off to cluster EdgeId(1434) with cost 12
+off to cluster EdgeId(1437) with cost 14
+off to cluster EdgeId(1438) with cost 10
+off to cluster EdgeId(1430) with cost 12
+off to cluster EdgeId(1433) with cost 10
+off to cluster EdgeId(1435) with cost 13
+off to cluster EdgeId(1436) with cost 15
+pure new layer 25
+cost is 10
+cost is 10
+pure new layer 25
+cost is 14
+cost is 15
+pure new layer 25
+cost is 12
+cost is 12
+cost is 13
+pure new layer 25
+cost is 11
+pure new layer 25
+cost is 9
+off to cluster EdgeId(1440) with cost 10
+off to cluster EdgeId(1442) with cost 15
+off to cluster EdgeId(1444) with cost 13
+off to cluster EdgeId(1445) with cost 12
+off to cluster EdgeId(1446) with cost 11
+off to cluster EdgeId(1447) with cost 10
+off to cluster EdgeId(1448) with cost 9
+off to cluster EdgeId(1439) with cost 11
+off to cluster EdgeId(1441) with cost 16
+off to cluster EdgeId(1443) with cost 14
+pure new layer 26
+cost is 12
+cost is 11
+cost is 11
+pure new layer 26
+cost is 15
+cost is 16
+pure new layer 26
+cost is 13
+cost is 14
+pure new layer 26
+cost is 9
+pure new layer 26
+cost is 10
+cost is 10
+off to cluster EdgeId(1449) with cost 10
+off to cluster EdgeId(1452) with cost 12
+off to cluster EdgeId(1453) with cost 16
+off to cluster EdgeId(1456) with cost 9
+off to cluster EdgeId(1458) with cost 14
+off to cluster EdgeId(1450) with cost 11
+off to cluster EdgeId(1451) with cost 13
+off to cluster EdgeId(1454) with cost 17
+off to cluster EdgeId(1455) with cost 10
+off to cluster EdgeId(1457) with cost 15
+pure new layer 27
+cost is 10
+cost is 9
+cost is 11
+cost is 10
+pure new layer 27
+cost is 17
+pure new layer 27
+cost is 14
+cost is 13
+cost is 15
+found similar state node layer 27
+similar new
+cost is 14
+cost is 13
+cost is 15
+similar existing
+cost is 12
+pure new layer 27
+cost is 16
+off to cluster EdgeId(1459) with cost 17
+off to cluster EdgeId(1464) with cost 16
+off to cluster EdgeId(1460) with cost 16
+off to cluster EdgeId(1461) with cost 18
+off to cluster EdgeId(1462) with cost 17
+off to cluster EdgeId(1463) with cost 15
+off to cluster EdgeId(1465) with cost 12
+off to cluster EdgeId(1466) with cost 11
+pure new layer 28
+cost is 12
+cost is 11
+pure new layer 28
+cost is 18
+pure new layer 28
+cost is 15
+pure new layer 28
+cost is 17
+cost is 17
+pure new layer 28
+cost is 16
+cost is 16
+off to cluster EdgeId(1467) with cost 17
+off to cluster EdgeId(1470) with cost 15
+off to cluster EdgeId(1472) with cost 18
+off to cluster EdgeId(1474) with cost 12
+off to cluster EdgeId(1475) with cost 16
+off to cluster EdgeId(1468) with cost 18
+off to cluster EdgeId(1469) with cost 16
+off to cluster EdgeId(1471) with cost 19
+off to cluster EdgeId(1473) with cost 13
+off to cluster EdgeId(1476) with cost 17
+pure new layer 29
+cost is 16
+cost is 16
+pure new layer 29
+cost is 12
+cost is 13
+pure new layer 29
+cost is 18
+cost is 18
+cost is 19
+pure new layer 29
+cost is 17
+cost is 17
+found similar state node layer 29
+similar new
+cost is 16
+cost is 16
+similar existing
+cost is 15
+off to cluster EdgeId(1477) with cost 17
+off to cluster EdgeId(1478) with cost 16
+off to cluster EdgeId(1479) with cost 13
+off to cluster EdgeId(1480) with cost 17
+off to cluster EdgeId(1481) with cost 18
+off to cluster EdgeId(1482) with cost 19
+off to cluster EdgeId(1483) with cost 20
+pure new layer 30
+cost is 17
+cost is 17
+pure new layer 30
+cost is 13
+pure new layer 30
+cost is 19
+cost is 20
+found similar state node layer 30
+similar new
+cost is 17
+cost is 17
+similar existing
+cost is 16
+pure new layer 30
+cost is 18
+off to cluster EdgeId(1485) with cost 18
+off to cluster EdgeId(1487) with cost 13
+off to cluster EdgeId(1488) with cost 20
+off to cluster EdgeId(1490) with cost 17
+off to cluster EdgeId(1484) with cost 19
+off to cluster EdgeId(1486) with cost 14
+off to cluster EdgeId(1489) with cost 21
+off to cluster EdgeId(1491) with cost 18
+pure new layer 31
+cost is 17
+pure new layer 31
+cost is 13
+cost is 14
+pure new layer 31
+cost is 20
+cost is 21
+pure new layer 31
+cost is 19
+pure new layer 31
+cost is 18
+cost is 18
+off to cluster EdgeId(1496) with cost 18
+off to cluster EdgeId(1492) with cost 21
+off to cluster EdgeId(1493) with cost 22
+off to cluster EdgeId(1494) with cost 15
+off to cluster EdgeId(1495) with cost 14
+off to cluster EdgeId(1497) with cost 17
+off to cluster EdgeId(1498) with cost 19
+off to cluster EdgeId(1499) with cost 19
+off to cluster EdgeId(1500) with cost 18
+pure new layer 32
+cost is 22
+pure new layer 32
+cost is 14
+pure new layer 32
+cost is 18
+cost is 17
+cost is 19
+cost is 19
+cost is 18
+pure new layer 32
+cost is 21
+pure new layer 32
+cost is 15
+off to cluster EdgeId(1502) with cost 22
+off to cluster EdgeId(1504) with cost 21
+off to cluster EdgeId(1505) with cost 19
+off to cluster EdgeId(1508) with cost 15
+off to cluster EdgeId(1509) with cost 14
+off to cluster EdgeId(1501) with cost 23
+off to cluster EdgeId(1503) with cost 22
+off to cluster EdgeId(1506) with cost 20
+off to cluster EdgeId(1507) with cost 16
+off to cluster EdgeId(1510) with cost 15
+pure new layer 33
+cost is 19
+cost is 20
+pure new layer 33
+cost is 15
+cost is 14
+cost is 15
+pure new layer 33
+cost is 22
+cost is 23
+cost is 22
+pure new layer 33
+cost is 21
+pure new layer 33
+cost is 16
+off to cluster EdgeId(1516) with cost 22
+off to cluster EdgeId(1511) with cost 23
+off to cluster EdgeId(1512) with cost 24
+off to cluster EdgeId(1513) with cost 20
+off to cluster EdgeId(1514) with cost 21
+off to cluster EdgeId(1515) with cost 21
+off to cluster EdgeId(1517) with cost 16
+off to cluster EdgeId(1518) with cost 15
+pure new layer 34
+cost is 16
+cost is 15
+pure new layer 34
+cost is 24
+pure new layer 34
+cost is 20
+cost is 21
+cost is 21
+pure new layer 34
+cost is 22
+pure new layer 34
+cost is 23
+off to cluster EdgeId(1519) with cost 21
+off to cluster EdgeId(1521) with cost 22
+off to cluster EdgeId(1522) with cost 23
+off to cluster EdgeId(1524) with cost 23
+off to cluster EdgeId(1526) with cost 24
+off to cluster EdgeId(1528) with cost 16
+off to cluster EdgeId(1520) with cost 22
+off to cluster EdgeId(1523) with cost 24
+off to cluster EdgeId(1525) with cost 25
+off to cluster EdgeId(1527) with cost 17
+pure new layer 35
+cost is 24
+cost is 24
+cost is 25
+pure new layer 35
+cost is 16
+cost is 17
+pure new layer 35
+cost is 21
+pure new layer 35
+cost is 22
+cost is 22
+pure new layer 35
+cost is 23
+cost is 23
+off to cluster EdgeId(1529) with cost 17
+off to cluster EdgeId(1532) with cost 25
+off to cluster EdgeId(1533) with cost 22
+off to cluster EdgeId(1536) with cost 23
+off to cluster EdgeId(1537) with cost 21
+off to cluster EdgeId(1530) with cost 18
+off to cluster EdgeId(1531) with cost 26
+off to cluster EdgeId(1534) with cost 23
+off to cluster EdgeId(1535) with cost 24
+off to cluster EdgeId(1538) with cost 22
+pure new layer 36
+cost is 26
+pure new layer 36
+cost is 17
+cost is 18
+pure new layer 36
+cost is 22
+cost is 23
+cost is 21
+cost is 23
+cost is 22
+pure new layer 36
+cost is 24
+pure new layer 36
+cost is 25
+off to cluster EdgeId(1539) with cost 18
+off to cluster EdgeId(1542) with cost 24
+off to cluster EdgeId(1543) with cost 23
+off to cluster EdgeId(1546) with cost 26
+off to cluster EdgeId(1547) with cost 26
+off to cluster EdgeId(1548) with cost 25
+off to cluster EdgeId(1540) with cost 19
+off to cluster EdgeId(1541) with cost 25
+off to cluster EdgeId(1544) with cost 24
+off to cluster EdgeId(1545) with cost 27
+pure new layer 37
+cost is 23
+pure new layer 37
+cost is 18
+cost is 19
+pure new layer 37
+cost is 26
+cost is 26
+cost is 27
+pure new layer 37
+cost is 25
+cost is 25
+pure new layer 37
+cost is 24
+cost is 24
+off to cluster EdgeId(1549) with cost 23
+off to cluster EdgeId(1551) with cost 27
+off to cluster EdgeId(1554) with cost 19
+off to cluster EdgeId(1556) with cost 25
+off to cluster EdgeId(1558) with cost 24
+off to cluster EdgeId(1550) with cost 24
+off to cluster EdgeId(1552) with cost 28
+off to cluster EdgeId(1553) with cost 20
+off to cluster EdgeId(1555) with cost 26
+off to cluster EdgeId(1557) with cost 25
+pure new layer 38
+cost is 19
+cost is 20
+pure new layer 38
+cost is 28
+pure new layer 38
+cost is 23
+cost is 24
+cost is 24
+pure new layer 38
+cost is 25
+cost is 26
+cost is 25
+pure new layer 38
+cost is 27
+off to cluster EdgeId(1563) with cost 28
+off to cluster EdgeId(1559) with cost 21
+off to cluster EdgeId(1560) with cost 20
+off to cluster EdgeId(1561) with cost 26
+off to cluster EdgeId(1562) with cost 27
+off to cluster EdgeId(1564) with cost 27
+off to cluster EdgeId(1565) with cost 28
+off to cluster EdgeId(1566) with cost 29
+off to cluster EdgeId(1567) with cost 25
+off to cluster EdgeId(1568) with cost 24
+pure new layer 39
+cost is 26
+cost is 27
+cost is 27
+pure new layer 39
+cost is 21
+cost is 20
+pure new layer 39
+cost is 29
+pure new layer 39
+cost is 25
+cost is 24
+pure new layer 39
+cost is 28
+cost is 28
+off to cluster EdgeId(1569) with cost 21
+off to cluster EdgeId(1571) with cost 29
+off to cluster EdgeId(1574) with cost 27
+off to cluster EdgeId(1575) with cost 25
+off to cluster EdgeId(1578) with cost 28
+off to cluster EdgeId(1570) with cost 22
+off to cluster EdgeId(1572) with cost 30
+off to cluster EdgeId(1573) with cost 28
+off to cluster EdgeId(1576) with cost 26
+off to cluster EdgeId(1577) with cost 29
+pure new layer 40
+cost is 25
+cost is 26
+pure new layer 40
+cost is 30
+pure new layer 40
+cost is 21
+cost is 22
+pure new layer 40
+cost is 27
+cost is 28
+cost is 28
+pure new layer 40
+cost is 29
+cost is 29
+off to cluster EdgeId(1580) with cost 23
+off to cluster EdgeId(1582) with cost 27
+off to cluster EdgeId(1584) with cost 29
+off to cluster EdgeId(1586) with cost 30
+off to cluster EdgeId(1579) with cost 30
+off to cluster EdgeId(1581) with cost 22
+off to cluster EdgeId(1583) with cost 26
+off to cluster EdgeId(1585) with cost 28
+off to cluster EdgeId(1587) with cost 29
+pure new layer 41
+cost is 27
+cost is 26
+cost is 28
+pure new layer 41
+cost is 22
+pure new layer 41
+cost is 30
+cost is 30
+pure new layer 41
+cost is 23
+pure new layer 41
+cost is 29
+cost is 29
+off to cluster EdgeId(1590) with cost 23
+off to cluster EdgeId(1593) with cost 29
+off to cluster EdgeId(1594) with cost 30
+off to cluster EdgeId(1588) with cost 23
+off to cluster EdgeId(1589) with cost 30
+off to cluster EdgeId(1591) with cost 22
+off to cluster EdgeId(1592) with cost 28
+off to cluster EdgeId(1595) with cost 29
+pure new layer 42
+cost is 22
+pure new layer 42
+cost is 30
+cost is 30
+pure new layer 42
+cost is 28
+pure new layer 42
+cost is 23
+cost is 23
+pure new layer 42
+cost is 29
+cost is 29
+off to cluster EdgeId(1597) with cost 29
+off to cluster EdgeId(1599) with cost 23
+off to cluster EdgeId(1596) with cost 30
+off to cluster EdgeId(1598) with cost 28
+off to cluster EdgeId(1600) with cost 22
+off to cluster EdgeId(1601) with cost 23
+off to cluster EdgeId(1602) with cost 29
+pure new layer 43
+cost is 28
+pure new layer 43
+cost is 22
+pure new layer 43
+cost is 30
+pure new layer 43
+cost is 29
+cost is 29
+pure new layer 43
+cost is 23
+cost is 23
+off to cluster EdgeId(1603) with cost 23
+off to cluster EdgeId(1605) with cost 30
+off to cluster EdgeId(1608) with cost 28
+off to cluster EdgeId(1610) with cost 29
+off to cluster EdgeId(1612) with cost 22
+off to cluster EdgeId(1604) with cost 24
+off to cluster EdgeId(1606) with cost 31
+off to cluster EdgeId(1607) with cost 29
+off to cluster EdgeId(1609) with cost 30
+off to cluster EdgeId(1611) with cost 23
+pure new layer 44
+cost is 30
+cost is 29
+cost is 31
+cost is 29
+cost is 30
+pure new layer 44
+cost is 22
+pure new layer 44
+cost is 28
+pure new layer 44
+cost is 24
+pure new layer 44
+cost is 23
+cost is 23
+off to cluster EdgeId(1619) with cost 23
+off to cluster EdgeId(1622) with cost 29
+off to cluster EdgeId(1613) with cost 25
+off to cluster EdgeId(1614) with cost 24
+off to cluster EdgeId(1615) with cost 23
+off to cluster EdgeId(1616) with cost 24
+off to cluster EdgeId(1617) with cost 31
+off to cluster EdgeId(1618) with cost 32
+off to cluster EdgeId(1620) with cost 22
+off to cluster EdgeId(1621) with cost 28
+pure new layer 45
+cost is 31
+cost is 32
+pure new layer 45
+cost is 22
+pure new layer 45
+cost is 29
+cost is 28
+pure new layer 45
+cost is 25
+cost is 24
+cost is 24
+found similar state node layer 45
+similar new
+cost is 22
+similar existing
+cost is 23
+cost is 23
+off to cluster EdgeId(1624) with cost 32
+off to cluster EdgeId(1625) with cost 29
+off to cluster EdgeId(1627) with cost 25
+off to cluster EdgeId(1628) with cost 23
+off to cluster EdgeId(1623) with cost 33
+off to cluster EdgeId(1626) with cost 30
+off to cluster EdgeId(1629) with cost 24
+pure new layer 46
+cost is 23
+cost is 24
+pure new layer 46
+cost is 33
+pure new layer 46
+cost is 29
+cost is 30
+pure new layer 46
+cost is 25
+pure new layer 46
+cost is 32
+off to cluster EdgeId(1633) with cost 30
+off to cluster EdgeId(1635) with cost 24
+off to cluster EdgeId(1636) with cost 33
+off to cluster EdgeId(1630) with cost 32
+off to cluster EdgeId(1631) with cost 33
+off to cluster EdgeId(1632) with cost 31
+off to cluster EdgeId(1634) with cost 25
+off to cluster EdgeId(1637) with cost 25
+off to cluster EdgeId(1638) with cost 26
+pure new layer 47
+cost is 32
+cost is 31
+pure new layer 47
+cost is 24
+cost is 25
+cost is 25
+pure new layer 47
+cost is 30
+pure new layer 47
+cost is 26
+pure new layer 47
+cost is 33
+cost is 33
+off to cluster EdgeId(1640) with cost 25
+off to cluster EdgeId(1642) with cost 32
+off to cluster EdgeId(1643) with cost 30
+off to cluster EdgeId(1644) with cost 31
+off to cluster EdgeId(1645) with cost 26
+off to cluster EdgeId(1647) with cost 33
+off to cluster EdgeId(1639) with cost 26
+off to cluster EdgeId(1641) with cost 33
+off to cluster EdgeId(1646) with cost 34
+pure new layer 48
+cost is 26
+cost is 26
+pure new layer 48
+cost is 33
+cost is 33
+cost is 34
+pure new layer 48
+cost is 30
+cost is 31
+pure new layer 48
+cost is 32
+pure new layer 48
+cost is 25
+off to cluster EdgeId(1648) with cost 31
+off to cluster EdgeId(1650) with cost 32
+off to cluster EdgeId(1652) with cost 34
+off to cluster EdgeId(1655) with cost 25
+off to cluster EdgeId(1656) with cost 26
+off to cluster EdgeId(1649) with cost 32
+off to cluster EdgeId(1651) with cost 33
+off to cluster EdgeId(1653) with cost 35
+off to cluster EdgeId(1654) with cost 26
+off to cluster EdgeId(1657) with cost 27
+pure new layer 49
+cost is 32
+cost is 32
+cost is 33
+pure new layer 49
+cost is 25
+cost is 26
+cost is 26
+pure new layer 49
+cost is 34
+cost is 35
+pure new layer 49
+cost is 27
+found similar state node layer 49
+similar new
+cost is 32
+cost is 32
+cost is 33
+similar existing
+cost is 31
+off to cluster EdgeId(1658) with cost 35
+off to cluster EdgeId(1660) with cost 26
+off to cluster EdgeId(1663) with cost 27
+off to cluster EdgeId(1664) with cost 34
+off to cluster EdgeId(1665) with cost 33
+off to cluster EdgeId(1659) with cost 36
+off to cluster EdgeId(1661) with cost 27
+off to cluster EdgeId(1662) with cost 28
+pure new layer 50
+cost is 35
+cost is 34
+cost is 36
+pure new layer 50
+cost is 26
+pure new layer 50
+cost is 33
+pure new layer 50
+cost is 28
+pure new layer 50
+cost is 27
+cost is 27
+off to cluster EdgeId(1666) with cost 27
+off to cluster EdgeId(1667) with cost 26
+off to cluster EdgeId(1668) with cost 28
+off to cluster EdgeId(1670) with cost 36
+off to cluster EdgeId(1672) with cost 34
+off to cluster EdgeId(1673) with cost 33
+off to cluster EdgeId(1675) with cost 27
+off to cluster EdgeId(1669) with cost 29
+off to cluster EdgeId(1671) with cost 37
+off to cluster EdgeId(1674) with cost 28
+pure new layer 51
+cost is 34
+cost is 33
+pure new layer 51
+cost is 26
+pure new layer 51
+cost is 28
+cost is 29
+cost is 28
+pure new layer 51
+cost is 36
+cost is 37
+pure new layer 51
+cost is 27
+cost is 27
+off to cluster EdgeId(1676) with cost 35
+off to cluster EdgeId(1677) with cost 34
+off to cluster EdgeId(1678) with cost 29
+off to cluster EdgeId(1680) with cost 27
+off to cluster EdgeId(1681) with cost 26
+off to cluster EdgeId(1682) with cost 28
+off to cluster EdgeId(1683) with cost 27
+off to cluster EdgeId(1685) with cost 37
+off to cluster EdgeId(1679) with cost 30
+off to cluster EdgeId(1684) with cost 38
+pure new layer 52
+cost is 27
+cost is 26
+cost is 27
+pure new layer 52
+cost is 37
+cost is 38
+pure new layer 52
+cost is 35
+cost is 34
+pure new layer 52
+cost is 29
+cost is 30
+pure new layer 52
+cost is 28
+off to cluster EdgeId(1687) with cost 38
+off to cluster EdgeId(1688) with cost 30
+off to cluster EdgeId(1691) with cost 28
+off to cluster EdgeId(1692) with cost 27
+off to cluster EdgeId(1695) with cost 35
+off to cluster EdgeId(1686) with cost 39
+off to cluster EdgeId(1689) with cost 31
+off to cluster EdgeId(1690) with cost 29
+off to cluster EdgeId(1693) with cost 28
+off to cluster EdgeId(1694) with cost 36
+pure new layer 53
+cost is 30
+cost is 31
+pure new layer 53
+cost is 38
+cost is 39
+pure new layer 53
+cost is 28
+cost is 27
+cost is 28
+pure new layer 53
+cost is 35
+cost is 36
+pure new layer 53
+cost is 29
+off to cluster EdgeId(1697) with cost 39
+off to cluster EdgeId(1699) with cost 28
+off to cluster EdgeId(1700) with cost 29
+off to cluster EdgeId(1702) with cost 31
+off to cluster EdgeId(1704) with cost 36
+off to cluster EdgeId(1696) with cost 40
+off to cluster EdgeId(1698) with cost 29
+off to cluster EdgeId(1701) with cost 32
+off to cluster EdgeId(1703) with cost 37
+pure new layer 54
+cost is 28
+cost is 29
+cost is 29
+pure new layer 54
+cost is 40
+pure new layer 54
+cost is 36
+cost is 37
+pure new layer 54
+cost is 31
+cost is 32
+pure new layer 54
+cost is 39
+off to cluster EdgeId(1705) with cost 32
+off to cluster EdgeId(1708) with cost 40
+off to cluster EdgeId(1709) with cost 40
+off to cluster EdgeId(1710) with cost 39
+off to cluster EdgeId(1712) with cost 29
+off to cluster EdgeId(1713) with cost 37
+off to cluster EdgeId(1706) with cost 33
+off to cluster EdgeId(1707) with cost 41
+off to cluster EdgeId(1711) with cost 30
+off to cluster EdgeId(1714) with cost 38
+pure new layer 55
+cost is 32
+cost is 33
+pure new layer 55
+cost is 40
+cost is 40
+cost is 41
+pure new layer 55
+cost is 29
+cost is 30
+pure new layer 55
+cost is 37
+cost is 38
+pure new layer 55
+cost is 39
+off to cluster EdgeId(1715) with cost 33
+off to cluster EdgeId(1716) with cost 38
+off to cluster EdgeId(1719) with cost 39
+off to cluster EdgeId(1721) with cost 41
+off to cluster EdgeId(1722) with cost 30
+off to cluster EdgeId(1717) with cost 39
+off to cluster EdgeId(1718) with cost 40
+off to cluster EdgeId(1720) with cost 42
+off to cluster EdgeId(1723) with cost 31
+pure new layer 56
+cost is 39
+cost is 39
+cost is 40
+pure new layer 56
+cost is 30
+cost is 31
+pure new layer 56
+cost is 33
+pure new layer 56
+cost is 41
+cost is 42
+found similar state node layer 56
+similar new
+cost is 39
+cost is 39
+cost is 40
+similar existing
+cost is 38
+off to cluster EdgeId(1726) with cost 41
+off to cluster EdgeId(1724) with cost 42
+off to cluster EdgeId(1725) with cost 43
+off to cluster EdgeId(1727) with cost 40
+off to cluster EdgeId(1728) with cost 33
+off to cluster EdgeId(1729) with cost 32
+off to cluster EdgeId(1730) with cost 31
+pure new layer 57
+cost is 33
+cost is 32
+pure new layer 57
+cost is 42
+cost is 43
+pure new layer 57
+cost is 40
+pure new layer 57
+cost is 31
+pure new layer 57
+cost is 41
+off to cluster EdgeId(1732) with cost 31
+off to cluster EdgeId(1734) with cost 43
+off to cluster EdgeId(1736) with cost 40
+off to cluster EdgeId(1737) with cost 33
+off to cluster EdgeId(1739) with cost 42
+off to cluster EdgeId(1740) with cost 41
+off to cluster EdgeId(1731) with cost 32
+off to cluster EdgeId(1733) with cost 44
+off to cluster EdgeId(1735) with cost 41
+off to cluster EdgeId(1738) with cost 34
+pure new layer 58
+cost is 33
+cost is 32
+cost is 34
+pure new layer 58
+cost is 43
+cost is 44
+pure new layer 58
+cost is 40
+cost is 41
+cost is 41
+pure new layer 58
+cost is 31
+pure new layer 58
+cost is 42
+off to cluster EdgeId(1743) with cost 43
+off to cluster EdgeId(1747) with cost 32
+off to cluster EdgeId(1741) with cost 34
+off to cluster EdgeId(1742) with cost 35
+off to cluster EdgeId(1744) with cost 42
+off to cluster EdgeId(1745) with cost 42
+off to cluster EdgeId(1746) with cost 41
+off to cluster EdgeId(1748) with cost 31
+off to cluster EdgeId(1749) with cost 45
+off to cluster EdgeId(1750) with cost 44
+pure new layer 59
+cost is 34
+cost is 35
+pure new layer 59
+cost is 45
+cost is 44
+pure new layer 59
+cost is 42
+cost is 42
+cost is 41
+pure new layer 59
+cost is 32
+cost is 31
+pure new layer 59
+cost is 43
+off to cluster EdgeId(1752) with cost 32
+off to cluster EdgeId(1754) with cost 35
+off to cluster EdgeId(1755) with cost 42
+off to cluster EdgeId(1757) with cost 43
+off to cluster EdgeId(1758) with cost 45
+off to cluster EdgeId(1751) with cost 33
+off to cluster EdgeId(1753) with cost 36
+off to cluster EdgeId(1756) with cost 43
+off to cluster EdgeId(1759) with cost 46
+pure new layer 60
+cost is 42
+cost is 43
+cost is 43
+pure new layer 60
+cost is 32
+cost is 33
+pure new layer 60
+cost is 36
+pure new layer 60
+cost is 45
+cost is 46
+pure new layer 60
+cost is 35
+off to cluster EdgeId(1769) with cost 36
+off to cluster EdgeId(1760) with cost 33
+off to cluster EdgeId(1761) with cost 34
+off to cluster EdgeId(1762) with cost 37
+off to cluster EdgeId(1763) with cost 36
+off to cluster EdgeId(1764) with cost 47
+off to cluster EdgeId(1765) with cost 46
+off to cluster EdgeId(1766) with cost 43
+off to cluster EdgeId(1767) with cost 44
+off to cluster EdgeId(1768) with cost 35
+pure new layer 61
+cost is 33
+cost is 34
+cost is 35
+pure new layer 61
+cost is 47
+cost is 46
+pure new layer 61
+cost is 43
+cost is 44
+pure new layer 61
+cost is 37
+pure new layer 61
+cost is 36
+cost is 36
+off to cluster EdgeId(1770) with cost 35
+off to cluster EdgeId(1772) with cost 37
+off to cluster EdgeId(1774) with cost 47
+off to cluster EdgeId(1776) with cost 36
+off to cluster EdgeId(1778) with cost 44
+off to cluster EdgeId(1771) with cost 36
+off to cluster EdgeId(1773) with cost 38
+off to cluster EdgeId(1775) with cost 48
+off to cluster EdgeId(1777) with cost 37
+off to cluster EdgeId(1779) with cost 45
+pure new layer 62
+cost is 44
+cost is 45
+pure new layer 62
+cost is 35
+cost is 36
+cost is 36
+pure new layer 62
+cost is 47
+cost is 48
+pure new layer 62
+cost is 38
+pure new layer 62
+cost is 37
+cost is 37
+off to cluster EdgeId(1780) with cost 48
+off to cluster EdgeId(1783) with cost 45
+off to cluster EdgeId(1785) with cost 36
+off to cluster EdgeId(1786) with cost 38
+off to cluster EdgeId(1787) with cost 37
+off to cluster EdgeId(1781) with cost 49
+off to cluster EdgeId(1782) with cost 46
+off to cluster EdgeId(1784) with cost 37
+pure new layer 63
+cost is 45
+cost is 46
+pure new layer 63
+cost is 36
+cost is 37
+cost is 37
+pure new layer 63
+cost is 49
+pure new layer 63
+cost is 38
+pure new layer 63
+cost is 48
+off to cluster EdgeId(1788) with cost 37
+off to cluster EdgeId(1791) with cost 46
+off to cluster EdgeId(1793) with cost 49
+off to cluster EdgeId(1794) with cost 38
+off to cluster EdgeId(1795) with cost 39
+off to cluster EdgeId(1796) with cost 48
+off to cluster EdgeId(1797) with cost 49
+off to cluster EdgeId(1789) with cost 38
+off to cluster EdgeId(1790) with cost 47
+off to cluster EdgeId(1792) with cost 50
+pure new layer 64
+cost is 49
+cost is 49
+cost is 50
+pure new layer 64
+cost is 37
+cost is 38
+cost is 38
+pure new layer 64
+cost is 46
+cost is 47
+pure new layer 64
+cost is 39
+pure new layer 64
+cost is 48
+off to cluster EdgeId(1799) with cost 50
+off to cluster EdgeId(1801) with cost 47
+off to cluster EdgeId(1802) with cost 38
+off to cluster EdgeId(1805) with cost 48
+off to cluster EdgeId(1806) with cost 39
+off to cluster EdgeId(1798) with cost 51
+off to cluster EdgeId(1800) with cost 48
+off to cluster EdgeId(1803) with cost 39
+off to cluster EdgeId(1804) with cost 49
+pure new layer 65
+cost is 38
+cost is 39
+cost is 39
+pure new layer 65
+cost is 51
+pure new layer 65
+cost is 47
+cost is 48
+cost is 48
+pure new layer 65
+cost is 49
+pure new layer 65
+cost is 50
+off to cluster EdgeId(1809) with cost 51
+off to cluster EdgeId(1807) with cost 51
+off to cluster EdgeId(1808) with cost 52
+off to cluster EdgeId(1810) with cost 50
+off to cluster EdgeId(1811) with cost 50
+off to cluster EdgeId(1812) with cost 49
+off to cluster EdgeId(1813) with cost 48
+off to cluster EdgeId(1814) with cost 49
+off to cluster EdgeId(1815) with cost 40
+off to cluster EdgeId(1816) with cost 39
+pure new layer 66
+cost is 40
+cost is 39
+pure new layer 66
+cost is 52
+pure new layer 66
+cost is 49
+cost is 48
+cost is 49
+pure new layer 66
+cost is 50
+cost is 50
+pure new layer 66
+cost is 51
+cost is 51
+off to cluster EdgeId(1818) with cost 50
+off to cluster EdgeId(1822) with cost 41
+off to cluster EdgeId(1817) with cost 49
+off to cluster EdgeId(1819) with cost 50
+off to cluster EdgeId(1820) with cost 52
+off to cluster EdgeId(1821) with cost 51
+off to cluster EdgeId(1823) with cost 40
+pure new layer 67
+cost is 52
+cost is 51
+pure new layer 67
+cost is 40
+pure new layer 67
+cost is 49
+pure new layer 67
+cost is 50
+cost is 50
+pure new layer 67
+cost is 41
+off to cluster EdgeId(1825) with cost 49
+off to cluster EdgeId(1826) with cost 50
+off to cluster EdgeId(1829) with cost 40
+off to cluster EdgeId(1831) with cost 52
+off to cluster EdgeId(1832) with cost 41
+off to cluster EdgeId(1833) with cost 42
+off to cluster EdgeId(1824) with cost 50
+off to cluster EdgeId(1827) with cost 51
+off to cluster EdgeId(1828) with cost 41
+off to cluster EdgeId(1830) with cost 53
+pure new layer 68
+cost is 52
+cost is 53
+pure new layer 68
+cost is 40
+cost is 41
+cost is 41
+pure new layer 68
+cost is 49
+cost is 50
+cost is 50
+pure new layer 68
+cost is 42
+pure new layer 68
+cost is 51
+off to cluster EdgeId(1834) with cost 51
+off to cluster EdgeId(1836) with cost 41
+off to cluster EdgeId(1837) with cost 53
+off to cluster EdgeId(1839) with cost 50
+off to cluster EdgeId(1841) with cost 42
+off to cluster EdgeId(1835) with cost 42
+off to cluster EdgeId(1838) with cost 54
+off to cluster EdgeId(1840) with cost 51
+pure new layer 69
+cost is 42
+cost is 42
+pure new layer 69
+cost is 53
+cost is 54
+pure new layer 69
+cost is 50
+pure new layer 69
+cost is 51
+cost is 51
+pure new layer 69
+cost is 41
+off to cluster EdgeId(1846) with cost 43
+off to cluster EdgeId(1849) with cost 52
+off to cluster EdgeId(1842) with cost 42
+off to cluster EdgeId(1843) with cost 41
+off to cluster EdgeId(1844) with cost 51
+off to cluster EdgeId(1845) with cost 50
+off to cluster EdgeId(1847) with cost 42
+off to cluster EdgeId(1848) with cost 51
+off to cluster EdgeId(1850) with cost 54
+pure new layer 70
+cost is 54
+pure new layer 70
+cost is 42
+cost is 41
+cost is 42
+pure new layer 70
+cost is 51
+cost is 50
+cost is 51
+pure new layer 70
+cost is 43
+pure new layer 70
+cost is 52
+off to cluster EdgeId(1852) with cost 51
+off to cluster EdgeId(1853) with cost 42
+off to cluster EdgeId(1855) with cost 52
+off to cluster EdgeId(1856) with cost 43
+off to cluster EdgeId(1858) with cost 54
+off to cluster EdgeId(1851) with cost 52
+off to cluster EdgeId(1854) with cost 43
+off to cluster EdgeId(1857) with cost 55
+pure new layer 71
+cost is 52
+cost is 52
+pure new layer 71
+cost is 42
+pure new layer 71
+cost is 54
+cost is 55
+pure new layer 71
+cost is 51
+pure new layer 71
+cost is 43
+cost is 43
+off to cluster EdgeId(1859) with cost 42
+off to cluster EdgeId(1862) with cost 51
+off to cluster EdgeId(1864) with cost 52
+off to cluster EdgeId(1865) with cost 43
+off to cluster EdgeId(1868) with cost 55
+off to cluster EdgeId(1860) with cost 43
+off to cluster EdgeId(1861) with cost 52
+off to cluster EdgeId(1863) with cost 53
+off to cluster EdgeId(1866) with cost 44
+off to cluster EdgeId(1867) with cost 56
+pure new layer 72
+cost is 43
+cost is 43
+cost is 44
+pure new layer 72
+cost is 55
+cost is 56
+pure new layer 72
+cost is 51
+cost is 52
+cost is 52
+pure new layer 72
+cost is 42
+pure new layer 72
+cost is 53
+off to cluster EdgeId(1869) with cost 42
+off to cluster EdgeId(1871) with cost 53
+off to cluster EdgeId(1873) with cost 56
+off to cluster EdgeId(1874) with cost 52
+off to cluster EdgeId(1877) with cost 44
+off to cluster EdgeId(1870) with cost 43
+off to cluster EdgeId(1872) with cost 57
+off to cluster EdgeId(1875) with cost 53
+off to cluster EdgeId(1876) with cost 45
+pure new layer 73
+cost is 56
+cost is 57
+pure new layer 73
+cost is 42
+cost is 43
+pure new layer 73
+cost is 52
+pure new layer 73
+cost is 44
+cost is 45
+pure new layer 73
+cost is 53
+cost is 53
+off to cluster EdgeId(1879) with cost 57
+off to cluster EdgeId(1880) with cost 45
+off to cluster EdgeId(1882) with cost 53
+off to cluster EdgeId(1885) with cost 52
+off to cluster EdgeId(1887) with cost 43
+off to cluster EdgeId(1878) with cost 58
+off to cluster EdgeId(1881) with cost 46
+off to cluster EdgeId(1883) with cost 54
+off to cluster EdgeId(1884) with cost 53
+off to cluster EdgeId(1886) with cost 44
+pure new layer 74
+cost is 45
+cost is 46
+cost is 44
+pure new layer 74
+cost is 57
+cost is 58
+pure new layer 74
+cost is 53
+cost is 52
+cost is 53
+pure new layer 74
+cost is 43
+pure new layer 74
+cost is 54
+off to cluster EdgeId(1889) with cost 54
+off to cluster EdgeId(1890) with cost 43
+off to cluster EdgeId(1891) with cost 44
+off to cluster EdgeId(1893) with cost 46
+off to cluster EdgeId(1895) with cost 53
+off to cluster EdgeId(1896) with cost 58
+off to cluster EdgeId(1888) with cost 55
+off to cluster EdgeId(1892) with cost 47
+off to cluster EdgeId(1894) with cost 54
+off to cluster EdgeId(1897) with cost 59
+pure new layer 75
+cost is 58
+cost is 59
+pure new layer 75
+cost is 43
+cost is 44
+pure new layer 75
+cost is 54
+cost is 53
+cost is 54
+pure new layer 75
+cost is 46
+cost is 47
+pure new layer 75
+cost is 55
+off to cluster EdgeId(1899) with cost 44
+off to cluster EdgeId(1900) with cost 55
+off to cluster EdgeId(1902) with cost 59
+off to cluster EdgeId(1903) with cost 54
+off to cluster EdgeId(1905) with cost 47
+off to cluster EdgeId(1898) with cost 45
+off to cluster EdgeId(1901) with cost 60
+off to cluster EdgeId(1904) with cost 55
+off to cluster EdgeId(1906) with cost 48
+pure new layer 76
+cost is 44
+cost is 45
+pure new layer 76
+cost is 59
+cost is 60
+pure new layer 76
+cost is 54
+pure new layer 76
+cost is 47
+cost is 48
+pure new layer 76
+cost is 55
+cost is 55
+off to cluster EdgeId(1909) with cost 55
+off to cluster EdgeId(1907) with cost 46
+off to cluster EdgeId(1908) with cost 45
+off to cluster EdgeId(1910) with cost 54
+off to cluster EdgeId(1911) with cost 60
+off to cluster EdgeId(1912) with cost 61
+off to cluster EdgeId(1913) with cost 56
+off to cluster EdgeId(1914) with cost 55
+off to cluster EdgeId(1915) with cost 48
+off to cluster EdgeId(1916) with cost 49
+pure new layer 77
+cost is 48
+cost is 49
+pure new layer 77
+cost is 60
+cost is 61
+pure new layer 77
+cost is 55
+cost is 54
+cost is 56
+cost is 55
+pure new layer 77
+cost is 45
+pure new layer 77
+cost is 46
+off to cluster EdgeId(1918) with cost 46
+off to cluster EdgeId(1920) with cost 57
+off to cluster EdgeId(1921) with cost 50
+off to cluster EdgeId(1925) with cost 47
+off to cluster EdgeId(1917) with cost 45
+off to cluster EdgeId(1919) with cost 56
+off to cluster EdgeId(1922) with cost 49
+off to cluster EdgeId(1923) with cost 61
+off to cluster EdgeId(1924) with cost 46
+pure new layer 78
+cost is 46
+cost is 47
+cost is 46
+pure new layer 78
+cost is 61
+pure new layer 78
+cost is 57
+cost is 56
+pure new layer 78
+cost is 50
+cost is 49
+pure new layer 78
+cost is 45
+off to cluster EdgeId(1926) with cost 57
+off to cluster EdgeId(1928) with cost 47
+off to cluster EdgeId(1931) with cost 45
+off to cluster EdgeId(1932) with cost 50
+off to cluster EdgeId(1935) with cost 61
+off to cluster EdgeId(1927) with cost 58
+off to cluster EdgeId(1929) with cost 48
+off to cluster EdgeId(1930) with cost 46
+off to cluster EdgeId(1933) with cost 51
+off to cluster EdgeId(1934) with cost 62
+pure new layer 79
+cost is 45
+cost is 46
+pure new layer 79
+cost is 61
+cost is 62
+pure new layer 79
+cost is 50
+cost is 51
+pure new layer 79
+cost is 57
+cost is 58
+pure new layer 79
+cost is 47
+cost is 48
+off to cluster EdgeId(1937) with cost 46
+off to cluster EdgeId(1938) with cost 58
+off to cluster EdgeId(1941) with cost 62
+off to cluster EdgeId(1942) with cost 48
+off to cluster EdgeId(1945) with cost 51
+off to cluster EdgeId(1936) with cost 47
+off to cluster EdgeId(1939) with cost 59
+off to cluster EdgeId(1940) with cost 63
+off to cluster EdgeId(1943) with cost 49
+off to cluster EdgeId(1944) with cost 52
+pure new layer 80
+cost is 48
+cost is 49
+pure new layer 80
+cost is 62
+cost is 63
+pure new layer 80
+cost is 58
+cost is 59
+pure new layer 80
+cost is 46
+cost is 47
+pure new layer 80
+cost is 51
+cost is 52
+off to cluster EdgeId(1947) with cost 52
+off to cluster EdgeId(1949) with cost 63
+off to cluster EdgeId(1951) with cost 59
+off to cluster EdgeId(1952) with cost 49
+off to cluster EdgeId(1954) with cost 47
+off to cluster EdgeId(1946) with cost 53
+off to cluster EdgeId(1948) with cost 64
+off to cluster EdgeId(1950) with cost 60
+off to cluster EdgeId(1953) with cost 50
+off to cluster EdgeId(1955) with cost 48
+pure new layer 81
+cost is 52
+cost is 53
+pure new layer 81
+cost is 63
+cost is 64
+pure new layer 81
+cost is 59
+cost is 60
+pure new layer 81
+cost is 47
+cost is 48
+pure new layer 81
+cost is 49
+cost is 50
+off to cluster EdgeId(1957) with cost 64
+off to cluster EdgeId(1959) with cost 60
+off to cluster EdgeId(1960) with cost 50
+off to cluster EdgeId(1962) with cost 53
+off to cluster EdgeId(1965) with cost 48
+off to cluster EdgeId(1956) with cost 65
+off to cluster EdgeId(1958) with cost 61
+off to cluster EdgeId(1961) with cost 51
+off to cluster EdgeId(1963) with cost 54
+off to cluster EdgeId(1964) with cost 49
+pure new layer 82
+cost is 48
+cost is 49
+pure new layer 82
+cost is 64
+cost is 65
+pure new layer 82
+cost is 53
+cost is 54
+pure new layer 82
+cost is 60
+cost is 61
+pure new layer 82
+cost is 50
+cost is 51
+off to cluster EdgeId(1966) with cost 62
+off to cluster EdgeId(1969) with cost 55
+off to cluster EdgeId(1972) with cost 50
+off to cluster EdgeId(1967) with cost 61
+off to cluster EdgeId(1968) with cost 51
+off to cluster EdgeId(1970) with cost 54
+off to cluster EdgeId(1971) with cost 49
+off to cluster EdgeId(1973) with cost 65
+pure new layer 83
+cost is 62
+cost is 61
+pure new layer 83
+cost is 50
+cost is 49
+pure new layer 83
+cost is 55
+cost is 54
+pure new layer 83
+cost is 65
+pure new layer 83
+cost is 51
+off to cluster EdgeId(1974) with cost 50
+off to cluster EdgeId(1977) with cost 62
+off to cluster EdgeId(1978) with cost 51
+off to cluster EdgeId(1980) with cost 65
+off to cluster EdgeId(1983) with cost 55
+off to cluster EdgeId(1975) with cost 51
+off to cluster EdgeId(1976) with cost 63
+off to cluster EdgeId(1979) with cost 52
+off to cluster EdgeId(1981) with cost 66
+off to cluster EdgeId(1982) with cost 56
+pure new layer 84
+cost is 62
+cost is 63
+pure new layer 84
+cost is 50
+cost is 51
+cost is 51
+pure new layer 84
+cost is 55
+cost is 56
+pure new layer 84
+cost is 65
+cost is 66
+pure new layer 84
+cost is 52
+off to cluster EdgeId(1984) with cost 64
+off to cluster EdgeId(1985) with cost 63
+off to cluster EdgeId(1986) with cost 56
+off to cluster EdgeId(1987) with cost 57
+off to cluster EdgeId(1988) with cost 53
+off to cluster EdgeId(1989) with cost 52
+off to cluster EdgeId(1990) with cost 67
+off to cluster EdgeId(1991) with cost 66
+off to cluster EdgeId(1992) with cost 51
+off to cluster EdgeId(1993) with cost 52
+pure new layer 85
+cost is 64
+cost is 63
+pure new layer 85
+cost is 52
+cost is 51
+cost is 52
+pure new layer 85
+cost is 56
+cost is 57
+pure new layer 85
+cost is 67
+cost is 66
+pure new layer 85
+cost is 53
+off to cluster EdgeId(1994) with cost 57
+off to cluster EdgeId(1996) with cost 64
+off to cluster EdgeId(1998) with cost 67
+off to cluster EdgeId(2000) with cost 53
+off to cluster EdgeId(2002) with cost 52
+off to cluster EdgeId(1995) with cost 58
+off to cluster EdgeId(1997) with cost 65
+off to cluster EdgeId(1999) with cost 68
+off to cluster EdgeId(2001) with cost 53
+pure new layer 86
+cost is 67
+cost is 68
+pure new layer 86
+cost is 53
+cost is 52
+cost is 53
+pure new layer 86
+cost is 58
+pure new layer 86
+cost is 64
+cost is 65
+pure new layer 86
+cost is 57
+off to cluster EdgeId(2003) with cost 58
+off to cluster EdgeId(2005) with cost 53
+off to cluster EdgeId(2007) with cost 57
+off to cluster EdgeId(2008) with cost 68
+off to cluster EdgeId(2010) with cost 65
+off to cluster EdgeId(2004) with cost 54
+off to cluster EdgeId(2006) with cost 58
+off to cluster EdgeId(2009) with cost 69
+off to cluster EdgeId(2011) with cost 66
+pure new layer 87
+cost is 58
+cost is 58
+pure new layer 87
+cost is 68
+cost is 69
+pure new layer 87
+cost is 53
+cost is 54
+pure new layer 87
+cost is 65
+cost is 66
+pure new layer 87
+cost is 57
+off to cluster EdgeId(2013) with cost 58
+off to cluster EdgeId(2015) with cost 66
+off to cluster EdgeId(2016) with cost 57
+off to cluster EdgeId(2017) with cost 58
+off to cluster EdgeId(2019) with cost 69
+off to cluster EdgeId(2020) with cost 54
+off to cluster EdgeId(2012) with cost 59
+off to cluster EdgeId(2014) with cost 67
+off to cluster EdgeId(2018) with cost 70
+off to cluster EdgeId(2021) with cost 55
+pure new layer 88
+cost is 69
+cost is 70
+pure new layer 88
+cost is 54
+cost is 55
+pure new layer 88
+cost is 58
+cost is 58
+cost is 59
+pure new layer 88
+cost is 66
+cost is 67
+pure new layer 88
+cost is 57
+off to cluster EdgeId(2022) with cost 57
+off to cluster EdgeId(2025) with cost 59
+off to cluster EdgeId(2027) with cost 67
+off to cluster EdgeId(2028) with cost 55
+off to cluster EdgeId(2031) with cost 70
+off to cluster EdgeId(2023) with cost 58
+off to cluster EdgeId(2024) with cost 60
+off to cluster EdgeId(2026) with cost 68
+off to cluster EdgeId(2029) with cost 56
+off to cluster EdgeId(2030) with cost 71
+pure new layer 89
+cost is 57
+cost is 59
+cost is 58
+pure new layer 89
+cost is 70
+cost is 71
+pure new layer 89
+cost is 67
+cost is 68
+pure new layer 89
+cost is 55
+cost is 56
+pure new layer 89
+cost is 60
+off to cluster EdgeId(2032) with cost 60
+off to cluster EdgeId(2033) with cost 59
+off to cluster EdgeId(2034) with cost 72
+off to cluster EdgeId(2035) with cost 71
+off to cluster EdgeId(2036) with cost 57
+off to cluster EdgeId(2037) with cost 56
+off to cluster EdgeId(2038) with cost 60
+off to cluster EdgeId(2039) with cost 61
+off to cluster EdgeId(2040) with cost 69
+off to cluster EdgeId(2041) with cost 68
+pure new layer 90
+cost is 72
+cost is 71
+pure new layer 90
+cost is 57
+cost is 56
+pure new layer 90
+cost is 60
+cost is 60
+cost is 61
+pure new layer 90
+cost is 69
+cost is 68
+pure new layer 90
+cost is 59
+off to cluster EdgeId(2042) with cost 57
+off to cluster EdgeId(2044) with cost 59
+off to cluster EdgeId(2047) with cost 72
+off to cluster EdgeId(2049) with cost 61
+off to cluster EdgeId(2051) with cost 69
+off to cluster EdgeId(2043) with cost 58
+off to cluster EdgeId(2045) with cost 60
+off to cluster EdgeId(2046) with cost 73
+off to cluster EdgeId(2048) with cost 62
+off to cluster EdgeId(2050) with cost 70
+pure new layer 91
+cost is 57
+cost is 58
+pure new layer 91
+cost is 72
+cost is 73
+pure new layer 91
+cost is 61
+cost is 62
+pure new layer 91
+cost is 69
+cost is 70
+pure new layer 91
+cost is 59
+cost is 60
+off to cluster EdgeId(2052) with cost 71
+off to cluster EdgeId(2053) with cost 70
+off to cluster EdgeId(2054) with cost 73
+off to cluster EdgeId(2055) with cost 74
+off to cluster EdgeId(2056) with cost 62
+off to cluster EdgeId(2057) with cost 63
+off to cluster EdgeId(2058) with cost 61
+off to cluster EdgeId(2059) with cost 60
+off to cluster EdgeId(2060) with cost 59
+off to cluster EdgeId(2061) with cost 58
+pure new layer 92
+cost is 62
+cost is 61
+cost is 60
+pure new layer 92
+cost is 73
+cost is 74
+pure new layer 92
+cost is 71
+cost is 70
+pure new layer 92
+cost is 59
+cost is 58
+pure new layer 92
+cost is 63
+off to cluster EdgeId(2063) with cost 59
+off to cluster EdgeId(2065) with cost 62
+off to cluster EdgeId(2067) with cost 63
+off to cluster EdgeId(2069) with cost 71
+off to cluster EdgeId(2070) with cost 74
+off to cluster EdgeId(2062) with cost 60
+off to cluster EdgeId(2064) with cost 63
+off to cluster EdgeId(2066) with cost 64
+off to cluster EdgeId(2068) with cost 72
+off to cluster EdgeId(2071) with cost 75
+pure new layer 93
+cost is 71
+cost is 72
+pure new layer 93
+cost is 59
+cost is 60
+pure new layer 93
+cost is 63
+cost is 63
+cost is 64
+pure new layer 93
+cost is 74
+cost is 75
+pure new layer 93
+cost is 62
+off to cluster EdgeId(2073) with cost 63
+off to cluster EdgeId(2072) with cost 62
+off to cluster EdgeId(2074) with cost 64
+off to cluster EdgeId(2075) with cost 65
+off to cluster EdgeId(2076) with cost 73
+off to cluster EdgeId(2077) with cost 72
+off to cluster EdgeId(2078) with cost 61
+off to cluster EdgeId(2079) with cost 60
+off to cluster EdgeId(2080) with cost 75
+off to cluster EdgeId(2081) with cost 76
+pure new layer 94
+cost is 63
+cost is 62
+cost is 61
+pure new layer 94
+cost is 75
+cost is 76
+pure new layer 94
+cost is 73
+cost is 72
+pure new layer 94
+cost is 64
+cost is 65
+found similar state node layer 94
+similar new
+cost is 63
+cost is 62
+cost is 61
+similar existing
+cost is 60
+off to cluster EdgeId(2082) with cost 76
+off to cluster EdgeId(2084) with cost 63
+off to cluster EdgeId(2087) with cost 73
+off to cluster EdgeId(2088) with cost 65
+off to cluster EdgeId(2083) with cost 77
+off to cluster EdgeId(2085) with cost 64
+off to cluster EdgeId(2086) with cost 74
+off to cluster EdgeId(2089) with cost 66
+pure new layer 95
+cost is 65
+cost is 66
+pure new layer 95
+cost is 77
+pure new layer 95
+cost is 73
+cost is 74
+pure new layer 95
+cost is 63
+cost is 64
+pure new layer 95
+cost is 76
+off to cluster EdgeId(2090) with cost 77
+off to cluster EdgeId(2091) with cost 76
+off to cluster EdgeId(2092) with cost 64
+off to cluster EdgeId(2094) with cost 77
+off to cluster EdgeId(2096) with cost 66
+off to cluster EdgeId(2099) with cost 74
+off to cluster EdgeId(2093) with cost 65
+off to cluster EdgeId(2095) with cost 78
+off to cluster EdgeId(2097) with cost 67
+off to cluster EdgeId(2098) with cost 75
+pure new layer 96
+cost is 77
+cost is 76
+cost is 77
+pure new layer 96
+cost is 64
+cost is 65
+pure new layer 96
+cost is 66
+cost is 67
+pure new layer 96
+cost is 74
+cost is 75
+pure new layer 96
+cost is 78
+off to cluster EdgeId(2100) with cost 77
+off to cluster EdgeId(2101) with cost 78
+off to cluster EdgeId(2103) with cost 75
+off to cluster EdgeId(2104) with cost 65
+off to cluster EdgeId(2106) with cost 67
+off to cluster EdgeId(2109) with cost 78
+off to cluster EdgeId(2102) with cost 76
+off to cluster EdgeId(2105) with cost 66
+off to cluster EdgeId(2107) with cost 68
+off to cluster EdgeId(2108) with cost 79
+pure new layer 97
+cost is 78
+cost is 78
+cost is 79
+pure new layer 97
+cost is 65
+cost is 66
+pure new layer 97
+cost is 75
+cost is 76
+pure new layer 97
+cost is 67
+cost is 68
+pure new layer 97
+cost is 77
+off to cluster EdgeId(2111) with cost 76
+off to cluster EdgeId(2113) with cost 79
+off to cluster EdgeId(2114) with cost 78
+off to cluster EdgeId(2115) with cost 77
+off to cluster EdgeId(2117) with cost 68
+off to cluster EdgeId(2118) with cost 66
+off to cluster EdgeId(2110) with cost 77
+off to cluster EdgeId(2112) with cost 80
+off to cluster EdgeId(2116) with cost 69
+off to cluster EdgeId(2119) with cost 67
+pure new layer 98
+cost is 79
+cost is 80
+pure new layer 98
+cost is 66
+cost is 67
+pure new layer 98
+cost is 76
+cost is 77
+cost is 77
+pure new layer 98
+cost is 68
+cost is 69
+pure new layer 98
+cost is 78
+off to cluster EdgeId(2121) with cost 80
+off to cluster EdgeId(2123) with cost 77
+off to cluster EdgeId(2124) with cost 69
+off to cluster EdgeId(2126) with cost 79
+off to cluster EdgeId(2127) with cost 78
+off to cluster EdgeId(2129) with cost 67
+off to cluster EdgeId(2120) with cost 81
+off to cluster EdgeId(2122) with cost 78
+off to cluster EdgeId(2125) with cost 70
+off to cluster EdgeId(2128) with cost 68
+pure new layer 99
+cost is 80
+cost is 81
+pure new layer 99
+cost is 67
+cost is 68
+pure new layer 99
+cost is 77
+cost is 78
+cost is 78
+pure new layer 99
+cost is 69
+cost is 70
+pure new layer 99
+cost is 79
+off to cluster EdgeId(2130) with cost 68
+off to cluster EdgeId(2131) with cost 79
+off to cluster EdgeId(2132) with cost 80
+off to cluster EdgeId(2133) with cost 70
+off to cluster EdgeId(2134) with cost 78
+off to cluster EdgeId(2137) with cost 81
+off to cluster EdgeId(2135) with cost 79
+off to cluster EdgeId(2136) with cost 82
+pure new layer 100
+cost is 81
+cost is 82
+pure new layer 100
+cost is 68
+pure new layer 100
+cost is 79
+cost is 78
+cost is 79
+pure new layer 100
+cost is 80
+pure new layer 100
+cost is 70
+off to cluster EdgeId(2138) with cost 80
+off to cluster EdgeId(2140) with cost 70
+off to cluster EdgeId(2142) with cost 82
+off to cluster EdgeId(2143) with cost 79
+off to cluster EdgeId(2146) with cost 68
+off to cluster EdgeId(2139) with cost 71
+off to cluster EdgeId(2141) with cost 83
+off to cluster EdgeId(2144) with cost 80
+off to cluster EdgeId(2145) with cost 69
+pure new layer 101
+cost is 70
+cost is 71
+cost is 69
+pure new layer 101
+cost is 82
+cost is 83
+pure new layer 101
+cost is 79
+pure new layer 101
+cost is 68
+pure new layer 101
+cost is 80
+cost is 80
+off to cluster EdgeId(2149) with cost 72
+off to cluster EdgeId(2151) with cost 80
+off to cluster EdgeId(2153) with cost 69
+off to cluster EdgeId(2147) with cost 83
+off to cluster EdgeId(2148) with cost 71
+off to cluster EdgeId(2150) with cost 80
+off to cluster EdgeId(2152) with cost 79
+off to cluster EdgeId(2154) with cost 68
+pure new layer 102
+cost is 72
+cost is 71
+pure new layer 102
+cost is 83
+pure new layer 102
+cost is 79
+pure new layer 102
+cost is 69
+cost is 68
+pure new layer 102
+cost is 80
+cost is 80
+off to cluster EdgeId(2155) with cost 84
+off to cluster EdgeId(2156) with cost 83
+off to cluster EdgeId(2157) with cost 72
+off to cluster EdgeId(2158) with cost 73
+off to cluster EdgeId(2159) with cost 69
+off to cluster EdgeId(2160) with cost 70
+off to cluster EdgeId(2161) with cost 80
+off to cluster EdgeId(2162) with cost 81
+off to cluster EdgeId(2163) with cost 79
+off to cluster EdgeId(2164) with cost 80
+pure new layer 103
+cost is 72
+cost is 73
+pure new layer 103
+cost is 84
+cost is 83
+pure new layer 103
+cost is 80
+cost is 79
+cost is 80
+pure new layer 103
+cost is 69
+cost is 70
+pure new layer 103
+cost is 81
+off to cluster EdgeId(2166) with cost 73
+off to cluster EdgeId(2167) with cost 70
+off to cluster EdgeId(2169) with cost 81
+off to cluster EdgeId(2171) with cost 80
+off to cluster EdgeId(2174) with cost 84
+off to cluster EdgeId(2165) with cost 74
+off to cluster EdgeId(2168) with cost 71
+off to cluster EdgeId(2170) with cost 82
+off to cluster EdgeId(2172) with cost 81
+off to cluster EdgeId(2173) with cost 85
+pure new layer 104
+cost is 81
+cost is 80
+cost is 82
+cost is 81
+pure new layer 104
+cost is 70
+cost is 71
+pure new layer 104
+cost is 74
+pure new layer 104
+cost is 84
+cost is 85
+pure new layer 104
+cost is 73
+off to cluster EdgeId(2175) with cost 82
+off to cluster EdgeId(2178) with cost 71
+off to cluster EdgeId(2179) with cost 74
+off to cluster EdgeId(2181) with cost 85
+off to cluster EdgeId(2182) with cost 73
+off to cluster EdgeId(2176) with cost 83
+off to cluster EdgeId(2177) with cost 72
+off to cluster EdgeId(2180) with cost 86
+off to cluster EdgeId(2183) with cost 74
+pure new layer 105
+cost is 73
+cost is 72
+pure new layer 105
+cost is 85
+cost is 86
+pure new layer 105
+cost is 82
+cost is 83
+pure new layer 105
+cost is 74
+cost is 74
+pure new layer 105
+cost is 71
+off to cluster EdgeId(2184) with cost 84
+off to cluster EdgeId(2187) with cost 75
+off to cluster EdgeId(2191) with cost 74
+off to cluster EdgeId(2185) with cost 83
+off to cluster EdgeId(2186) with cost 74
+off to cluster EdgeId(2188) with cost 71
+off to cluster EdgeId(2189) with cost 72
+off to cluster EdgeId(2190) with cost 73
+off to cluster EdgeId(2192) with cost 86
+pure new layer 106
+cost is 71
+cost is 72
+pure new layer 106
+cost is 86
+pure new layer 106
+cost is 75
+cost is 74
+cost is 74
+pure new layer 106
+cost is 84
+cost is 83
+found similar state node layer 106
+similar new
+cost is 75
+cost is 74
+cost is 74
+similar existing
+cost is 73
+off to cluster EdgeId(2194) with cost 72
+off to cluster EdgeId(2195) with cost 75
+off to cluster EdgeId(2197) with cost 86
+off to cluster EdgeId(2200) with cost 84
+off to cluster EdgeId(2193) with cost 73
+off to cluster EdgeId(2196) with cost 76
+off to cluster EdgeId(2198) with cost 87
+off to cluster EdgeId(2199) with cost 85
+pure new layer 107
+cost is 73
+pure new layer 107
+cost is 86
+cost is 87
+pure new layer 107
+cost is 84
+cost is 85
+pure new layer 107
+cost is 75
+cost is 76
+pure new layer 107
+cost is 72
+off to cluster EdgeId(2203) with cost 73
+off to cluster EdgeId(2201) with cost 86
+off to cluster EdgeId(2202) with cost 85
+off to cluster EdgeId(2204) with cost 72
+off to cluster EdgeId(2205) with cost 87
+off to cluster EdgeId(2206) with cost 88
+off to cluster EdgeId(2207) with cost 73
+off to cluster EdgeId(2208) with cost 74
+off to cluster EdgeId(2209) with cost 77
+off to cluster EdgeId(2210) with cost 76
+pure new layer 108
+cost is 73
+cost is 73
+cost is 74
+pure new layer 108
+cost is 87
+cost is 88
+pure new layer 108
+cost is 86
+cost is 85
+pure new layer 108
+cost is 77
+cost is 76
+pure new layer 108
+cost is 72
+off to cluster EdgeId(2213) with cost 87
+off to cluster EdgeId(2214) with cost 78
+off to cluster EdgeId(2216) with cost 73
+off to cluster EdgeId(2218) with cost 75
+off to cluster EdgeId(2211) with cost 88
+off to cluster EdgeId(2212) with cost 86
+off to cluster EdgeId(2215) with cost 77
+off to cluster EdgeId(2217) with cost 72
+off to cluster EdgeId(2219) with cost 74
+pure new layer 109
+cost is 73
+cost is 72
+pure new layer 109
+cost is 87
+cost is 88
+pure new layer 109
+cost is 78
+cost is 77
+pure new layer 109
+cost is 75
+cost is 74
+pure new layer 109
+cost is 86
+off to cluster EdgeId(2221) with cost 88
+off to cluster EdgeId(2222) with cost 86
+off to cluster EdgeId(2225) with cost 73
+off to cluster EdgeId(2226) with cost 78
+off to cluster EdgeId(2228) with cost 75
+off to cluster EdgeId(2220) with cost 89
+off to cluster EdgeId(2223) with cost 87
+off to cluster EdgeId(2224) with cost 74
+off to cluster EdgeId(2227) with cost 79
+pure new layer 110
+cost is 88
+cost is 86
+cost is 87
+pure new layer 110
+cost is 73
+cost is 74
+pure new layer 110
+cost is 78
+cost is 79
+pure new layer 110
+cost is 75
+pure new layer 110
+cost is 89
+off to cluster EdgeId(2229) with cost 76
+off to cluster EdgeId(2230) with cost 75
+off to cluster EdgeId(2231) with cost 80
+off to cluster EdgeId(2232) with cost 79
+off to cluster EdgeId(2233) with cost 88
+off to cluster EdgeId(2234) with cost 89
+off to cluster EdgeId(2235) with cost 89
+off to cluster EdgeId(2236) with cost 90
+off to cluster EdgeId(2237) with cost 74
+off to cluster EdgeId(2238) with cost 75
+pure new layer 111
+cost is 80
+cost is 79
+pure new layer 111
+cost is 89
+cost is 89
+cost is 90
+pure new layer 111
+cost is 75
+cost is 74
+cost is 75
+pure new layer 111
+cost is 76
+pure new layer 111
+cost is 88
+off to cluster EdgeId(2239) with cost 88
+off to cluster EdgeId(2241) with cost 90
+off to cluster EdgeId(2243) with cost 76
+off to cluster EdgeId(2244) with cost 75
+off to cluster EdgeId(2246) with cost 80
+off to cluster EdgeId(2240) with cost 89
+off to cluster EdgeId(2242) with cost 91
+off to cluster EdgeId(2245) with cost 76
+off to cluster EdgeId(2247) with cost 81
+pure new layer 112
+cost is 80
+cost is 81
+pure new layer 112
+cost is 91
+pure new layer 112
+cost is 76
+cost is 75
+cost is 76
+pure new layer 112
+cost is 88
+cost is 89
+pure new layer 112
+cost is 90
+off to cluster EdgeId(2249) with cost 89
+off to cluster EdgeId(2251) with cost 76
+off to cluster EdgeId(2253) with cost 81
+off to cluster EdgeId(2254) with cost 91
+off to cluster EdgeId(2255) with cost 90
+off to cluster EdgeId(2257) with cost 91
+off to cluster EdgeId(2248) with cost 90
+off to cluster EdgeId(2250) with cost 77
+off to cluster EdgeId(2252) with cost 82
+off to cluster EdgeId(2256) with cost 92
+pure new layer 113
+cost is 76
+cost is 77
+pure new layer 113
+cost is 91
+cost is 91
+cost is 92
+pure new layer 113
+cost is 82
+pure new layer 113
+cost is 89
+cost is 90
+cost is 90
+pure new layer 113
+cost is 81
+off to cluster EdgeId(2259) with cost 90
+off to cluster EdgeId(2260) with cost 82
+off to cluster EdgeId(2262) with cost 77
+off to cluster EdgeId(2264) with cost 92
+off to cluster EdgeId(2266) with cost 81
+off to cluster EdgeId(2258) with cost 91
+off to cluster EdgeId(2261) with cost 78
+off to cluster EdgeId(2263) with cost 93
+off to cluster EdgeId(2265) with cost 82
+pure new layer 114
+cost is 90
+cost is 91
+pure new layer 114
+cost is 77
+cost is 78
+pure new layer 114
+cost is 82
+cost is 81
+cost is 82
+pure new layer 114
+cost is 93
+pure new layer 114
+cost is 92
+off to cluster EdgeId(2267) with cost 79
+off to cluster EdgeId(2270) with cost 92
+off to cluster EdgeId(2272) with cost 83
+off to cluster EdgeId(2275) with cost 93
+off to cluster EdgeId(2268) with cost 78
+off to cluster EdgeId(2269) with cost 93
+off to cluster EdgeId(2271) with cost 91
+off to cluster EdgeId(2273) with cost 82
+off to cluster EdgeId(2274) with cost 92
+pure new layer 115
+cost is 92
+cost is 91
+cost is 92
+pure new layer 115
+cost is 78
+pure new layer 115
+cost is 83
+cost is 82
+pure new layer 115
+cost is 93
+cost is 93
+pure new layer 115
+cost is 79
+off to cluster EdgeId(2276) with cost 80
+off to cluster EdgeId(2277) with cost 79
+off to cluster EdgeId(2278) with cost 79
+off to cluster EdgeId(2279) with cost 78
+off to cluster EdgeId(2280) with cost 93
+off to cluster EdgeId(2281) with cost 94
+off to cluster EdgeId(2282) with cost 93
+off to cluster EdgeId(2283) with cost 92
+off to cluster EdgeId(2284) with cost 84
+off to cluster EdgeId(2285) with cost 83
+pure new layer 116
+cost is 93
+cost is 94
+cost is 93
+pure new layer 116
+cost is 79
+cost is 79
+cost is 78
+pure new layer 116
+cost is 84
+cost is 83
+pure new layer 116
+cost is 80
+pure new layer 116
+cost is 92
+off to cluster EdgeId(2287) with cost 92
+off to cluster EdgeId(2288) with cost 84
+off to cluster EdgeId(2290) with cost 79
+off to cluster EdgeId(2292) with cost 94
+off to cluster EdgeId(2294) with cost 80
+off to cluster EdgeId(2286) with cost 93
+off to cluster EdgeId(2289) with cost 85
+off to cluster EdgeId(2291) with cost 80
+off to cluster EdgeId(2293) with cost 95
+pure new layer 117
+cost is 84
+cost is 85
+pure new layer 117
+cost is 95
+pure new layer 117
+cost is 79
+cost is 80
+cost is 80
+pure new layer 117
+cost is 92
+cost is 93
+pure new layer 117
+cost is 94
+off to cluster EdgeId(2301) with cost 95
+off to cluster EdgeId(2295) with cost 86
+off to cluster EdgeId(2296) with cost 85
+off to cluster EdgeId(2297) with cost 95
+off to cluster EdgeId(2298) with cost 96
+off to cluster EdgeId(2299) with cost 93
+off to cluster EdgeId(2300) with cost 94
+off to cluster EdgeId(2302) with cost 94
+off to cluster EdgeId(2303) with cost 80
+off to cluster EdgeId(2304) with cost 81
+pure new layer 118
+cost is 80
+cost is 81
+pure new layer 118
+cost is 96
+pure new layer 118
+cost is 86
+cost is 85
+pure new layer 118
+cost is 93
+cost is 94
+cost is 94
+pure new layer 118
+cost is 95
+cost is 95
+off to cluster EdgeId(2306) with cost 95
+off to cluster EdgeId(2307) with cost 96
+off to cluster EdgeId(2310) with cost 86
+off to cluster EdgeId(2312) with cost 94
+off to cluster EdgeId(2314) with cost 81
+off to cluster EdgeId(2305) with cost 96
+off to cluster EdgeId(2308) with cost 97
+off to cluster EdgeId(2309) with cost 87
+off to cluster EdgeId(2311) with cost 95
+off to cluster EdgeId(2313) with cost 82
+pure new layer 119
+cost is 86
+cost is 87
+pure new layer 119
+cost is 96
+cost is 96
+cost is 97
+pure new layer 119
+cost is 81
+cost is 82
+pure new layer 119
+cost is 94
+pure new layer 119
+cost is 95
+cost is 95
+off to cluster EdgeId(2315) with cost 83
+off to cluster EdgeId(2318) with cost 95
+off to cluster EdgeId(2319) with cost 88
+off to cluster EdgeId(2321) with cost 96
+off to cluster EdgeId(2316) with cost 82
+off to cluster EdgeId(2317) with cost 94
+off to cluster EdgeId(2320) with cost 87
+off to cluster EdgeId(2322) with cost 95
+off to cluster EdgeId(2323) with cost 97
+pure new layer 120
+cost is 82
+pure new layer 120
+cost is 96
+cost is 97
+pure new layer 120
+cost is 88
+cost is 87
+pure new layer 120
+cost is 95
+cost is 94
+cost is 95
+pure new layer 120
+cost is 83
+off to cluster EdgeId(2328) with cost 84
+off to cluster EdgeId(2324) with cost 98
+off to cluster EdgeId(2325) with cost 97
+off to cluster EdgeId(2326) with cost 95
+off to cluster EdgeId(2327) with cost 96
+off to cluster EdgeId(2329) with cost 83
+off to cluster EdgeId(2330) with cost 82
+off to cluster EdgeId(2331) with cost 83
+off to cluster EdgeId(2332) with cost 88
+off to cluster EdgeId(2333) with cost 89
+pure new layer 121
+cost is 98
+cost is 97
+cost is 96
+pure new layer 121
+cost is 83
+cost is 82
+cost is 83
+pure new layer 121
+cost is 88
+cost is 89
+pure new layer 121
+cost is 84
+found similar state node layer 121
+similar new
+cost is 98
+cost is 97
+cost is 96
+similar existing
+cost is 95
+off to cluster EdgeId(2336) with cost 85
+off to cluster EdgeId(2334) with cost 90
+off to cluster EdgeId(2335) with cost 89
+off to cluster EdgeId(2337) with cost 84
+off to cluster EdgeId(2338) with cost 99
+off to cluster EdgeId(2339) with cost 98
+off to cluster EdgeId(2340) with cost 83
+off to cluster EdgeId(2341) with cost 84
+pure new layer 122
+cost is 85
+cost is 84
+cost is 84
+pure new layer 122
+cost is 99
+cost is 98
+pure new layer 122
+cost is 90
+pure new layer 122
+cost is 83
+pure new layer 122
+cost is 89
+off to cluster EdgeId(2342) with cost 90
+off to cluster EdgeId(2343) with cost 89
+off to cluster EdgeId(2344) with cost 99
+off to cluster EdgeId(2345) with cost 100
+off to cluster EdgeId(2346) with cost 85
+off to cluster EdgeId(2347) with cost 86
+off to cluster EdgeId(2348) with cost 83
+off to cluster EdgeId(2349) with cost 84
+off to cluster EdgeId(2350) with cost 91
+off to cluster EdgeId(2351) with cost 90
+pure new layer 123
+cost is 83
+cost is 84
+pure new layer 123
+cost is 99
+cost is 100
+pure new layer 123
+cost is 90
+cost is 91
+cost is 90
+pure new layer 123
+cost is 85
+cost is 86
+pure new layer 123
+cost is 89
+off to cluster EdgeId(2352) with cost 91
+off to cluster EdgeId(2354) with cost 84
+off to cluster EdgeId(2356) with cost 100
+off to cluster EdgeId(2358) with cost 86
+off to cluster EdgeId(2360) with cost 89
+off to cluster EdgeId(2353) with cost 92
+off to cluster EdgeId(2355) with cost 85
+off to cluster EdgeId(2357) with cost 101
+off to cluster EdgeId(2359) with cost 90
+pure new layer 124
+cost is 91
+cost is 92
+cost is 90
+pure new layer 124
+cost is 100
+cost is 101
+pure new layer 124
+cost is 84
+cost is 85
+pure new layer 124
+cost is 86
+found similar state node layer 124
+similar new
+cost is 91
+cost is 92
+cost is 90
+similar existing
+cost is 89
+off to cluster EdgeId(2361) with cost 93
+off to cluster EdgeId(2367) with cost 87
+off to cluster EdgeId(2362) with cost 92
+off to cluster EdgeId(2363) with cost 102
+off to cluster EdgeId(2364) with cost 101
+off to cluster EdgeId(2365) with cost 86
+off to cluster EdgeId(2366) with cost 85
+off to cluster EdgeId(2368) with cost 86
+pure new layer 125
+cost is 86
+cost is 85
+cost is 86
+pure new layer 125
+cost is 102
+cost is 101
+pure new layer 125
+cost is 93
+pure new layer 125
+cost is 87
+pure new layer 125
+cost is 92
+off to cluster EdgeId(2369) with cost 102
+off to cluster EdgeId(2371) with cost 93
+off to cluster EdgeId(2372) with cost 87
+off to cluster EdgeId(2373) with cost 86
+off to cluster EdgeId(2376) with cost 92
+off to cluster EdgeId(2370) with cost 103
+off to cluster EdgeId(2374) with cost 87
+off to cluster EdgeId(2375) with cost 93
+pure new layer 126
+cost is 103
+pure new layer 126
+cost is 86
+pure new layer 126
+cost is 93
+cost is 92
+cost is 93
+pure new layer 126
+cost is 102
+pure new layer 126
+cost is 87
+cost is 87
+off to cluster EdgeId(2377) with cost 93
+off to cluster EdgeId(2379) with cost 102
+off to cluster EdgeId(2380) with cost 103
+off to cluster EdgeId(2382) with cost 103
+off to cluster EdgeId(2383) with cost 87
+off to cluster EdgeId(2385) with cost 86
+off to cluster EdgeId(2386) with cost 87
+off to cluster EdgeId(2378) with cost 94
+off to cluster EdgeId(2381) with cost 104
+off to cluster EdgeId(2384) with cost 88
+pure new layer 127
+cost is 102
+cost is 103
+cost is 103
+pure new layer 127
+cost is 87
+cost is 86
+cost is 87
+pure new layer 127
+cost is 93
+cost is 94
+pure new layer 127
+cost is 104
+pure new layer 127
+cost is 88
+off to cluster EdgeId(2390) with cost 104
+off to cluster EdgeId(2387) with cost 94
+off to cluster EdgeId(2388) with cost 87
+off to cluster EdgeId(2389) with cost 104
+off to cluster EdgeId(2391) with cost 103
+off to cluster EdgeId(2392) with cost 88
+pure new layer 128
+cost is 94
+pure new layer 128
+cost is 104
+cost is 104
+pure new layer 128
+cost is 87
+pure new layer 128
+cost is 103
+pure new layer 128
+cost is 88
+off to cluster EdgeId(2394) with cost 94
+off to cluster EdgeId(2395) with cost 87
+off to cluster EdgeId(2397) with cost 103
+off to cluster EdgeId(2399) with cost 88
+off to cluster EdgeId(2402) with cost 104
+off to cluster EdgeId(2393) with cost 95
+off to cluster EdgeId(2396) with cost 88
+off to cluster EdgeId(2398) with cost 104
+off to cluster EdgeId(2400) with cost 89
+off to cluster EdgeId(2401) with cost 105
+pure new layer 129
+cost is 87
+cost is 88
+cost is 88
+cost is 89
+pure new layer 129
+cost is 104
+cost is 104
+cost is 105
+pure new layer 129
+cost is 95
+pure new layer 129
+cost is 103
+pure new layer 129
+cost is 94
+off to cluster EdgeId(2406) with cost 104
+off to cluster EdgeId(2408) with cost 95
+off to cluster EdgeId(2403) with cost 89
+off to cluster EdgeId(2404) with cost 90
+off to cluster EdgeId(2405) with cost 103
+off to cluster EdgeId(2407) with cost 94
+off to cluster EdgeId(2409) with cost 96
+off to cluster EdgeId(2410) with cost 95
+off to cluster EdgeId(2411) with cost 106
+off to cluster EdgeId(2412) with cost 105
+pure new layer 130
+cost is 89
+cost is 90
+pure new layer 130
+cost is 106
+cost is 105
+pure new layer 130
+cost is 95
+cost is 96
+cost is 95
+pure new layer 130
+cost is 104
+cost is 103
+pure new layer 130
+cost is 94
+off to cluster EdgeId(2414) with cost 94
+off to cluster EdgeId(2416) with cost 104
+off to cluster EdgeId(2418) with cost 106
+off to cluster EdgeId(2420) with cost 90
+off to cluster EdgeId(2422) with cost 96
+off to cluster EdgeId(2413) with cost 95
+off to cluster EdgeId(2415) with cost 105
+off to cluster EdgeId(2417) with cost 107
+off to cluster EdgeId(2419) with cost 91
+off to cluster EdgeId(2421) with cost 97
+pure new layer 131
+cost is 104
+cost is 106
+cost is 105
+pure new layer 131
+cost is 90
+cost is 91
+pure new layer 131
+cost is 96
+cost is 97
+pure new layer 131
+cost is 94
+cost is 95
+pure new layer 131
+cost is 107
+off to cluster EdgeId(2423) with cost 92
+off to cluster EdgeId(2426) with cost 96
+off to cluster EdgeId(2427) with cost 98
+off to cluster EdgeId(2430) with cost 107
+off to cluster EdgeId(2424) with cost 91
+off to cluster EdgeId(2425) with cost 95
+off to cluster EdgeId(2428) with cost 97
+off to cluster EdgeId(2429) with cost 106
+off to cluster EdgeId(2431) with cost 107
+pure new layer 132
+cost is 96
+cost is 95
+pure new layer 132
+cost is 107
+cost is 106
+cost is 107
+pure new layer 132
+cost is 91
+pure new layer 132
+cost is 98
+cost is 97
+pure new layer 132
+cost is 92
+off to cluster EdgeId(2433) with cost 98
+off to cluster EdgeId(2435) with cost 96
+off to cluster EdgeId(2436) with cost 107
+off to cluster EdgeId(2438) with cost 91
+off to cluster EdgeId(2440) with cost 92
+off to cluster EdgeId(2432) with cost 99
+off to cluster EdgeId(2434) with cost 97
+off to cluster EdgeId(2437) with cost 108
+off to cluster EdgeId(2439) with cost 92
+pure new layer 133
+cost is 96
+cost is 97
+pure new layer 133
+cost is 107
+cost is 108
+pure new layer 133
+cost is 91
+cost is 92
+cost is 92
+pure new layer 133
+cost is 99
+pure new layer 133
+cost is 98
+off to cluster EdgeId(2442) with cost 108
+off to cluster EdgeId(2443) with cost 99
+off to cluster EdgeId(2446) with cost 97
+off to cluster EdgeId(2448) with cost 92
+off to cluster EdgeId(2441) with cost 109
+off to cluster EdgeId(2444) with cost 99
+off to cluster EdgeId(2445) with cost 98
+off to cluster EdgeId(2447) with cost 98
+off to cluster EdgeId(2449) with cost 93
+pure new layer 134
+cost is 109
+pure new layer 134
+cost is 92
+cost is 93
+pure new layer 134
+cost is 99
+cost is 99
+cost is 98
+cost is 98
+pure new layer 134
+cost is 97
+pure new layer 134
+cost is 108
+off to cluster EdgeId(2451) with cost 109
+off to cluster EdgeId(2452) with cost 109
+off to cluster EdgeId(2453) with cost 108
+off to cluster EdgeId(2454) with cost 97
+off to cluster EdgeId(2455) with cost 98
+off to cluster EdgeId(2456) with cost 93
+off to cluster EdgeId(2458) with cost 99
+off to cluster EdgeId(2450) with cost 110
+off to cluster EdgeId(2457) with cost 94
+off to cluster EdgeId(2459) with cost 100
+pure new layer 135
+cost is 93
+cost is 94
+pure new layer 135
+cost is 109
+cost is 109
+cost is 110
+pure new layer 135
+cost is 99
+cost is 100
+pure new layer 135
+cost is 97
+cost is 98
+pure new layer 135
+cost is 108
+off to cluster EdgeId(2467) with cost 99
+off to cluster EdgeId(2468) with cost 109
+off to cluster EdgeId(2460) with cost 100
+off to cluster EdgeId(2461) with cost 101
+off to cluster EdgeId(2462) with cost 95
+off to cluster EdgeId(2463) with cost 94
+off to cluster EdgeId(2464) with cost 111
+off to cluster EdgeId(2465) with cost 110
+off to cluster EdgeId(2466) with cost 98
+off to cluster EdgeId(2469) with cost 108
+pure new layer 136
+cost is 99
+cost is 98
+pure new layer 136
+cost is 111
+cost is 110
+pure new layer 136
+cost is 95
+cost is 94
+pure new layer 136
+cost is 100
+cost is 101
+pure new layer 136
+cost is 109
+cost is 108
+off to cluster EdgeId(2471) with cost 101
+off to cluster EdgeId(2472) with cost 111
+off to cluster EdgeId(2475) with cost 95
+off to cluster EdgeId(2477) with cost 109
+off to cluster EdgeId(2479) with cost 99
+off to cluster EdgeId(2470) with cost 102
+off to cluster EdgeId(2473) with cost 112
+off to cluster EdgeId(2474) with cost 96
+off to cluster EdgeId(2476) with cost 110
+off to cluster EdgeId(2478) with cost 100
+pure new layer 137
+cost is 101
+cost is 102
+pure new layer 137
+cost is 111
+cost is 112
+pure new layer 137
+cost is 95
+cost is 96
+pure new layer 137
+cost is 109
+cost is 110
+pure new layer 137
+cost is 99
+cost is 100
+off to cluster EdgeId(2480) with cost 111
+off to cluster EdgeId(2481) with cost 110
+off to cluster EdgeId(2482) with cost 96
+off to cluster EdgeId(2483) with cost 97
+off to cluster EdgeId(2484) with cost 112
+off to cluster EdgeId(2485) with cost 113
+off to cluster EdgeId(2486) with cost 100
+off to cluster EdgeId(2487) with cost 102
+pure new layer 138
+cost is 111
+cost is 112
+cost is 113
+pure new layer 138
+cost is 96
+cost is 97
+pure new layer 138
+cost is 102
+pure new layer 138
+cost is 110
+pure new layer 138
+cost is 100
+off to cluster EdgeId(2488) with cost 110
+off to cluster EdgeId(2491) with cost 113
+off to cluster EdgeId(2492) with cost 97
+off to cluster EdgeId(2494) with cost 100
+off to cluster EdgeId(2497) with cost 102
+off to cluster EdgeId(2489) with cost 111
+off to cluster EdgeId(2490) with cost 114
+off to cluster EdgeId(2493) with cost 98
+off to cluster EdgeId(2495) with cost 101
+off to cluster EdgeId(2496) with cost 103
+pure new layer 139
+cost is 110
+cost is 111
+pure new layer 139
+cost is 97
+cost is 98
+pure new layer 139
+cost is 102
+cost is 103
+pure new layer 139
+cost is 100
+cost is 101
+pure new layer 139
+cost is 113
+cost is 114
+off to cluster EdgeId(2498) with cost 99
+off to cluster EdgeId(2499) with cost 98
+off to cluster EdgeId(2500) with cost 104
+off to cluster EdgeId(2501) with cost 103
+off to cluster EdgeId(2502) with cost 111
+off to cluster EdgeId(2503) with cost 112
+off to cluster EdgeId(2504) with cost 101
+off to cluster EdgeId(2505) with cost 102
+off to cluster EdgeId(2506) with cost 115
+off to cluster EdgeId(2507) with cost 114
+pure new layer 140
+cost is 115
+cost is 114
+pure new layer 140
+cost is 99
+cost is 98
+pure new layer 140
+cost is 104
+cost is 103
+pure new layer 140
+cost is 111
+cost is 112
+pure new layer 140
+cost is 101
+cost is 102
+off to cluster EdgeId(2508) with cost 102
+off to cluster EdgeId(2510) with cost 99
+off to cluster EdgeId(2513) with cost 104
+off to cluster EdgeId(2514) with cost 115
+off to cluster EdgeId(2516) with cost 112
+off to cluster EdgeId(2509) with cost 103
+off to cluster EdgeId(2511) with cost 100
+off to cluster EdgeId(2512) with cost 105
+off to cluster EdgeId(2515) with cost 116
+off to cluster EdgeId(2517) with cost 113
+pure new layer 141
+cost is 115
+cost is 116
+pure new layer 141
+cost is 99
+cost is 100
+pure new layer 141
+cost is 104
+cost is 105
+pure new layer 141
+cost is 112
+cost is 113
+pure new layer 141
+cost is 102
+cost is 103
+off to cluster EdgeId(2519) with cost 100
+off to cluster EdgeId(2521) with cost 103
+off to cluster EdgeId(2522) with cost 116
+off to cluster EdgeId(2524) with cost 105
+off to cluster EdgeId(2526) with cost 113
+off to cluster EdgeId(2518) with cost 101
+off to cluster EdgeId(2520) with cost 104
+off to cluster EdgeId(2523) with cost 117
+off to cluster EdgeId(2525) with cost 106
+off to cluster EdgeId(2527) with cost 114
+pure new layer 142
+cost is 100
+cost is 101
+pure new layer 142
+cost is 116
+cost is 117
+pure new layer 142
+cost is 105
+cost is 106
+pure new layer 142
+cost is 113
+cost is 114
+pure new layer 142
+cost is 103
+cost is 104
+off to cluster EdgeId(2529) with cost 106
+off to cluster EdgeId(2530) with cost 114
+off to cluster EdgeId(2533) with cost 117
+off to cluster EdgeId(2535) with cost 104
+off to cluster EdgeId(2536) with cost 101
+off to cluster EdgeId(2528) with cost 107
+off to cluster EdgeId(2531) with cost 115
+off to cluster EdgeId(2532) with cost 118
+off to cluster EdgeId(2534) with cost 105
+off to cluster EdgeId(2537) with cost 102
+pure new layer 143
+cost is 106
+cost is 107
+cost is 105
+pure new layer 143
+cost is 117
+cost is 118
+pure new layer 143
+cost is 101
+cost is 102
+pure new layer 143
+cost is 114
+cost is 115
+found similar state node layer 143
+similar new
+cost is 106
+cost is 107
+cost is 105
+similar existing
+cost is 104
+off to cluster EdgeId(2538) with cost 115
+off to cluster EdgeId(2540) with cost 102
+off to cluster EdgeId(2542) with cost 108
+off to cluster EdgeId(2543) with cost 107
+off to cluster EdgeId(2544) with cost 118
+off to cluster EdgeId(2539) with cost 116
+off to cluster EdgeId(2541) with cost 103
+off to cluster EdgeId(2545) with cost 119
+pure new layer 144
+cost is 116
+pure new layer 144
+cost is 102
+cost is 103
+pure new layer 144
+cost is 108
+cost is 107
+pure new layer 144
+cost is 118
+cost is 119
+pure new layer 144
+cost is 115
+off to cluster EdgeId(2547) with cost 119
+off to cluster EdgeId(2548) with cost 115
+off to cluster EdgeId(2549) with cost 116
+off to cluster EdgeId(2551) with cost 103
+off to cluster EdgeId(2553) with cost 116
+off to cluster EdgeId(2554) with cost 108
+off to cluster EdgeId(2555) with cost 109
+off to cluster EdgeId(2546) with cost 120
+off to cluster EdgeId(2550) with cost 104
+off to cluster EdgeId(2552) with cost 117
+pure new layer 145
+cost is 115
+cost is 116
+cost is 116
+cost is 117
+pure new layer 145
+cost is 103
+cost is 104
+pure new layer 145
+cost is 108
+cost is 109
+pure new layer 145
+cost is 120
+pure new layer 145
+cost is 119
+off to cluster EdgeId(2556) with cost 109
+off to cluster EdgeId(2557) with cost 110
+off to cluster EdgeId(2558) with cost 104
+off to cluster EdgeId(2561) with cost 117
+off to cluster EdgeId(2562) with cost 120
+off to cluster EdgeId(2564) with cost 119
+off to cluster EdgeId(2565) with cost 120
+off to cluster EdgeId(2559) with cost 105
+off to cluster EdgeId(2560) with cost 118
+off to cluster EdgeId(2563) with cost 121
+pure new layer 146
+cost is 120
+cost is 120
+cost is 121
+pure new layer 146
+cost is 104
+cost is 105
+pure new layer 146
+cost is 109
+cost is 110
+pure new layer 146
+cost is 117
+cost is 118
+pure new layer 146
+cost is 119
+off to cluster EdgeId(2567) with cost 118
+off to cluster EdgeId(2568) with cost 119
+off to cluster EdgeId(2570) with cost 105
+off to cluster EdgeId(2573) with cost 121
+off to cluster EdgeId(2575) with cost 110
+off to cluster EdgeId(2566) with cost 119
+off to cluster EdgeId(2569) with cost 120
+off to cluster EdgeId(2571) with cost 106
+off to cluster EdgeId(2572) with cost 122
+off to cluster EdgeId(2574) with cost 111
+pure new layer 147
+cost is 118
+cost is 119
+cost is 119
+pure new layer 147
+cost is 105
+cost is 106
+pure new layer 147
+cost is 110
+cost is 111
+pure new layer 147
+cost is 121
+cost is 122
+pure new layer 147
+cost is 120
+off to cluster EdgeId(2576) with cost 121
+off to cluster EdgeId(2577) with cost 120
+off to cluster EdgeId(2578) with cost 119
+off to cluster EdgeId(2579) with cost 120
+off to cluster EdgeId(2580) with cost 112
+off to cluster EdgeId(2581) with cost 111
+off to cluster EdgeId(2582) with cost 122
+off to cluster EdgeId(2583) with cost 123
+off to cluster EdgeId(2584) with cost 106
+off to cluster EdgeId(2585) with cost 107
+pure new layer 148
+cost is 122
+cost is 123
+pure new layer 148
+cost is 106
+cost is 107
+pure new layer 148
+cost is 112
+cost is 111
+pure new layer 148
+cost is 120
+cost is 119
+cost is 120
+pure new layer 148
+cost is 121
+off to cluster EdgeId(2586) with cost 112
+off to cluster EdgeId(2589) with cost 107
+off to cluster EdgeId(2591) with cost 123
+off to cluster EdgeId(2592) with cost 120
+off to cluster EdgeId(2594) with cost 121
+off to cluster EdgeId(2587) with cost 113
+off to cluster EdgeId(2588) with cost 108
+off to cluster EdgeId(2590) with cost 124
+off to cluster EdgeId(2593) with cost 121
+pure new layer 149
+cost is 120
+cost is 121
+cost is 121
+pure new layer 149
+cost is 107
+cost is 108
+pure new layer 149
+cost is 113
+pure new layer 149
+cost is 123
+cost is 124
+pure new layer 149
+cost is 112
+off to cluster EdgeId(2596) with cost 108
+off to cluster EdgeId(2597) with cost 113
+off to cluster EdgeId(2599) with cost 112
+off to cluster EdgeId(2601) with cost 121
+off to cluster EdgeId(2603) with cost 124
+off to cluster EdgeId(2595) with cost 109
+off to cluster EdgeId(2598) with cost 113
+off to cluster EdgeId(2600) with cost 122
+off to cluster EdgeId(2602) with cost 125
+pure new layer 150
+cost is 121
+cost is 122
+pure new layer 150
+cost is 108
+cost is 109
+pure new layer 150
+cost is 113
+cost is 113
+pure new layer 150
+cost is 124
+cost is 125
+pure new layer 150
+cost is 112
+off to cluster EdgeId(2605) with cost 109
+off to cluster EdgeId(2606) with cost 113
+off to cluster EdgeId(2608) with cost 113
+off to cluster EdgeId(2609) with cost 112
+off to cluster EdgeId(2610) with cost 122
+off to cluster EdgeId(2613) with cost 125
+off to cluster EdgeId(2604) with cost 110
+off to cluster EdgeId(2607) with cost 114
+off to cluster EdgeId(2611) with cost 123
+off to cluster EdgeId(2612) with cost 126
+pure new layer 151
+cost is 122
+cost is 123
+pure new layer 151
+cost is 109
+cost is 110
+pure new layer 151
+cost is 113
+cost is 113
+cost is 114
+pure new layer 151
+cost is 125
+cost is 126
+found similar state node layer 151
+similar new
+cost is 113
+cost is 113
+cost is 114
+similar existing
+cost is 112
+off to cluster EdgeId(2615) with cost 126
+off to cluster EdgeId(2616) with cost 123
+off to cluster EdgeId(2618) with cost 114
+off to cluster EdgeId(2620) with cost 110
+off to cluster EdgeId(2614) with cost 127
+off to cluster EdgeId(2617) with cost 124
+off to cluster EdgeId(2619) with cost 115
+off to cluster EdgeId(2621) with cost 111
+pure new layer 152
+cost is 114
+cost is 115
+pure new layer 152
+cost is 127
+pure new layer 152
+cost is 123
+cost is 124
+pure new layer 152
+cost is 110
+cost is 111
+pure new layer 152
+cost is 126
+off to cluster EdgeId(2626) with cost 127
+off to cluster EdgeId(2622) with cost 128
+off to cluster EdgeId(2623) with cost 127
+off to cluster EdgeId(2624) with cost 111
+off to cluster EdgeId(2625) with cost 112
+off to cluster EdgeId(2627) with cost 126
+off to cluster EdgeId(2628) with cost 124
+off to cluster EdgeId(2629) with cost 125
+off to cluster EdgeId(2630) with cost 115
+off to cluster EdgeId(2631) with cost 116
+pure new layer 153
+cost is 127
+cost is 128
+cost is 127
+pure new layer 153
+cost is 111
+cost is 112
+pure new layer 153
+cost is 115
+cost is 116
+pure new layer 153
+cost is 124
+cost is 125
+pure new layer 153
+cost is 126
+off to cluster EdgeId(2632) with cost 113
+off to cluster EdgeId(2636) with cost 117
+off to cluster EdgeId(2639) with cost 126
+off to cluster EdgeId(2633) with cost 112
+off to cluster EdgeId(2634) with cost 126
+off to cluster EdgeId(2635) with cost 128
+off to cluster EdgeId(2637) with cost 116
+off to cluster EdgeId(2638) with cost 125
+pure new layer 154
+cost is 117
+cost is 116
+pure new layer 154
+cost is 128
+pure new layer 154
+cost is 112
+pure new layer 154
+cost is 126
+cost is 126
+cost is 125
+pure new layer 154
+cost is 113
+off to cluster EdgeId(2640) with cost 128
+off to cluster EdgeId(2642) with cost 112
+off to cluster EdgeId(2644) with cost 114
+off to cluster EdgeId(2645) with cost 113
+off to cluster EdgeId(2647) with cost 117
+off to cluster EdgeId(2648) with cost 126
+off to cluster EdgeId(2641) with cost 129
+off to cluster EdgeId(2643) with cost 113
+off to cluster EdgeId(2646) with cost 118
+off to cluster EdgeId(2649) with cost 127
+pure new layer 155
+cost is 114
+cost is 113
+cost is 113
+pure new layer 155
+cost is 128
+cost is 129
+pure new layer 155
+cost is 117
+cost is 118
+pure new layer 155
+cost is 126
+cost is 127
+found similar state node layer 155
+similar new
+cost is 114
+cost is 113
+cost is 113
+similar existing
+cost is 112
+off to cluster EdgeId(2651) with cost 127
+off to cluster EdgeId(2652) with cost 118
+off to cluster EdgeId(2654) with cost 114
+off to cluster EdgeId(2656) with cost 129
+off to cluster EdgeId(2650) with cost 128
+off to cluster EdgeId(2653) with cost 119
+off to cluster EdgeId(2655) with cost 115
+off to cluster EdgeId(2657) with cost 130
+pure new layer 156
+cost is 129
+cost is 128
+pure new layer 156
+cost is 114
+cost is 115
+pure new layer 156
+cost is 118
+cost is 119
+pure new layer 156
+cost is 130
+pure new layer 156
+cost is 127
+off to cluster EdgeId(2659) with cost 115
+off to cluster EdgeId(2661) with cost 129
+off to cluster EdgeId(2663) with cost 130
+off to cluster EdgeId(2664) with cost 119
+off to cluster EdgeId(2666) with cost 127
+off to cluster EdgeId(2667) with cost 128
+off to cluster EdgeId(2658) with cost 116
+off to cluster EdgeId(2660) with cost 130
+off to cluster EdgeId(2662) with cost 131
+off to cluster EdgeId(2665) with cost 120
+pure new layer 157
+cost is 129
+cost is 130
+cost is 130
+pure new layer 157
+cost is 115
+cost is 116
+pure new layer 157
+cost is 119
+cost is 120
+pure new layer 157
+cost is 127
+cost is 128
+pure new layer 157
+cost is 131
+off to cluster EdgeId(2669) with cost 129
+off to cluster EdgeId(2673) with cost 121
+off to cluster EdgeId(2675) with cost 117
+off to cluster EdgeId(2668) with cost 130
+off to cluster EdgeId(2670) with cost 128
+off to cluster EdgeId(2671) with cost 131
+off to cluster EdgeId(2672) with cost 120
+off to cluster EdgeId(2674) with cost 116
+pure new layer 158
+cost is 130
+cost is 131
+pure new layer 158
+cost is 117
+cost is 116
+pure new layer 158
+cost is 121
+cost is 120
+pure new layer 158
+cost is 128
+pure new layer 158
+cost is 129
+off to cluster EdgeId(2676) with cost 131
+off to cluster EdgeId(2678) with cost 121
+off to cluster EdgeId(2679) with cost 128
+off to cluster EdgeId(2681) with cost 117
+off to cluster EdgeId(2683) with cost 130
+off to cluster EdgeId(2684) with cost 129
+off to cluster EdgeId(2677) with cost 132
+off to cluster EdgeId(2680) with cost 129
+off to cluster EdgeId(2682) with cost 118
+pure new layer 159
+cost is 128
+cost is 130
+cost is 129
+cost is 129
+pure new layer 159
+cost is 117
+cost is 118
+found similar state node layer 159
+similar new
+cost is 117
+cost is 118
+similar existing
+cost is 121
+pure new layer 159
+cost is 132
+pure new layer 159
+cost is 131
+off to cluster EdgeId(2686) with cost 122
+off to cluster EdgeId(2689) with cost 132
+off to cluster EdgeId(2685) with cost 121
+off to cluster EdgeId(2687) with cost 131
+off to cluster EdgeId(2688) with cost 130
+off to cluster EdgeId(2690) with cost 131
+off to cluster EdgeId(2691) with cost 133
+off to cluster EdgeId(2692) with cost 132
+pure new layer 160
+cost is 131
+cost is 130
+cost is 131
+pure new layer 160
+cost is 121
+pure new layer 160
+cost is 133
+pure new layer 160
+cost is 122
+pure new layer 160
+cost is 132
+cost is 132
+off to cluster EdgeId(2696) with cost 122
+off to cluster EdgeId(2697) with cost 133
+off to cluster EdgeId(2701) with cost 132
+off to cluster EdgeId(2693) with cost 122
+off to cluster EdgeId(2694) with cost 123
+off to cluster EdgeId(2695) with cost 121
+off to cluster EdgeId(2698) with cost 132
+off to cluster EdgeId(2699) with cost 133
+off to cluster EdgeId(2700) with cost 131
+pure new layer 161
+cost is 122
+cost is 122
+cost is 121
+pure new layer 161
+cost is 133
+cost is 133
+pure new layer 161
+cost is 131
+found similar state node layer 161
+similar new
+cost is 131
+similar existing
+cost is 132
+cost is 132
+pure new layer 161
+cost is 123
+off to cluster EdgeId(2702) with cost 132
+off to cluster EdgeId(2705) with cost 122
+off to cluster EdgeId(2707) with cost 123
+off to cluster EdgeId(2708) with cost 133
+off to cluster EdgeId(2703) with cost 133
+off to cluster EdgeId(2704) with cost 123
+off to cluster EdgeId(2706) with cost 124
+off to cluster EdgeId(2709) with cost 134
+pure new layer 162
+cost is 124
+pure new layer 162
+cost is 133
+cost is 133
+cost is 134
+pure new layer 162
+cost is 132
+pure new layer 162
+cost is 122
+pure new layer 162
+cost is 123
+cost is 123
+off to cluster EdgeId(2710) with cost 133
+off to cluster EdgeId(2712) with cost 123
+off to cluster EdgeId(2711) with cost 132
+off to cluster EdgeId(2713) with cost 122
+off to cluster EdgeId(2714) with cost 124
+off to cluster EdgeId(2715) with cost 123
+off to cluster EdgeId(2716) with cost 124
+off to cluster EdgeId(2717) with cost 134
+off to cluster EdgeId(2718) with cost 135
+pure new layer 163
+cost is 123
+cost is 124
+cost is 123
+cost is 124
+pure new layer 163
+cost is 134
+cost is 135
+pure new layer 163
+cost is 132
+found similar state node layer 163
+similar new
+cost is 123
+cost is 124
+cost is 123
+cost is 124
+similar existing
+cost is 122
+pure new layer 163
+cost is 133
+off to cluster EdgeId(2719) with cost 133
+off to cluster EdgeId(2720) with cost 124
+off to cluster EdgeId(2721) with cost 132
+off to cluster EdgeId(2724) with cost 135
+off to cluster EdgeId(2722) with cost 133
+off to cluster EdgeId(2723) with cost 136
+pure new layer 164
+cost is 132
+pure new layer 164
+cost is 124
+pure new layer 164
+cost is 136
+pure new layer 164
+cost is 133
+cost is 133
+pure new layer 164
+cost is 135
+off to cluster EdgeId(2725) with cost 136
+off to cluster EdgeId(2726) with cost 135
+off to cluster EdgeId(2728) with cost 133
+off to cluster EdgeId(2729) with cost 124
+off to cluster EdgeId(2730) with cost 125
+off to cluster EdgeId(2731) with cost 133
+off to cluster EdgeId(2732) with cost 132
+off to cluster EdgeId(2734) with cost 136
+off to cluster EdgeId(2727) with cost 134
+off to cluster EdgeId(2733) with cost 137
+pure new layer 165
+cost is 124
+cost is 125
+pure new layer 165
+cost is 137
+pure new layer 165
+cost is 133
+cost is 133
+cost is 132
+pure new layer 165
+cost is 135
+cost is 134
+pure new layer 165
+cost is 136
+cost is 136
+off to cluster EdgeId(2736) with cost 126
+off to cluster EdgeId(2737) with cost 137
+off to cluster EdgeId(2739) with cost 134
+off to cluster EdgeId(2741) with cost 136
+off to cluster EdgeId(2735) with cost 125
+off to cluster EdgeId(2738) with cost 136
+off to cluster EdgeId(2740) with cost 133
+off to cluster EdgeId(2742) with cost 135
+off to cluster EdgeId(2743) with cost 137
+pure new layer 166
+cost is 134
+cost is 133
+pure new layer 166
+cost is 125
+pure new layer 166
+cost is 137
+cost is 136
+cost is 136
+cost is 137
+found similar state node layer 166
+similar new
+cost is 137
+cost is 136
+cost is 136
+cost is 137
+similar existing
+cost is 135
+pure new layer 166
+cost is 126
+off to cluster EdgeId(2745) with cost 125
+off to cluster EdgeId(2746) with cost 137
+off to cluster EdgeId(2749) with cost 134
+off to cluster EdgeId(2750) with cost 126
+off to cluster EdgeId(2751) with cost 127
+off to cluster EdgeId(2744) with cost 126
+off to cluster EdgeId(2747) with cost 138
+off to cluster EdgeId(2748) with cost 135
+pure new layer 167
+cost is 125
+cost is 126
+cost is 126
+pure new layer 167
+cost is 138
+pure new layer 167
+cost is 134
+cost is 135
+pure new layer 167
+cost is 127
+pure new layer 167
+cost is 137
+off to cluster EdgeId(2752) with cost 128
+off to cluster EdgeId(2754) with cost 138
+off to cluster EdgeId(2753) with cost 127
+off to cluster EdgeId(2755) with cost 137
+off to cluster EdgeId(2756) with cost 127
+off to cluster EdgeId(2757) with cost 126
+off to cluster EdgeId(2758) with cost 135
+off to cluster EdgeId(2759) with cost 136
+off to cluster EdgeId(2760) with cost 138
+off to cluster EdgeId(2761) with cost 139
+pure new layer 168
+cost is 127
+cost is 127
+cost is 126
+pure new layer 168
+cost is 138
+cost is 138
+cost is 139
+pure new layer 168
+cost is 135
+cost is 136
+pure new layer 168
+cost is 137
+pure new layer 168
+cost is 128
+off to cluster EdgeId(2762) with cost 136
+off to cluster EdgeId(2764) with cost 128
+off to cluster EdgeId(2765) with cost 137
+off to cluster EdgeId(2768) with cost 127
+off to cluster EdgeId(2769) with cost 139
+off to cluster EdgeId(2763) with cost 137
+off to cluster EdgeId(2766) with cost 138
+off to cluster EdgeId(2767) with cost 128
+off to cluster EdgeId(2770) with cost 140
+pure new layer 169
+cost is 139
+cost is 138
+cost is 140
+pure new layer 169
+cost is 127
+pure new layer 169
+cost is 136
+pure new layer 169
+cost is 128
+cost is 128
+found similar state node layer 169
+similar new
+cost is 136
+similar existing
+cost is 137
+cost is 137
+off to cluster EdgeId(2771) with cost 128
+off to cluster EdgeId(2772) with cost 127
+off to cluster EdgeId(2773) with cost 137
+off to cluster EdgeId(2774) with cost 138
+off to cluster EdgeId(2775) with cost 141
+off to cluster EdgeId(2776) with cost 140
+off to cluster EdgeId(2777) with cost 128
+off to cluster EdgeId(2778) with cost 129
+pure new layer 170
+cost is 137
+cost is 138
+pure new layer 170
+cost is 127
+pure new layer 170
+cost is 141
+cost is 140
+pure new layer 170
+cost is 129
+pure new layer 170
+cost is 128
+cost is 128
+off to cluster EdgeId(2780) with cost 128
+off to cluster EdgeId(2782) with cost 129
+off to cluster EdgeId(2784) with cost 127
+off to cluster EdgeId(2785) with cost 138
+off to cluster EdgeId(2787) with cost 141
+off to cluster EdgeId(2779) with cost 129
+off to cluster EdgeId(2781) with cost 130
+off to cluster EdgeId(2783) with cost 128
+off to cluster EdgeId(2786) with cost 139
+off to cluster EdgeId(2788) with cost 142
+pure new layer 171
+cost is 141
+cost is 142
+pure new layer 171
+cost is 127
+pure new layer 171
+cost is 138
+cost is 139
+pure new layer 171
+cost is 129
+cost is 129
+cost is 130
+found similar state node layer 171
+similar new
+cost is 127
+similar existing
+cost is 128
+cost is 128
+off to cluster EdgeId(2789) with cost 130
+off to cluster EdgeId(2790) with cost 131
+off to cluster EdgeId(2791) with cost 129
+off to cluster EdgeId(2792) with cost 128
+off to cluster EdgeId(2793) with cost 143
+off to cluster EdgeId(2794) with cost 142
+off to cluster EdgeId(2795) with cost 139
+off to cluster EdgeId(2796) with cost 140
+pure new layer 172
+cost is 143
+cost is 142
+pure new layer 172
+cost is 129
+cost is 128
+pure new layer 172
+cost is 131
+pure new layer 172
+cost is 139
+cost is 140
+pure new layer 172
+cost is 130
+off to cluster EdgeId(2797) with cost 140
+off to cluster EdgeId(2800) with cost 130
+off to cluster EdgeId(2801) with cost 131
+off to cluster EdgeId(2803) with cost 143
+off to cluster EdgeId(2806) with cost 129
+off to cluster EdgeId(2798) with cost 141
+off to cluster EdgeId(2799) with cost 131
+off to cluster EdgeId(2802) with cost 132
+off to cluster EdgeId(2804) with cost 144
+off to cluster EdgeId(2805) with cost 130
+pure new layer 173
+cost is 130
+cost is 129
+cost is 130
+pure new layer 173
+cost is 143
+cost is 144
+pure new layer 173
+cost is 140
+cost is 141
+pure new layer 173
+cost is 132
+pure new layer 173
+cost is 131
+cost is 131
+off to cluster EdgeId(2807) with cost 131
+off to cluster EdgeId(2808) with cost 132
+off to cluster EdgeId(2809) with cost 130
+off to cluster EdgeId(2810) with cost 131
+off to cluster EdgeId(2811) with cost 141
+off to cluster EdgeId(2812) with cost 142
+off to cluster EdgeId(2813) with cost 133
+off to cluster EdgeId(2814) with cost 132
+off to cluster EdgeId(2815) with cost 145
+off to cluster EdgeId(2816) with cost 144
+pure new layer 174
+cost is 141
+cost is 142
+pure new layer 174
+cost is 130
+pure new layer 174
+cost is 145
+cost is 144
+pure new layer 174
+cost is 132
+cost is 133
+cost is 132
+found similar state node layer 174
+similar new
+cost is 130
+similar existing
+cost is 131
+cost is 131
+off to cluster EdgeId(2818) with cost 145
+off to cluster EdgeId(2820) with cost 131
+off to cluster EdgeId(2821) with cost 133
+off to cluster EdgeId(2824) with cost 142
+off to cluster EdgeId(2817) with cost 146
+off to cluster EdgeId(2819) with cost 132
+off to cluster EdgeId(2822) with cost 134
+off to cluster EdgeId(2823) with cost 143
+pure new layer 175
+cost is 133
+cost is 134
+pure new layer 175
+cost is 146
+pure new layer 175
+cost is 142
+cost is 143
+pure new layer 175
+cost is 131
+cost is 132
+pure new layer 175
+cost is 145
+off to cluster EdgeId(2831) with cost 146
+off to cluster EdgeId(2825) with cost 146
+off to cluster EdgeId(2826) with cost 147
+off to cluster EdgeId(2827) with cost 143
+off to cluster EdgeId(2828) with cost 144
+off to cluster EdgeId(2829) with cost 135
+off to cluster EdgeId(2830) with cost 134
+off to cluster EdgeId(2832) with cost 145
+off to cluster EdgeId(2833) with cost 133
+off to cluster EdgeId(2834) with cost 132
+pure new layer 176
+cost is 146
+cost is 146
+cost is 145
+pure new layer 176
+cost is 133
+cost is 132
+pure new layer 176
+cost is 135
+cost is 134
+pure new layer 176
+cost is 147
+pure new layer 176
+cost is 143
+cost is 144
+off to cluster EdgeId(2837) with cost 145
+off to cluster EdgeId(2840) with cost 147
+off to cluster EdgeId(2835) with cost 147
+off to cluster EdgeId(2836) with cost 144
+off to cluster EdgeId(2838) with cost 135
+off to cluster EdgeId(2839) with cost 133
+off to cluster EdgeId(2841) with cost 146
+pure new layer 177
+cost is 144
+found similar state node layer 177
+similar new
+cost is 144
+similar existing
+cost is 133
+pure new layer 177
+cost is 147
+cost is 147
+cost is 146
+pure new layer 177
+cost is 135
+pure new layer 177
+cost is 145
+off to cluster EdgeId(2842) with cost 135
+off to cluster EdgeId(2844) with cost 145
+off to cluster EdgeId(2845) with cost 144
+off to cluster EdgeId(2847) with cost 147
+off to cluster EdgeId(2843) with cost 136
+off to cluster EdgeId(2846) with cost 145
+off to cluster EdgeId(2848) with cost 148
+pure new layer 178
+cost is 144
+pure new layer 178
+cost is 135
+cost is 136
+pure new layer 178
+cost is 148
+pure new layer 178
+cost is 145
+cost is 145
+pure new layer 178
+cost is 147
+off to cluster EdgeId(2853) with cost 145
+off to cluster EdgeId(2856) with cost 148
+off to cluster EdgeId(2849) with cost 149
+off to cluster EdgeId(2850) with cost 148
+off to cluster EdgeId(2851) with cost 146
+off to cluster EdgeId(2852) with cost 145
+off to cluster EdgeId(2854) with cost 144
+off to cluster EdgeId(2855) with cost 136
+off to cluster EdgeId(2857) with cost 147
+pure new layer 179
+cost is 144
+pure new layer 179
+cost is 136
+pure new layer 179
+cost is 148
+cost is 149
+cost is 148
+found similar state node layer 179
+similar new
+cost is 144
+similar existing
+cost is 146
+cost is 147
+pure new layer 179
+cost is 145
+cost is 145
+off to cluster EdgeId(2859) with cost 145
+off to cluster EdgeId(2861) with cost 147
+off to cluster EdgeId(2863) with cost 149
+off to cluster EdgeId(2865) with cost 136
+off to cluster EdgeId(2858) with cost 146
+off to cluster EdgeId(2860) with cost 148
+off to cluster EdgeId(2862) with cost 150
+off to cluster EdgeId(2864) with cost 137
+pure new layer 180
+cost is 147
+cost is 146
+pure new layer 180
+cost is 136
+cost is 137
+pure new layer 180
+cost is 149
+cost is 150
+pure new layer 180
+cost is 148
+pure new layer 180
+cost is 145
+off to cluster EdgeId(2866) with cost 145
+off to cluster EdgeId(2869) with cost 147
+off to cluster EdgeId(2870) with cost 148
+off to cluster EdgeId(2871) with cost 137
+off to cluster EdgeId(2873) with cost 150
+off to cluster EdgeId(2867) with cost 146
+off to cluster EdgeId(2868) with cost 148
+off to cluster EdgeId(2872) with cost 138
+off to cluster EdgeId(2874) with cost 151
+pure new layer 181
+cost is 150
+cost is 151
+pure new layer 181
+cost is 137
+cost is 138
+pure new layer 181
+cost is 145
+cost is 146
+pure new layer 181
+cost is 148
+cost is 148
+found similar state node layer 181
+similar new
+cost is 148
+cost is 148
+similar existing
+cost is 147
+off to cluster EdgeId(2875) with cost 146
+off to cluster EdgeId(2878) with cost 151
+off to cluster EdgeId(2880) with cost 138
+off to cluster EdgeId(2881) with cost 148
+off to cluster EdgeId(2876) with cost 147
+off to cluster EdgeId(2877) with cost 152
+off to cluster EdgeId(2879) with cost 139
+off to cluster EdgeId(2882) with cost 149
+pure new layer 182
+cost is 151
+cost is 152
+pure new layer 182
+cost is 138
+cost is 139
+pure new layer 182
+cost is 146
+pure new layer 182
+cost is 148
+cost is 149
+pure new layer 182
+cost is 147
+off to cluster EdgeId(2885) with cost 147
+off to cluster EdgeId(2883) with cost 140
+off to cluster EdgeId(2884) with cost 139
+off to cluster EdgeId(2886) with cost 146
+off to cluster EdgeId(2887) with cost 148
+off to cluster EdgeId(2888) with cost 147
+off to cluster EdgeId(2889) with cost 153
+off to cluster EdgeId(2890) with cost 152
+off to cluster EdgeId(2891) with cost 149
+off to cluster EdgeId(2892) with cost 150
+pure new layer 183
+cost is 153
+cost is 152
+pure new layer 183
+cost is 140
+cost is 139
+pure new layer 183
+cost is 146
+pure new layer 183
+cost is 148
+cost is 149
+cost is 150
+pure new layer 183
+cost is 147
+cost is 147
+off to cluster EdgeId(2894) with cost 150
+off to cluster EdgeId(2896) with cost 147
+off to cluster EdgeId(2897) with cost 153
+off to cluster EdgeId(2899) with cost 140
+off to cluster EdgeId(2902) with cost 146
+off to cluster EdgeId(2893) with cost 151
+off to cluster EdgeId(2895) with cost 148
+off to cluster EdgeId(2898) with cost 154
+off to cluster EdgeId(2900) with cost 141
+off to cluster EdgeId(2901) with cost 147
+pure new layer 184
+cost is 147
+cost is 146
+cost is 148
+cost is 147
+pure new layer 184
+cost is 140
+cost is 141
+pure new layer 184
+cost is 154
+pure new layer 184
+cost is 150
+cost is 151
+pure new layer 184
+cost is 153
+off to cluster EdgeId(2903) with cost 142
+off to cluster EdgeId(2906) with cost 154
+off to cluster EdgeId(2908) with cost 152
+off to cluster EdgeId(2910) with cost 149
+off to cluster EdgeId(2904) with cost 141
+off to cluster EdgeId(2905) with cost 154
+off to cluster EdgeId(2907) with cost 153
+off to cluster EdgeId(2909) with cost 151
+off to cluster EdgeId(2911) with cost 148
+pure new layer 185
+cost is 154
+cost is 154
+cost is 153
+pure new layer 185
+cost is 141
+pure new layer 185
+cost is 149
+cost is 148
+pure new layer 185
+cost is 152
+cost is 151
+pure new layer 185
+cost is 142
+off to cluster EdgeId(2914) with cost 143
+off to cluster EdgeId(2912) with cost 154
+off to cluster EdgeId(2913) with cost 155
+off to cluster EdgeId(2915) with cost 142
+off to cluster EdgeId(2916) with cost 149
+off to cluster EdgeId(2917) with cost 150
+off to cluster EdgeId(2918) with cost 142
+off to cluster EdgeId(2919) with cost 141
+off to cluster EdgeId(2920) with cost 153
+off to cluster EdgeId(2921) with cost 152
+pure new layer 186
+cost is 142
+cost is 142
+cost is 141
+pure new layer 186
+cost is 154
+cost is 155
+pure new layer 186
+cost is 149
+cost is 150
+pure new layer 186
+cost is 153
+cost is 152
+pure new layer 186
+cost is 143
+off to cluster EdgeId(2922) with cost 144
+off to cluster EdgeId(2923) with cost 143
+off to cluster EdgeId(2924) with cost 142
+off to cluster EdgeId(2925) with cost 143
+off to cluster EdgeId(2926) with cost 153
+off to cluster EdgeId(2927) with cost 154
+off to cluster EdgeId(2928) with cost 150
+off to cluster EdgeId(2929) with cost 151
+off to cluster EdgeId(2930) with cost 156
+off to cluster EdgeId(2931) with cost 155
+pure new layer 187
+cost is 154
+cost is 156
+cost is 155
+pure new layer 187
+cost is 143
+cost is 142
+cost is 143
+found similar state node layer 187
+similar new
+cost is 154
+cost is 156
+cost is 155
+similar existing
+cost is 150
+cost is 151
+pure new layer 187
+cost is 144
+pure new layer 187
+cost is 153
+off to cluster EdgeId(2932) with cost 143
+off to cluster EdgeId(2934) with cost 153
+off to cluster EdgeId(2936) with cost 156
+off to cluster EdgeId(2937) with cost 144
+off to cluster EdgeId(2933) with cost 154
+off to cluster EdgeId(2935) with cost 157
+pure new layer 188
+cost is 154
+pure new layer 188
+cost is 143
+cost is 144
+pure new layer 188
+cost is 157
+pure new layer 188
+cost is 153
+pure new layer 188
+cost is 156
+off to cluster EdgeId(2942) with cost 157
+off to cluster EdgeId(2944) with cost 154
+off to cluster EdgeId(2938) with cost 144
+off to cluster EdgeId(2939) with cost 154
+off to cluster EdgeId(2940) with cost 155
+off to cluster EdgeId(2941) with cost 156
+off to cluster EdgeId(2943) with cost 153
+off to cluster EdgeId(2945) with cost 158
+off to cluster EdgeId(2946) with cost 157
+pure new layer 189
+cost is 154
+cost is 154
+cost is 153
+pure new layer 189
+cost is 144
+pure new layer 189
+cost is 158
+found similar state node layer 189
+similar new
+cost is 154
+cost is 154
+cost is 153
+similar existing
+cost is 155
+cost is 156
+pure new layer 189
+cost is 157
+cost is 157
+off to cluster EdgeId(2947) with cost 145
+off to cluster EdgeId(2950) with cost 157
+off to cluster EdgeId(2953) with cost 158
+off to cluster EdgeId(2948) with cost 144
+off to cluster EdgeId(2949) with cost 158
+off to cluster EdgeId(2951) with cost 156
+off to cluster EdgeId(2952) with cost 157
+pure new layer 190
+cost is 144
+pure new layer 190
+cost is 158
+cost is 158
+pure new layer 190
+cost is 156
+pure new layer 190
+cost is 145
+pure new layer 190
+cost is 157
+cost is 157
+off to cluster EdgeId(2955) with cost 158
+off to cluster EdgeId(2957) with cost 157
+off to cluster EdgeId(2959) with cost 156
+off to cluster EdgeId(2960) with cost 144
+off to cluster EdgeId(2961) with cost 145
+off to cluster EdgeId(2954) with cost 159
+off to cluster EdgeId(2956) with cost 158
+off to cluster EdgeId(2958) with cost 157
+pure new layer 191
+cost is 144
+cost is 145
+pure new layer 191
+cost is 159
+pure new layer 191
+cost is 156
+pure new layer 191
+cost is 158
+cost is 158
+found similar state node layer 191
+similar new
+cost is 156
+similar existing
+cost is 157
+cost is 157
+off to cluster EdgeId(2962) with cost 159
+off to cluster EdgeId(2965) with cost 158
+off to cluster EdgeId(2968) with cost 146
+off to cluster EdgeId(2963) with cost 158
+off to cluster EdgeId(2964) with cost 157
+off to cluster EdgeId(2966) with cost 159
+off to cluster EdgeId(2967) with cost 145
+pure new layer 192
+cost is 159
+cost is 159
+pure new layer 192
+cost is 145
+pure new layer 192
+cost is 157
+found similar state node layer 192
+similar new
+cost is 157
+similar existing
+cost is 158
+cost is 158
+pure new layer 192
+cost is 146
+off to cluster EdgeId(2969) with cost 145
+off to cluster EdgeId(2972) with cost 158
+off to cluster EdgeId(2973) with cost 146
+off to cluster EdgeId(2974) with cost 159
+off to cluster EdgeId(2970) with cost 146
+off to cluster EdgeId(2971) with cost 159
+off to cluster EdgeId(2975) with cost 160
+pure new layer 193
+cost is 160
+pure new layer 193
+cost is 145
+pure new layer 193
+cost is 158
+found similar state node layer 193
+similar new
+cost is 145
+similar existing
+cost is 146
+cost is 146
+found similar state node layer 193
+similar new
+cost is 158
+similar existing
+cost is 159
+cost is 159
+off to cluster EdgeId(2976) with cost 146
+off to cluster EdgeId(2977) with cost 147
+off to cluster EdgeId(2978) with cost 160
+off to cluster EdgeId(2979) with cost 161
+off to cluster EdgeId(2980) with cost 159
+off to cluster EdgeId(2981) with cost 160
+pure new layer 194
+cost is 160
+cost is 160
+pure new layer 194
+cost is 146
+pure new layer 194
+cost is 147
+pure new layer 194
+cost is 161
+pure new layer 194
+cost is 159
+off to cluster EdgeId(2982) with cost 146
+off to cluster EdgeId(2983) with cost 161
+off to cluster EdgeId(2985) with cost 147
+off to cluster EdgeId(2987) with cost 160
+off to cluster EdgeId(2988) with cost 159
+off to cluster EdgeId(2984) with cost 162
+off to cluster EdgeId(2986) with cost 161
+off to cluster EdgeId(2989) with cost 160
+pure new layer 195
+cost is 160
+cost is 159
+cost is 160
+pure new layer 195
+cost is 146
+pure new layer 195
+cost is 162
+pure new layer 195
+cost is 161
+cost is 161
+pure new layer 195
+cost is 147
+off to cluster EdgeId(2990) with cost 146
+off to cluster EdgeId(2991) with cost 161
+off to cluster EdgeId(2992) with cost 162
+off to cluster EdgeId(2993) with cost 147
+off to cluster EdgeId(2994) with cost 161
+off to cluster EdgeId(2995) with cost 160
+off to cluster EdgeId(2996) with cost 162
+off to cluster EdgeId(2997) with cost 163
+pure new layer 196
+cost is 161
+cost is 161
+cost is 160
+pure new layer 196
+cost is 146
+pure new layer 196
+cost is 163
+pure new layer 196
+cost is 162
+cost is 162
+pure new layer 196
+cost is 147
+off to cluster EdgeId(2999) with cost 162
+off to cluster EdgeId(2998) with cost 146
+off to cluster EdgeId(3000) with cost 161
+off to cluster EdgeId(3001) with cost 147
+off to cluster EdgeId(3002) with cost 163
+off to cluster EdgeId(3003) with cost 162
+pure new layer 197
+cost is 163
+pure new layer 197
+cost is 146
+pure new layer 197
+cost is 161
+found similar state node layer 197
+similar new
+cost is 161
+similar existing
+cost is 162
+cost is 162
+pure new layer 197
+cost is 147
+off to cluster EdgeId(3004) with cost 147
+off to cluster EdgeId(3005) with cost 146
+off to cluster EdgeId(3006) with cost 147
+off to cluster EdgeId(3007) with cost 148
+off to cluster EdgeId(3008) with cost 163
+off to cluster EdgeId(3009) with cost 163
+off to cluster EdgeId(3010) with cost 162
+pure new layer 198
+cost is 147
+cost is 147
+found similar state node layer 198
+similar new
+cost is 147
+cost is 147
+similar existing
+cost is 163
+cost is 163
+found similar state node layer 198
+similar new
+cost is 147
+cost is 147
+cost is 163
+cost is 163
+similar existing
+cost is 146
+pure new layer 198
+cost is 148
+pure new layer 198
+cost is 162
+off to cluster EdgeId(3011) with cost 162
+off to cluster EdgeId(3013) with cost 163
+off to cluster EdgeId(3016) with cost 148
+off to cluster EdgeId(3012) with cost 163
+off to cluster EdgeId(3014) with cost 164
+off to cluster EdgeId(3015) with cost 149
+pure new layer 199
+cost is 164
+pure new layer 199
+cost is 148
+pure new layer 199
+cost is 162
+found similar state node layer 199
+similar new
+cost is 162
+similar existing
+cost is 163
+cost is 163
+pure new layer 199
+cost is 149
+pure new layer 200
+cost is 148
+pure new layer 200
+cost is 164
+pure new layer 200
+cost is 163
+pure new layer 200
+cost is 149
+pure new layer 200
+cost is 164
+after refine 
+{"Aborted":"false","Binary Split":"false","Compile Cluster":"false","Duration":"0.031","Gap":"1.000","Lower Bnd":"-9223372036854775808","Objective":"-1","Refine Cluster":"true","Solution":"[]","Solver":"IR","Upper Bnd":"164","Width":"5"}

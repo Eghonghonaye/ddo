@@ -416,6 +416,7 @@ where
             cache: &shared.cache,
             dominance: shared.dominance,
             binary_split: false,
+            cluster_compile: false,
         };
 
         let Completion{is_exact, ..} = mdd.compile(&compilation)?;

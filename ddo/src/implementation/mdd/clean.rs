@@ -1176,6 +1176,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
 
         let mut mdd = DefaultMDD::new();
@@ -1215,6 +1216,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
 
@@ -1253,6 +1255,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
 
@@ -1291,6 +1294,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1323,6 +1327,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1355,6 +1360,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1393,6 +1399,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1423,6 +1430,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1452,6 +1460,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1482,6 +1491,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1521,6 +1531,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1554,6 +1565,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1585,6 +1597,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1616,6 +1629,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1646,6 +1660,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1676,6 +1691,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1706,6 +1722,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1735,6 +1752,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1764,6 +1782,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1793,6 +1812,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1822,6 +1842,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1855,6 +1876,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1888,6 +1910,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1921,6 +1944,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -1952,6 +1976,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -2007,6 +2032,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -2062,6 +2088,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -2117,6 +2144,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDD::new();
         let result = mdd.compile(&input);
@@ -2299,6 +2327,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDDLEL::new();
         let result = mdd.compile(&input);
@@ -2362,6 +2391,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDDFC::new();
         let result = mdd.compile(&input);
@@ -2443,6 +2473,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDDFC::new();
         let result = mdd.compile(&input);
@@ -2522,6 +2553,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
@@ -2557,6 +2589,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
@@ -2597,6 +2630,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);
@@ -2637,6 +2671,7 @@ mod test_default_mdd {
             cache: &cache,
             dominance: &dominance,
             binary_split: false,
+            cluster_compile: false,
         };
         let mut mdd = DefaultMDDFC::new();
         let _ = mdd.compile(&input);

@@ -71,6 +71,8 @@ pub struct TDSolver<
     /// Data structure containing info about past compilations used to prune the search
     cache: C,
     dominance: &'a (dyn DominanceChecker<State = State>),
+    // option to merge in top down compile by clustering
+    pub cluster_compile: bool,
 }
 
 impl<'a, State, D, C> TDSolver<'a, State, D, C>
@@ -87,9 +89,10 @@ where
         dominance: &'a (dyn DominanceChecker<State = State>),
         cutoff: &'a (dyn Cutoff),
         fringe: &'a mut (dyn Fringe<State = State>),
+        cluster_compile: bool,
     ) -> Self {
         Self::custom(
-            problem, relaxation, ranking, width, dominance, cutoff, fringe,
+            problem, relaxation, ranking, width, dominance, cutoff, fringe,cluster_compile,
         )
     }
 
@@ -101,6 +104,7 @@ where
         dominance: &'a (dyn DominanceChecker<State = State>),
         cutoff: &'a (dyn Cutoff),
         fringe: &'a mut (dyn Fringe<State = State>),
+        cluster_compile: bool,
     ) -> Self {
         TDSolver {
             problem,
@@ -121,6 +125,7 @@ where
             mdd: D::default(),
             cache: C::default(),
             dominance,
+            cluster_compile,
         }
     }
 
@@ -144,6 +149,7 @@ where
             //
             best_lb,
             binary_split: false,
+            cluster_compile: self.cluster_compile,
         };
 
         // compile initial narrow width diagram
