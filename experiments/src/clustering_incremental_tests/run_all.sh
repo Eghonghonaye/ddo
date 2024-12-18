@@ -22,11 +22,17 @@ function run {
 	if [ ! -d "$DIR1" ]; then
 		# Directory does not exist, so create it
 		mkdir "$DIR1"
-		mkdir "$DIR2"
 	else
-		if [ ! -d "$DIR2" ]; then
-			mkdir "$DIR2"
-		fi
+		IFS='/' read -ra ADDR <<< "$folder"
+		DIR2=$DIR1
+		for i in "${ADDR[@]}"; do
+			# process "$i"
+			DIR2="$DIR2/$i"
+			if [ ! -d "$DIR2" ]; then
+				mkdir "$DIR2"
+			fi
+		done
+		
 	fi
 
 	# #first run oracle
@@ -214,8 +220,8 @@ function run {
 
 # ##############
 # # ############## "Dominance+Cluster" 
-run "knapsack" "knapsack" "max" "Dominance+Cluster" 
-run "lcs" "lcs" "max" "Dominance+Cluster" 
+# run "knapsack" "knapsack" "max" "Dominance+Cluster" 
+# run "lcs" "lcs" "max" "Dominance+Cluster" 
 run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster" 
 # ##############
 			
