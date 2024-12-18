@@ -21,6 +21,15 @@ function runOracle {
 	if [ ! -d "$DIR1" ]; then
 		# Directory does not exist, so create it
 		mkdir "$DIR1"
+		IFS='/' read -ra ADDR <<< "$folder"
+		DIR2=$DIR1
+		for i in "${ADDR[@]}"; do
+			# process "$i"
+			DIR2=$DIR2/$i
+			if [ ! -d "$DIR2" ]; then
+				mkdir "$DIR2"
+			fi
+		done
 	else
 		IFS='/' read -ra ADDR <<< "$folder"
 		DIR2=$DIR1
@@ -61,6 +70,15 @@ function run {
 	if [ ! -d "$DIR1" ]; then
 		# Directory does not exist, so create it
 		mkdir "$DIR1"
+		IFS='/' read -ra ADDR <<< "$folder"
+		DIR2=$DIR1
+		for i in "${ADDR[@]}"; do
+			# process "$i"
+			DIR2=$DIR2/$i
+			if [ ! -d "$DIR2" ]; then
+				mkdir "$DIR2"
+			fi
+		done
 	else
 		IFS='/' read -ra ADDR <<< "$folder"
 		DIR2=$DIR1
