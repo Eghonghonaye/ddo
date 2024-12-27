@@ -23,11 +23,6 @@ pub struct TDSolver<
     /// The ranking heuristic used to discriminate the most promising from
     /// the least promising states
     value_ranking: &'a (dyn StateRanking<State = State>),
-    /// The ranking heuristic used to discriminate the nodes to split first
-    /// We aim to split nodes that will strengthen the relaxation first, can supply same
-    /// ranking as value_ranking if you want but not necessary for this ranking to be based on
-    /// contribution to objective
-    split_ranking: &'a (dyn StateRanking<State = State>),
     /// The maximum width heuristic used to enforce a given maximum memory
     /// usage when compiling mdds
     width_heu: &'a (dyn WidthHeuristic<State>),
@@ -73,6 +68,8 @@ pub struct TDSolver<
     dominance: &'a (dyn DominanceChecker<State = State>),
     // option to merge in top down compile by clustering
     pub cluster_compile: bool,
+    //best merge quality
+    pub merge_quality: f64
 }
 
 impl<'a, State, D, C> TDSolver<'a, State, D, C>
@@ -110,7 +107,6 @@ where
             problem,
             relaxation,
             value_ranking: ranking,
-            split_ranking: ranking,
             width_heu,
             cutoff,
             //
@@ -126,6 +122,7 @@ where
             cache: C::default(),
             dominance,
             cluster_compile,
+            merge_quality: 0.0,
         }
     }
 
@@ -179,6 +176,7 @@ where
     /// case the best value of the current `mdd` expansion improves the current
     /// bounds.
     fn maybe_update_best(&mut self) {
+        self.merge_quality = self.mdd.merge_quality();
         let dd_best_value = self.mdd.best_exact_value().unwrap_or(isize::MIN);
         if dd_best_value > self.best_lb {
             self.best_lb = dd_best_value;
@@ -189,6 +187,7 @@ where
             self.best_ub = dd_upper_bound;
         }
     }
+
 }
 
 impl<'a, State, D, C> Solver
@@ -289,5 +288,9 @@ where
             self.best_sol = Some(solution);
             self.best_lb = value;
         }
+    }
+
+    fn merge_quality(&self)->f64{
+        self.merge_quality
     }
 }

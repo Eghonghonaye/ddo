@@ -6,13 +6,14 @@
 //! for Dominance and Suboptimality Detection''.
 
 use std::{
-    collections::{hash_map::Entry, HashMap, HashSet},
+    collections::{hash_map::Entry, HashMap},
     fmt::Debug,
     fs,
-    hash::{BuildHasherDefault, Hash},
+    hash::Hash,
     sync::Arc,
 };
 use clustering::kmeans;
+use eval_metrics::regression::*;
 
 use derive_builder::Builder;
 // use derive_builder::Builder;
@@ -202,8 +203,9 @@ where
     /// A flag set to true when the longest r-t path of this decision diagram
     /// traverses no merged node (Exact Best Path Optimization aka EBPO).
     has_exact_best_path: bool,
-    // to cluster or not for top down comilation
-    cluster_compile: bool
+    /// merge relaxation quality metric
+    // merge_quality: (f64,usize),
+    merge_quality: Vec<f64>,
 }
 
 // Tech note: WHY AM I USING MACROS HERE ?
@@ -309,7 +311,7 @@ where
     T: Eq + PartialEq + Hash + Clone,
 {
     fn default() -> Self {
-        Self::new(false)
+        Self::new()
     }
 }
 
@@ -347,6 +349,10 @@ where
         self._best_exact_solution()
     }
 
+    fn merge_quality(&self)->f64{
+        self._merge_quality()
+    }
+
     fn drain_cutset<F>(&mut self, func: F)
     where
         F: FnMut(SubProblem<Self::State>),
@@ -359,7 +365,7 @@ impl<T, const CUTSET_TYPE: CutsetType> VectorMdd<T, { CUTSET_TYPE }>
 where
     T: Eq + PartialEq + Hash + Clone,
 {
-    pub fn new(cluster_compile:bool) -> Self {
+    pub fn new() -> Self {
         Self {
             nodes: vec![],
             edges: vec![],
@@ -376,7 +382,8 @@ where
             best_exact_node: None,
             is_exact: false,
             has_exact_best_path: false,
-            cluster_compile: cluster_compile
+            // merge_quality:(0.0,0)
+            merge_quality:vec![],
         }
     }
 
@@ -444,6 +451,23 @@ where
             edge_id = nodes[edge.from.0][edge.from.1].best;
         }
         sol
+    }
+
+    fn _merge_quality(&self) -> f64{
+        // if self.merge_quality.1 > 0{
+        //     self.merge_quality.0/self.merge_quality.1 as f64}
+        // else{
+        //     0.0
+        // }
+        
+        if self.merge_quality.len() > 0{
+            *self.merge_quality.iter().max_by(|a, b| a.total_cmp(b)).unwrap()
+        }
+        else{
+            0.0
+        }
+    
+        
     }
 
     fn _compile(&mut self, input: &CompilationInput<T>) -> Result<Completion, Reason> {
@@ -1348,7 +1372,7 @@ where
         let all_node_costs = curr_l.iter()
                 .map(|x| NodeClusterHelper::new(*x, get!(node x, self).value_top))
                 .collect::<Vec<_>>();
-        let clustering = kmeans(input.max_width, &all_node_costs, 10);
+        let clustering = kmeans(input.max_width, &all_node_costs, 5);
         let mut result = vec![Vec::new(); clustering.membership.len()];
         for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
             result[label].push(h.id);
@@ -1362,10 +1386,13 @@ where
         for id in keep.drain(..) {
             curr_l.push(id);
         }
+        let mut total_merge_err:f64 = 0.0;
 
         //--
         for node_ids in result.iter(){
             if node_ids.len() > 1{ //merge nodes
+                let to_merge_costs:Vec<_> = node_ids.iter().map(|id| get!(node id, self).value_top as f64).collect();
+
                 let merged_node = Arc::new(
                     input
                         .relaxation
@@ -1427,8 +1454,15 @@ where
                 if !recycled.is_some() {
                     curr_l.push(merged_id);
                 }
+
+                let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
+                let merge_err = rmse(&to_merge_costs,&merged_cost);
+                total_merge_err += merge_err.unwrap();
         }
     }
+
+    // average merge error over the layer
+    self.merge_quality.push(total_merge_err/curr_l.len() as f64);
 }
 
 
@@ -1462,6 +1496,9 @@ where
 
         //--
         let (keep, merge) = curr_l.split_at_mut(input.max_width - 1);
+
+        let to_merge_costs:Vec<_> = merge.iter().map(|id| get!(node id, self).value_top as f64).collect();
+
         let merged = Arc::new(
             input
                 .relaxation
@@ -1515,6 +1552,14 @@ where
             });
         }
 
+        let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
+        let merge_err = rmse(&to_merge_costs,&merged_cost);
+        // self.merge_quality.0 += merge_err.unwrap()/(to_merge_costs.iter().max_by(|a, b| a.total_cmp(b)).unwrap() -
+        //                                                          to_merge_costs.iter().min_by(|a, b| a.total_cmp(b)).unwrap());
+
+        // self.merge_quality.0 += merge_err.unwrap();
+        // self.merge_quality.1 += 1; 
+
         if recycled.is_some() {
             curr_l.truncate(input.max_width);
             let saved_id = curr_l[input.max_width - 1];
@@ -1523,6 +1568,9 @@ where
             curr_l.truncate(input.max_width - 1);
             curr_l.push(merged_id);
         }
+
+        // average merge error over the layer
+        self.merge_quality.push(merge_err.unwrap()/curr_l.len() as f64);
     }
 
     fn _split_with_rub(&mut self,

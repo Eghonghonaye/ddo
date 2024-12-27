@@ -19,6 +19,7 @@ def main(args):
             {results["Refine Cluster"]},\
             {results["Compile Cluster"]},\
             {"-" if "Dominance" not in results else results["Dominance"]},\
+            {float(0) if "MergeQuality" not in results else float(results["MergeQuality"])},\
             {results["Binary Split"]},\
             {results["Solver"]},\
             {results["Width"]},\

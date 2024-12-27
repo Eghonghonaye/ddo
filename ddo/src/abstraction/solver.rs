@@ -91,4 +91,8 @@ pub trait Solver {
             (u - l) as f32 / u as f32
         }
     }    
+    ///Returns merge quality measure of diagram
+    fn merge_quality(&self)->f64{
+        0.0
+    }
 }

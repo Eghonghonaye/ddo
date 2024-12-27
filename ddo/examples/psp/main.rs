@@ -145,6 +145,8 @@ fn main() {
                     .collect()
             });
 
+        let merge_quality = solver.merge_quality();
+
         let result = json!({
             "Duration": format!("{:.3}", duration.as_secs_f32()),
             "Objective":  format!("{}", best_value.map(|v| -v).unwrap_or(-1)),
@@ -155,6 +157,7 @@ fn main() {
             "Refine Cluster":    format!("{}", args.cluster),
             "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
+            "MergeQuality":    format!("{:.3}", merge_quality),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
             "Solution":   format!("{:?}", best_solution.unwrap_or_default())

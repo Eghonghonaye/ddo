@@ -92,7 +92,9 @@ def plot_bound_width(files,type):
             df["RealGap"] = (df['Upper'] - df['RealUpper'])/df['Upper']
             print(df["RealGap"].min(),df["RealGap"].max())
             print(df)
-            new_df = df.groupby(["Solver","CompileCluster","Dominance","RefineCluster","Binary","Width"],as_index=False)["RealGap"].mean()
+            # new_df = df
+            # new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","MergeQuality","Width"],as_index=False)["RealGap"].mean()
+            new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","Width"],as_index=False).agg({"RealGap":"mean","MergeQuality":"mean"})
             all_df.append(new_df)
         else: #is min
             # df["Upper"] = df["Upper"]*(-1)
@@ -100,7 +102,9 @@ def plot_bound_width(files,type):
             df["RealGap"] = (df['RealUpper'] - df['Upper'])/df['RealUpper']
             print(df["RealGap"].min(),df["RealGap"].max())
             print(df)
-            new_df = df.groupby(["Solver","CompileCluster","Dominance","RefineCluster","Binary","Width"],as_index=False)["RealGap"].mean()
+            # new_df = df
+            # new_df = df.groupby(["Solver","CompileCluster","RefineCluster","Binary","MergeQuality","Width"],as_index=False)["RealGap"].mean()
+            new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","Width"],as_index=False).agg({"RealGap":"mean","MergeQuality":"mean"})
             all_df.append(new_df)
  
         
@@ -108,7 +112,7 @@ def plot_bound_width(files,type):
     # print(all_df.to_string())
     all_df['Solver'] = all_df['Solver'].str.strip()
     all_df['CompileCluster'] = all_df['CompileCluster'].str.strip()
-    all_df['Dominance'] = all_df['Dominance'].str.strip()
+    # all_df['Dominance'] = all_df['Dominance'].str.strip()
     all_df['RefineCluster'] = all_df['RefineCluster'].str.strip()
     all_df['Binary'] = all_df['Binary'].str.strip()
 
@@ -118,7 +122,7 @@ def plot_bound_width(files,type):
     # all_df = all_df[~mask]
 
     # all_df['CompileCluster'] = all_df['CompileCluster'].map({'true': 'CC', 'false': 'X'})
-    all_df['Dominance'] = all_df['Dominance'].map({'true': 'DD', 'false': 'X'})
+    # all_df['Dominance'] = all_df['Dominance'].map({'true': 'DD', 'false': 'X'})
     all_df['RefineCluster'] = all_df['RefineCluster'].map({'true': 'RC', 'false': 'X'})
     all_df['Binary'] = all_df['Binary'].map({'true': 'B', 'false': 'X'})
 
@@ -164,13 +168,33 @@ def plot(problem_names):
     # print(all_df.to_string())
     all_df = all_df.drop(all_df[all_df["Solver"] == 'incremental'].index)
     all_df = all_df.drop(all_df[all_df["Solver"] == 'branch-bound'].index)
-    # print(all_df.to_string())
+    all_df["MergeQuality"] =  all_df["MergeQuality"].astype(float)
+    all_df = all_df.dropna()
+    print(all_df.to_string())
 
-    g = sns.FacetGrid(all_df, col="Problem", col_wrap=2)
-    g.map_dataframe(sns.lineplot,x="Width", y="RealGap", hue="Label").add_legend() 
-    g.set_ylabels("Normalised Bound")
+    def joint_plot(data: pd.DataFrame, x_name: str, y1_name: str, y2_name: str, ylabel1: str, ylabel2: str,color="blue",label=0):
+        ax1 = plt.gca()
+        sns.lineplot(x=data[x_name], y=data[y1_name], alpha=.7, color='red',ax=ax1)
+        ax1.set_ylabel(ylabel1)
+
+        ax2 = ax1.twinx()
+        sns.lineplot(x=data[x_name], y=data[y2_name], alpha=.7,ax=ax2)
+        ax2.set_ylabel(ylabel2)
+
+
+    g = sns.FacetGrid(all_df, col="Problem", hue="Label",col_wrap=2)
+    # g.map_dataframe(sns.lineplot,x="Width", y="RealGap", hue="Label").add_legend() 
+    g.map_dataframe(joint_plot, x_name="Width", y1_name="RealGap", y2_name="MergeQuality",
+                    ylabel1="Normalised Bound", ylabel2="Merge Error")
+    # g.set_ylabels("Normalised Bound")
     g.set_xlabels("Width")
     plt.show() 
+
+    # ax =  sns.lineplot(x="Width", y="RealGap", hue="Label", data=all_df)
+    # ax2 = ax.twinx()
+    # sns.lineplot(x="Width", y="MergeQuality", hue="Label", ax=ax2, data=all_df)
+    # # ax.figure.legend()
+    # plt.show()
 
 
 if __name__ == "__main__":
@@ -193,8 +217,86 @@ if __name__ == "__main__":
     #     ("knapsack", "knapsack", "max"),
     #     ])
     
+
+
+    ["Cluster","Dominance","RUB","VarOrd" ,
+     "Cluster+VarOrd","Dominance+VarOrd","RUB+VarOrd",
+     "RUB+Cluster","RUB+Dominance" ,"Dominance+Cluster",
+      "All","Gewoon"]
+    
+    ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"]
+    ["VarOrd","Gewoon"]
+			
+    #RUB does nothing??? even in tsptw?
+
+
+    # #Dominance
+    # plot([
+    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
+    #     ("srflp", "srflp", ["Gewoon"],"min"),
+    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
+    #     ("misp", "misp", ["VarOrd","Gewoon"],"max"),
+    #     ("sop", "sop", ["Gewoon"],"min"),
+    #     ("mcp", "mcp", ["Gewoon"],"max"),
+    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+    #     ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
+    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
+    #     ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
+    #     ])
+    
+    # #VarOrd
+    # plot([
+    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
+    #     ("srflp", "srflp", ["Gewoon"],"min"),
+    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
+    #     ("misp", "misp", ["VarOrd","Gewoon"],"max"),
+    #     ("sop", "sop", ["Gewoon"],"min"),
+    #     ("mcp", "mcp", ["Gewoon"],"max"),
+    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+    #     ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
+    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
+    #     ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
+    #     ])
+    
+    # #RUB
+    # plot([
+    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
+    #     ("srflp", "srflp", ["Gewoon"],"min"),
+    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
+    #     ("misp", "misp", ["VarOrd","Gewoon"],"max"),
+    #     ("sop", "sop", ["Gewoon"],"min"),
+    #     ("mcp", "mcp", ["Gewoon"],"max"),
+    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+    #     ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
+    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
+    #     ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
+    #     ])
+    
+
+    # plot([
+    #     # ("talentsched", "talentsched", ["Gewoon"],"min"),
+    #     # ("srflp", "srflp", ["Gewoon"],"min"),
+    #     # ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
+    #     # ("misp", "misp", ["VarOrd","Gewoon"],"max"),
+    #     # ("sop", "sop", ["Gewoon"],"min"),
+    #     # ("mcp", "mcp", ["Gewoon"],"max"),
+    #     ("knapsack", "knapsack", ["Gewoon"],"max"),
+    #     # ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
+    #     # ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
+    #     # ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
+    #     ])
+
     plot([
-        ("knapsack", "knapsack", ["Cluster","Dominance","Dominance+Cluster"], "max"),
+        ("talentsched", "talentsched", ["Gewoon"],"min"),
+        ("srflp", "srflp", ["Gewoon"],"min"),
+        ("tsptw", "tsptw/AFG",  ["Gewoon"],"min"),
+        ("misp", "misp", ["Gewoon"],"max"),
+        ("sop", "sop", ["Gewoon"],"min"),
+        ("mcp", "mcp", ["Gewoon"],"max"),
+        ("knapsack", "knapsack", ["Gewoon"],"max"),
+        ("max2sat", "max2sat", ["Gewoon"],"max"),
+        ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
+        ("lcs", "lcs",  ["Gewoon"],"max"),
         ])
 
 

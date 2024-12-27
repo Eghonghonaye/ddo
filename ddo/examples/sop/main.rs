@@ -171,6 +171,8 @@ fn main() {
         let best_solution = solver.best_solution().unwrap_or_default()
         .iter().map(|d| d.value).collect::<Vec<isize>>();
 
+        let merge_quality = solver.merge_quality();
+
         let result = json!({
             "Duration": format!("{:.3}", duration.as_secs_f32()),
             "Objective":  format!("{}", objective(best_value.unwrap_or(-1))),
@@ -181,6 +183,7 @@ fn main() {
             "Refine Cluster":    format!("{}", args.cluster),
             "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
+            "MergeQuality":    format!("{:.3}", merge_quality),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
             "Solution":   format!("{:?}", best_solution)

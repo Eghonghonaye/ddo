@@ -125,6 +125,10 @@ pub trait DecisionDiagram {
     /// maximizing the objective value. When no feasible solution exists in the
     /// approximate DD, it returns the value None instead.
     fn best_exact_solution(&self) -> Option<Solution>;
+    ///Returns merge quality measure of diagram
+    fn merge_quality(&self)->f64{
+        0.0
+    }
     /// Iteratively applies the given function `func` to each element of the
     /// exact cut-set that was computed during DD compilation.
     ///
@@ -135,4 +139,5 @@ pub trait DecisionDiagram {
     fn drain_cutset<F>(&mut self, func: F)
     where
         F: FnMut(SubProblem<Self::State>);
+    
 }

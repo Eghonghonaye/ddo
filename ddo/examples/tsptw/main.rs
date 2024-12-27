@@ -130,7 +130,9 @@ fn main() {
         //     decisions.sort_unstable_by_key(|d| d.variable.id());
         //     decisions.iter().map(|d| d.value).collect::<Vec<_>>()
         // });
-
+        
+        let merge_quality = solver.merge_quality();
+        
         let result = json!({
             "Duration": format!("{:.3}", duration.as_secs_f32()),
             "Objective":  format!("{}", objective(best_value.unwrap_or(-1))),
@@ -141,6 +143,7 @@ fn main() {
             "Refine Cluster":    format!("{}", args.cluster),
             "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
+            "MergeQuality":    format!("{:.3}", merge_quality),
             "Dominance":    format!("{}", args.dominance),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
