@@ -1456,14 +1456,14 @@ where
                 }
 
                 let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
-                let merge_err = rmse(&to_merge_costs,&merged_cost);
-                total_merge_err += merge_err.unwrap();
+                let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/(get!(node merged_id, self).value_top as f64);
+                total_merge_err += merge_err;
+            }
         }
-    }
 
-    // average merge error over the layer
-    self.merge_quality.push(total_merge_err/curr_l.len() as f64);
-}
+        // average merge error over the layer
+        self.merge_quality.push(total_merge_err/curr_l.len() as f64);
+    }
 
 
     #[allow(clippy::redundant_closure_call)]
@@ -1553,7 +1553,7 @@ where
         }
 
         let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
-        let merge_err = rmse(&to_merge_costs,&merged_cost);
+        let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/(get!(node merged_id, self).value_top as f64);
         // self.merge_quality.0 += merge_err.unwrap()/(to_merge_costs.iter().max_by(|a, b| a.total_cmp(b)).unwrap() -
         //                                                          to_merge_costs.iter().min_by(|a, b| a.total_cmp(b)).unwrap());
 
@@ -1570,7 +1570,7 @@ where
         }
 
         // average merge error over the layer
-        self.merge_quality.push(merge_err.unwrap()/curr_l.len() as f64);
+        self.merge_quality.push(merge_err/curr_l.len() as f64);
     }
 
     fn _split_with_rub(&mut self,

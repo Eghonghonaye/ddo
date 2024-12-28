@@ -198,18 +198,18 @@ run "psp" "psp/instancesWith2items" "min" "Gewoon"
 run "lcs" "lcs" "max" "Gewoon"
 ################
 
-#############
-run "talentsched" "talentsched" "min" "Cluster"
-run "srflp" "srflp" "min" "Cluster"
-run "tsptw" "tsptw/AFG" "min" "Cluster"
-run "misp" "misp" "max" "Cluster"
-run "sop" "sop" "min" "Cluster"
-run "mcp" "mcp" "max" "Cluster"
-run "knapsack" "knapsack" "max" "Cluster"
-run "max2sat" "max2sat" "max" "Cluster"
-run "psp" "psp/instancesWith2items" "min" "Cluster"
-run "lcs" "lcs" "max" "Cluster"
-###############
+# #############
+# run "talentsched" "talentsched" "min" "Cluster"
+# run "srflp" "srflp" "min" "Cluster"
+# run "tsptw" "tsptw/AFG" "min" "Cluster"
+# run "misp" "misp" "max" "Cluster"
+# run "sop" "sop" "min" "Cluster"
+# run "mcp" "mcp" "max" "Cluster"
+# run "knapsack" "knapsack" "max" "Cluster"
+# run "max2sat" "max2sat" "max" "Cluster"
+# run "psp" "psp/instancesWith2items" "min" "Cluster"
+# run "lcs" "lcs" "max" "Cluster"
+# ###############
 
 ##############
 # run "knapsack" "knapsack" "max" "Dominance"
