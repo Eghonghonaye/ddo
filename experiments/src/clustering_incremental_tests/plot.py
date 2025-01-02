@@ -88,7 +88,7 @@ def plot_bound_width(files,type):
         print(file)
 
         if type == "max":
-            df["MergeQuality"] = df["MergeQuality"].astype(float)
+            df["MergeQuality"] = abs(df["MergeQuality"].astype(float))
             df["RealUpper"] = df.groupby('Name')['Upper'].transform('min')
             df["RealGap"] = (df['Upper'] - df['RealUpper'])/df['Upper']
             print(df["RealGap"].min(),df["RealGap"].max())
@@ -99,7 +99,7 @@ def plot_bound_width(files,type):
             all_df.append(new_df)
         else: #is min
             # df["Upper"] = df["Upper"]*(-1)
-            df["MergeQuality"] = df["MergeQuality"].astype(float)
+            df["MergeQuality"] = abs(df["MergeQuality"].astype(float))
             df["RealUpper"] = df.groupby('Name')['Upper'].transform('max')
             df["RealGap"] = (df['RealUpper'] - df['Upper'])/df['RealUpper']
             print(df["RealGap"].min(),df["RealGap"].max())
@@ -184,7 +184,7 @@ def plot(problem_names):
         ax2.set_ylabel(ylabel2)
 
 
-    g = sns.FacetGrid(all_df, col="Problem", col_wrap=2)
+    g = sns.FacetGrid(all_df, col="Problem", hue="Label", col_wrap=2)
     # g.map_dataframe(sns.lineplot,x="Width", y="RealGap", hue="Label").add_legend() 
     g.map_dataframe(joint_plot, x_name="Width", y1_name="RealGap", y2_name="MergeQuality",
                     ylabel1="Normalised Bound", ylabel2="Merge Error")

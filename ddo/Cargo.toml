@@ -29,6 +29,7 @@ tensorflow       = "0.18.0"
 serde_json       = "1.0.128"
 clustering       = "0.2.1"
 eval-metrics = "1.0.2"
+statistical = "1.0.0"
 
 [dev-dependencies]
 thiserror        = "1.0"

@@ -18,6 +18,7 @@ use eval_metrics::regression::*;
 use derive_builder::Builder;
 // use derive_builder::Builder;
 use fxhash::{FxHashMap, FxHashSet};
+use statistical::standard_deviation;
 
 use crate::{
     CompilationInput, CompilationStrategy, CompilationType, Completion, CutsetType, Decision,
@@ -1456,7 +1457,8 @@ where
                 }
 
                 let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
-                let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/(get!(node merged_id, self).value_top as f64);
+                // let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/(get!(node merged_id, self).value_top as f64);
+                let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/standard_deviation(&to_merge_costs,None);
                 total_merge_err += merge_err;
             }
         }
@@ -1553,7 +1555,8 @@ where
         }
 
         let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
-        let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/(get!(node merged_id, self).value_top as f64);
+        // let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/(get!(node merged_id, self).value_top as f64);
+        let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/standard_deviation(&to_merge_costs,None);
         // self.merge_quality.0 += merge_err.unwrap()/(to_merge_costs.iter().max_by(|a, b| a.total_cmp(b)).unwrap() -
         //                                                          to_merge_costs.iter().min_by(|a, b| a.total_cmp(b)).unwrap());
 
