@@ -172,7 +172,7 @@ def plot(problem_names):
     all_df = all_df.drop(all_df[all_df["Solver"] == 'branch-bound'].index)
     all_df["MergeQuality"] =  all_df["MergeQuality"].astype(float)
     all_df = all_df.dropna()
-    print(all_df.to_string())
+    all_df.to_csv("experiments/all.csv")
 
     def joint_plot(data: pd.DataFrame, x_name: str, y1_name: str, y2_name: str, ylabel1: str, ylabel2: str,color="blue",label=0):
         ax1 = plt.gca()
@@ -184,12 +184,13 @@ def plot(problem_names):
         ax2.set_ylabel(ylabel2)
 
 
-    g = sns.FacetGrid(all_df, col="Problem", hue="Label", col_wrap=2)
+    g = sns.FacetGrid(all_df, row="Problem", col="Conditions", hue="Label",margin_titles=True)
     # g.map_dataframe(sns.lineplot,x="Width", y="RealGap", hue="Label").add_legend() 
     g.map_dataframe(joint_plot, x_name="Width", y1_name="RealGap", y2_name="MergeQuality",
-                    ylabel1="Normalised Bound", ylabel2="Merge Error")
-    g.set_ylabels("Normalised Bound")
-    g.set_xlabels("Width")
+                    ylabel1="Gap", ylabel2="Error")
+    # g.set_ylabels("Normalised Bound")
+    # g.set_xlabels("Width")
+    g.set_titles(row_template="{row_name}",col_template="{col_name}", fontweight='bold', size=14) 
     plt.show() 
     # plt.savefig(f'{experiments}plot.png')
 
@@ -270,18 +271,18 @@ if __name__ == "__main__":
     #     # ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
     #     ])
 
-    plot([
-        ("talentsched", "talentsched", ["Gewoon"],"min"),
-        ("srflp", "srflp", ["Gewoon"],"min"),
-        ("tsptw", "tsptw/AFG",  ["Gewoon"],"min"),
-        ("misp", "misp", ["Gewoon"],"max"),
-        ("sop", "sop", ["Gewoon"],"min"),
-        ("mcp", "mcp", ["Gewoon"],"max"),
-        ("knapsack", "knapsack", ["Gewoon"],"max"),
-        ("max2sat", "max2sat", ["Gewoon"],"max"),
-        ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
-        ("lcs", "lcs",  ["Gewoon"],"max"),
-        ])
+    # plot([
+    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
+    #     ("srflp", "srflp", ["Gewoon"],"min"),
+    #     ("tsptw", "tsptw/AFG",  ["Gewoon"],"min"),
+    #     ("misp", "misp", ["Gewoon"],"max"),
+    #     ("sop", "sop", ["Gewoon"],"min"),
+    #     ("mcp", "mcp", ["Gewoon"],"max"),
+    #     ("knapsack", "knapsack", ["Gewoon"],"max"),
+    #     ("max2sat", "max2sat", ["Gewoon"],"max"),
+    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
+    #     ("lcs", "lcs",  ["Gewoon"],"max"),
+    #     ])
     
     # plot([
     #     ("talentsched", "talentsched", ["Cluster"],"min"),
@@ -296,18 +297,18 @@ if __name__ == "__main__":
     #     ("lcs", "lcs",  ["Cluster"],"max"),
     #     ])
     
-    # plot([
-    #     ("talentsched", "talentsched", ["Gewoon","Cluster"],"min"),
-    #     ("srflp", "srflp", ["Gewoon","Cluster"],"min"),
-    #     ("tsptw", "tsptw/AFG",  ["Gewoon","Cluster"],"min"),
-    #     ("misp", "misp", ["Gewoon","Cluster"],"max"),
-    #     ("sop", "sop", ["Gewoon","Cluster"],"min"),
-    #     ("mcp", "mcp", ["Gewoon","Cluster"],"max"),
-    #     ("knapsack", "knapsack", ["Gewoon","Cluster"],"max"),
-    #     ("max2sat", "max2sat", ["Gewoon","Cluster"],"max"),
-    #     ("psp", "psp/instancesWith2items", ["Gewoon","Cluster"],"min"),
-    #     ("lcs", "lcs",  ["Gewoon","Cluster"],"max"),
-    #     ])
+    plot([
+        ("talentsched", "talentsched", ["Gewoon","Cluster"],"min"),
+        ("srflp", "srflp", ["Gewoon","Cluster"],"min"),
+        ("tsptw", "tsptw/AFG",  ["Gewoon","Cluster"],"min"),
+        ("misp", "misp", ["Gewoon","Cluster"],"max"),
+        ("sop", "sop", ["Gewoon","Cluster"],"min"),
+        ("mcp", "mcp", ["Gewoon","Cluster"],"max"),
+        ("knapsack", "knapsack", ["Gewoon","Cluster"],"max"),
+        ("max2sat", "max2sat", ["Gewoon","Cluster"],"max"),
+        ("psp", "psp/instancesWith2items", ["Gewoon","Cluster"],"min"),
+        ("lcs", "lcs",  ["Gewoon","Cluster"],"max"),
+        ])
 
 
     parser = argparse.ArgumentParser(description='Choose full or abridged verification.')
