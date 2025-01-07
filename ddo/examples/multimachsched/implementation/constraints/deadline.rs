@@ -9,11 +9,11 @@ impl Satisfaction for Deadline{
         state:&State,
         _op: &OpId,
         options:& mut BitVector){
-            println!("after deadline filter {:?}", options);
+            // println!("after deadline filter {:?}", options);
             for index in 0..instance.nops{
                 if state.est[index] > state.lst[index] || state.est[index] > self.value  {
                         options.remove(index);
-                        println!("after deadline filter {:?}", options);
+                        // println!("after deadline filter {:?}", options);
                     } 
             } 
 

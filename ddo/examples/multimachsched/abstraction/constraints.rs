@@ -3,7 +3,6 @@
 use crate::abstraction::instance::{Instance,Machine,OpId};
 use crate::bitvector::BitVector;
 use crate::model::State;
-use std::rc::Rc;
 
 #[derive(Clone, PartialEq, Eq)]
 pub enum Constraint{
@@ -57,7 +56,7 @@ pub struct Setup {
 #[derive(Clone, PartialEq, Eq)]
 pub struct Assign {
     pub op_a: OpId,
-    pub mach: Rc<Machine>
+    pub mach: Machine
 }
 
 #[derive(Clone, PartialEq, Eq)]

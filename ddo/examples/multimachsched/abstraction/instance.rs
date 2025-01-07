@@ -1,7 +1,6 @@
 // problem instance
 use crate::abstraction::constraints::Constraint;
 use std::collections::HashMap;
-use std::rc::Rc;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct OpId(usize);
@@ -15,9 +14,9 @@ impl OpId{
     pub fn as_usize(&self) -> usize{
         self.0
     }
-    pub fn as_string(&self) -> String{
-        format!("{}",self.0)
-    }
+    // pub fn as_string(&self) -> String{
+    //     format!("{}",self.0)
+    // }
 }
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Hash)]
@@ -32,9 +31,9 @@ impl MId{
     pub fn as_usize(&self) -> usize{
         self.0
     }
-    pub fn as_string(&self) -> String{
-        format!("{}",self.0)
-    }
+    // pub fn as_string(&self) -> String{
+    //     format!("{}",self.0)
+    // }
 }
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -88,18 +87,18 @@ pub struct Instance {
     pub nops :usize,
     pub nmachs : usize,
     pub ops: HashMap<OpId, Operation>,
-    pub machs: HashMap<MId, Rc<Machine>>,
+    pub machs: HashMap<MId, Machine>,
     pub constraints: HashMap<OpId,Vec<Constraint>>
 }
 
 impl PartialEq for Instance{
     // Required method
-    fn eq(&self, other: &Self) -> bool{
+    fn eq(&self, _other: &Self) -> bool{
         true
     }
 
     // Provided method
-    fn ne(&self, other: &Self) -> bool {
+    fn ne(&self, _other: &Self) -> bool {
         true
      }
 }

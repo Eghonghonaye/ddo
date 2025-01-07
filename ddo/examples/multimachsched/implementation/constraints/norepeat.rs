@@ -10,11 +10,11 @@ impl Satisfaction for NoRepeat{
         state: &State, 
         _op: &OpId,
         options: &mut BitVector) {
-            println!("before no repeat filter {:?}", options);
+            // println!("before no repeat filter {:?}", options);
             for index in 0..instance.nops{
                 if state.def_scheduled.contains(index){
                         options.remove(index);
-                        println!("after no repeat filter {:?}", options);
+                        // println!("after no repeat filter {:?}", options);
                     } 
             } 
             // options.retain(|op| self.feasible(instance,state,&op) == true);

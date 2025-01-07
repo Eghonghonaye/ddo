@@ -205,8 +205,8 @@ where
     /// traverses no merged node (Exact Best Path Optimization aka EBPO).
     has_exact_best_path: bool,
     /// merge relaxation quality metric
-    merge_quality: (f64,usize),
-    // merge_quality: Vec<f64>,
+    // merge_quality: (f64,usize),
+    merge_quality: Vec<isize>,
 }
 
 // Tech note: WHY AM I USING MACROS HERE ?
@@ -383,8 +383,8 @@ where
             best_exact_node: None,
             is_exact: false,
             has_exact_best_path: false,
-            merge_quality:(0.0,0)
-            // merge_quality:vec![],
+            // merge_quality:(0.0,0)
+            merge_quality:vec![],
         }
     }
 
@@ -455,18 +455,19 @@ where
     }
 
     fn _merge_quality(&self) -> f64{
-        if self.merge_quality.1 > 0{
-            self.merge_quality.0/self.merge_quality.1 as f64}
-        else{
-            0.0
-        }
-        
-        // if self.merge_quality.len() > 0{
-        //     *self.merge_quality.iter().max_by(|a, b| a.total_cmp(b)).unwrap()
-        // }
+        // if self.merge_quality.1 > 0{
+        //     self.merge_quality.0/self.merge_quality.1 as f64}
         // else{
         //     0.0
         // }
+        
+        if self.merge_quality.len() > 0{
+            // *self.merge_quality.iter().max_by(|a, b| a.total_cmp(b)).unwrap()
+            *self.merge_quality.iter().max().unwrap() as f64
+        }
+        else{
+            0.0
+        }
     
         
     }
@@ -1387,13 +1388,12 @@ where
         for id in keep.drain(..) {
             curr_l.push(id);
         }
-        let mut total_merge_err:f64 = 0.0;
+        let mut max_merge_err = 0;
         let mut total_merges:usize = 0;
 
         //--
         for node_ids in result.iter(){
             if node_ids.len() > 1{ //merge nodes
-                let to_merge_costs:Vec<_> = node_ids.iter().map(|id| get!(node id, self).value_top as f64).collect();
 
                 let merged_node = Arc::new(
                     input
@@ -1435,7 +1435,7 @@ where
                 get!(mut node merged_id, self).flags.set_relaxed(true);
     
                 // delete source nodes of this merge
-                for drop_id in node_ids {
+                for drop_id in node_ids.iter() {
                     get!(mut node drop_id, self).flags.set_deleted(true);
         
                     foreach!(incoming edge of drop_id, self, |edge: Edge<T>| {
@@ -1457,20 +1457,28 @@ where
                     curr_l.push(merged_id);
                 }
 
-                let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
-                let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap();
+                let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+                    get!(node merged_id, self).value_top);
+                let to_merge_costs:Vec<_> = node_ids.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+                                                                            merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
+                let merge_err = to_merge_costs.iter().max().unwrap();
+                max_merge_err = std::cmp::max(max_merge_err,*merge_err);
 
-                total_merge_err += merge_err;
-                total_merges += 1;
+                // let merged_cost = vec![(input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+                //                                     get!(node merged_id, self).value_top) as f64;to_merge_costs.len()];
+                // let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap();
+
+                // total_merge_err += merge_err;
+                // total_merges += 1;
                 
             }
         }
 
-        self.merge_quality.0 += total_merge_err;
-        self.merge_quality.1 += total_merges;
+        // self.merge_quality.0 += total_merge_err;
+        // self.merge_quality.1 += total_merges;
 
         // // average merge error over the layer
-        // self.merge_quality.push(total_merge_err/curr_l.len() as f64);
+        self.merge_quality.push(max_merge_err);
     }
 
 
@@ -1504,8 +1512,6 @@ where
 
         //--
         let (keep, merge) = curr_l.split_at_mut(input.max_width - 1);
-
-        let to_merge_costs:Vec<_> = merge.iter().map(|id| get!(node id, self).value_top as f64).collect();
 
         let merged = Arc::new(
             input
@@ -1541,7 +1547,9 @@ where
 
         get!(mut node merged_id, self).flags.set_relaxed(true);
 
-        for drop_id in merge {
+        
+
+        for drop_id in merge.iter() {
             get!(mut node drop_id, self).flags.set_deleted(true);
 
             foreach!(incoming edge of drop_id, self, |edge: Edge<T>| {
@@ -1560,17 +1568,27 @@ where
             });
         }
 
-        let merged_cost = vec![get!(node merged_id, self).value_top as f64;to_merge_costs.len()];
+        let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+            get!(node merged_id, self).value_top);
+        let to_merge_costs:Vec<_> = merge.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+                                                                    merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
+        let merge_err = to_merge_costs.iter().max().unwrap();
+
+        // let merged_cost = vec![(input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+        //     get!(node merged_id, self).value_top) as f64;to_merge_costs.len()];
+        
         // let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap()/(get!(node merged_id, self).value_top as f64);
-        let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap();
+        // let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap();
+
+        
         
         ///////(standard_deviation(&to_merge_costs,None)+0.00000001);
         // println!("{:?},{:?}",rmse(&to_merge_costs,&merged_cost).unwrap(),standard_deviation(&to_merge_costs,None));
         // self.merge_quality.0 += merge_err.unwrap()/(to_merge_costs.iter().max_by(|a, b| a.total_cmp(b)).unwrap() -
         //                                                          to_merge_costs.iter().min_by(|a, b| a.total_cmp(b)).unwrap());
 
-        self.merge_quality.0 += merge_err;
-        self.merge_quality.1 += 1; 
+        // self.merge_quality.0 += merge_err;
+        // self.merge_quality.1 += 1; 
 
         if recycled.is_some() {
             curr_l.truncate(input.max_width);
@@ -1583,6 +1601,7 @@ where
 
         // // average merge error over the layer
         // self.merge_quality.push(merge_err/curr_l.len() as f64);
+        self.merge_quality.push(*merge_err);
     }
 
     fn _split_with_rub(&mut self,

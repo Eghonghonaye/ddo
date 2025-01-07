@@ -8,9 +8,6 @@ use std::fs::File;
 use std::path::Path;
 use std::io::{BufRead, BufReader};
 
-use std::rc::Rc;
-use std::borrow::BorrowMut;
-
 use regex::Regex;
 
 impl Instance{
@@ -33,7 +30,7 @@ impl Instance{
 
     fn add_machine(&mut self,name:String,mid:usize) -> (String,MId) {
         self.nmachs += 1;
-        self.machs.insert(MId::new(mid),Rc::new(Machine::new(name.clone(),mid)));
+        self.machs.insert(MId::new(mid),Machine::new(name.clone(),mid));
         (name,MId::new(mid))
     }
 
@@ -83,7 +80,7 @@ impl Instance{
                     let (name,id) = instance.add_op(op_name.clone(),instance.nops);
                     // TODO: make add opp return what it just added or directly populate this to prevent bugs
                     op_name_to_id.insert(name.clone(),id);
-                    println!("found an op {},{}",job_id,op_id);
+                    // println!("found an op {},{}",job_id,op_id);
                     continue;
                 }
                 else if let Some(caps) = machines_re.captures(line) {
@@ -92,7 +89,7 @@ impl Instance{
                     let (name,mid) = instance.add_machine(m_name.clone(),instance.nmachs);
                     // TODO: make add machine return what it just added or directly populate this to prevent bugs
                     mch_name_to_id.insert(name.clone(),mid);
-                    println!("found a machine {}",mid.as_string());
+                    // println!("found a machine {}",mid.as_string());
                     continue;
                 }
                 else if let Some(caps) = assignments_re.captures(line) {
@@ -108,14 +105,14 @@ impl Instance{
                             // instance.add_constraint(*op_id,Constraint::AssignCons(Assign{op_a: Rc::clone(instance.ops.get(&op_id).unwrap()),
                             //             mach: Rc::clone(instance.machs.get(&m_id).unwrap())})); 
                             instance.add_constraint(*op_id,Constraint::AssignCons(Assign{op_a: *op_id,
-                                mach: Rc::clone(instance.machs.get(&m_id).unwrap())})); 
-                                        println!("adding assignment constraint op {} to machine {}",op_id.as_string(),m_id.as_string());
+                                mach: instance.machs.get(&m_id).unwrap().clone()})); 
+                                        // println!("adding assignment constraint op {} to machine {}",op_id.as_string(),m_id.as_string());
                             if let Some(x) = instance.ops.get_mut(&op_id) { 
                                                                 x.assign_machine(*m_id) };
                                                             
                             }
                         }
-                    println!("found assignment of op {},{} to machine {}",job_id,op_id,mid);                        
+                    // println!("found assignment of op {},{} to machine {}",job_id,op_id,mid);                        
                     continue;
                 
                 }
@@ -131,7 +128,7 @@ impl Instance{
                         if let Some(x) = instance.ops.get_mut(&op_id) { 
                             x.set_release(val) };
                     }
-                    println!("found release of op {},{} as {}",job_id,op_id,val);                        
+                    // println!("found release of op {},{} as {}",job_id,op_id,val);                        
                     continue;
                 }
                 else if let Some(caps) = setup_re.captures(line) {
@@ -150,7 +147,7 @@ impl Instance{
                                         value: val,
                                         setup_type: SetupType::IndependentOps})); 
                     }
-                    println!("found setup between of op {},{} op {},{} as {}",job_id_a,op_id_a,job_id_b,op_id_b,val);
+                    // println!("found setup between of op {},{} op {},{} as {}",job_id_a,op_id_a,job_id_b,op_id_b,val);
                 }
                 else if let Some(caps) = precedence_re.captures(line) {
                     let job_id_a = caps["job_id_a"].to_string().parse::<u8>().unwrap();
@@ -165,7 +162,7 @@ impl Instance{
                         instance.add_constraint(*op_id_b,Constraint::PrecedenceCons(Precedence{op_a: *op_id_a,
                             op_b: *op_id_b})); 
                     }
-                    println!("found precedence between op {},{} op {},{}",job_id_a,op_id_a,job_id_b,op_id_b);
+                    // println!("found precedence between op {},{} op {},{}",job_id_a,op_id_a,job_id_b,op_id_b);
                 }
                 else if let Some(caps) = processing_re.captures(line) {
                     let job_id = caps["job_id"].to_string().parse::<u8>().unwrap();
@@ -179,7 +176,7 @@ impl Instance{
                         if let Some(x) = instance.ops.get_mut(&op_id) { 
                             x.set_processing(val) };
                     }
-                    println!("found processing of op {},{} as {}",job_id,op_id,val);  
+                    // println!("found processing of op {},{} as {}",job_id,op_id,val);  
                 }
                 else if let Some(caps) = deadline_re.captures(line) {
                     let job_id = caps["job_id"].to_string().parse::<u8>().unwrap();
@@ -193,7 +190,7 @@ impl Instance{
                         if let Some(x) = instance.ops.get_mut(&op_id) { 
                             x.set_deadline(val) };
                     }
-                    println!("found deadline of op {},{} as {}",job_id,op_id,val);  
+                    // println!("found deadline of op {},{} as {}",job_id,op_id,val);  
                 }
                 else if let Some(caps) = norepeat_re.captures(line) {
                     let job_id = caps["job_id"].to_string().parse::<u8>().unwrap();
@@ -203,7 +200,7 @@ impl Instance{
                         let op_id = op_name_to_id.get(&op_name).unwrap();
                         instance.add_constraint(*op_id, Constraint::NoRepeatCons(NoRepeat{op_a: *op_id})); 
                     }
-                    println!("found no repeat of op {},{}",job_id,op_id);  
+                    // println!("found no repeat of op {},{}",job_id,op_id);  
                 }
                 else{
                     ()
@@ -211,7 +208,7 @@ impl Instance{
             }
         }
     println!("Instance has {} ops and {} machines and {} constraints",instance.nops,instance.nmachs,instance.constraints.len());
-    for (opid,op) in &instance.ops{    println!("{:?},{:?}",opid,op.machine);  }
+    // for (opid,op) in &instance.ops{    println!("{:?},{:?}",opid,op.machine);  }
     instance
     }
     

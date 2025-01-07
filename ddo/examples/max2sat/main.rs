@@ -161,7 +161,7 @@ fn main() {
         _ => panic!("suplied unknown solver"),
     };
 
-    println!("{}", result.to_string());
+    println!("{}", serde_json::to_string_pretty(&result).unwrap());
     if args.json_output {
         let mut outfile = args.outfolder.to_owned();
         let instance_name = if let Some(x) = &args.file.split("/").collect::<Vec<_>>().last() {

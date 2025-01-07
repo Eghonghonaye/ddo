@@ -25,11 +25,11 @@ impl Satisfaction for Precedence{
         state: &State, 
         _op: &OpId,
         options: &mut BitVector) {
-            println!("before precedence filter {:?}", options);
+            // println!("before precedence filter {:?}", options);
             for index in 0..instance.nops{
                 if !self.feasible(instance,state,&OpId::new(index)){
                         options.remove(index);
-                        println!("after precedence filter {:?}", options);
+                        // println!("after precedence filter {:?}", options);
                     } 
             } 
             // options.retain(|op| self.feasible(instance,state,&op) == true);

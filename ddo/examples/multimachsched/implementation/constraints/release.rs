@@ -9,11 +9,11 @@ impl Satisfaction for Release{
         state:&State,
         _op: &OpId,
         options:& mut BitVector){
-            println!("before release filter {:?}", options);
+            // println!("before release filter {:?}", options);
             for index in 0..instance.nops{
                 if state.est[index] < self.value {
                         options.remove(index);
-                        println!("after release filter {:?}", options);
+                        // println!("after release filter {:?}", options);
                     } 
             } 
         // options.retain(|operation| state.est[operation.as_usize()] >= self.value);

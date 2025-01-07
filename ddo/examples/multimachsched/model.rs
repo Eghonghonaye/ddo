@@ -1,21 +1,19 @@
 // use crate::abstraction::state::{State, DecisionState};
 // use ddo::{Problem, Variable, Decision};
-use crate::abstraction::constraints::{Constraint, Satisfaction, SetupType};
+use crate::abstraction::constraints::{Constraint,SetupType};
 use crate::abstraction::instance::{Instance, OpId};
 use ddo::*;
 // use crate::implementation::constraints::release;
 // use std::collections::{HashMap, HashSet};
 use clustering::{kmeans, Elem};
 use std::cmp;
-use std::rc::Rc;
-use std::sync::Arc;
 
 // extern crate bitvector;
 use crate::utils::bitvector::*;
 
 #[derive(Clone, Hash)]
 pub struct State {
-    pub last_decision: Vec<Rc<Decision>>,
+    pub last_decision: Vec<Decision>,
     pub depth: usize,
     pub est: Vec<usize>,          // indexed by opid
     pub lst: Vec<usize>,          // indexed by opid
@@ -170,7 +168,7 @@ impl Problem for Mms {
         // update all the values according to the paper rules
         let op = OpId::new(decision.value.try_into().unwrap());
         let mut def_sched = state.def_scheduled.clone();
-        println!("def scheduled before {:?}", def_sched);
+        // println!("def scheduled before {:?}", def_sched);
         def_sched.insert(decision.value.try_into().unwrap()); // should be some opid but that its in the decision does not mean it was defintely scheduled
         let mut may_sched = state.maybe_scheduled.clone();
         may_sched.insert(decision.value.try_into().unwrap());
@@ -179,6 +177,9 @@ impl Problem for Mms {
         let mut machine_seq: usize = 0;
         let mut indpndt_ops_seq: usize = 0;
         let mut indpndt_mch_seq: usize = 0;
+
+        // find max finishing of predecessor
+        let mut max_predecessor_finish = 0;
 
         for constraint in &self.instance.constraints[&op] {
             match constraint {
@@ -211,6 +212,10 @@ impl Problem for Mms {
                         indpndt_mch_seq = cmp::max(indpndt_mch_seq, cons.value)
                     }
                 },
+                Constraint::PrecedenceCons(cons) => {
+                    max_predecessor_finish = cmp::max(max_predecessor_finish,
+                        state.est[cons.op_a.as_usize()]+self.instance.ops[&cons.op_a].processing);
+                },
                 _ => {}
             }
         }
@@ -226,37 +231,39 @@ impl Problem for Mms {
         // must update est, lst and availability in this order
         let mut est = state.est.clone();
 
-        est[op.as_usize()] = cmp::max(release, state.availability[machine.as_usize()] + setup); // modifies est in place
+        //TODO: this est update does not correctly add the setup time its using
+        est[op.as_usize()] = cmp::max(release, 
+                                cmp::max(state.availability[machine.as_usize()],max_predecessor_finish) + setup); // modifies est in place
         let lst = state.lst.clone();
         let mut availability = state.availability.clone();
         availability[machine.as_usize()] = est[op.as_usize()] + processing;
         // let mut last_decision = state.last_decision.clone();
-        let mut last_decision: Vec<Rc<Decision>> = vec![];
-        last_decision.push(Rc::new(decision.clone()));
+        let mut last_decision: Vec<Decision> = vec![];
+        last_decision.push(decision);
 
-        println!("\n \n STATE UPDATES");
-        println!("operation {:?}", op);
-        println!("machine {:?}", machine);
-        println!("est {:?}", est);
-        println!("lst {:?}", lst);
-        println!("def scheduled {:?}", def_sched);
-        println!("maybe scheduled {:?}", may_sched);
-        println!("last decision {:?}", last_decision);
-        println!("depth {:?}", state.depth + 1);
+        // println!("\n \n STATE UPDATES");
+        // println!("operation {:?}", op);
+        // println!("machine {:?}", machine);
+        // println!("est {:?}", est);
+        // println!("lst {:?}", lst);
+        // println!("def scheduled {:?}", def_sched);
+        // println!("maybe scheduled {:?}", may_sched);
+        // println!("last decision {:?}", last_decision);
+        // println!("depth {:?}", state.depth + 1);
 
         let mut new_state = State {
             last_decision: last_decision.clone(),
             depth: state.depth + 1,
-            est: est,
-            lst: lst, // ignore deadlines for now
+            est,
+            lst, // ignore deadlines for now
             def_scheduled: def_sched,
             maybe_scheduled: may_sched,
             feasible_set: BitVector::ones(self.instance.nops),
-            availability: availability,
+            availability,
         };
 
         let feasible_set = self.instance.construct_feasible_set(&new_state);
-        println!("feasible set {:?} \n", feasible_set);
+        // println!("feasible set {:?} \n", feasible_set);
         new_state.feasible_set = feasible_set;
 
         new_state
@@ -282,6 +289,7 @@ impl Problem for Mms {
         // (dest_obj - src_obj) as isize
         // negate cost because solver maximises
         (src_obj - dest_obj) as isize
+        // src_obj.saturating_sub(*dest_obj) as isize
     }
     /// Any problem needs to be able to specify an ordering on the variables
     /// in order to decide which variable should be assigned next. This choice
@@ -314,7 +322,7 @@ impl Problem for Mms {
         for (_, op) in &self.instance.ops {
             // print feasible set
             if state.feasible_set.contains(op.id.as_usize()) {
-                println!("applying {:?}", op.id);
+                // println!("applying {:?}", op.id);
                 f.apply(Decision {
                     variable,
                     value: op.id.as_isize(),
@@ -342,7 +350,7 @@ impl Problem for Mms {
         how_many: usize,
     ) -> Vec<Vec<usize>> {
         if self.cluster {
-            let mut all_decisions = decisions.collect::<Vec<_>>();
+            let all_decisions = decisions.collect::<Vec<_>>();
             // cluster on cost (for now)
             let all_decision_costs: Vec<_> = all_decisions
                 .into_iter()
@@ -433,7 +441,7 @@ impl<'a> Relaxation for MmsRelax<'a> {
     /// with the $\oplus$ operator.
     fn merge(&self, states: &mut dyn Iterator<Item = &Self::State>) -> Self::State {
         // update all the values according to the paper rules
-        let mut last_decision: Vec<Rc<Decision>> = vec![];
+        let mut last_decision: Vec<Decision> = vec![];
         let mut est_min: Vec<_> = vec![usize::MAX; self.problem.instance.nops];
         let mut lst_max: Vec<_> = vec![usize::MIN; self.problem.instance.nops];
         let mut availability_min: Vec<_> = vec![usize::MAX; self.problem.instance.nmachs];
@@ -442,7 +450,7 @@ impl<'a> Relaxation for MmsRelax<'a> {
         let mut feasible_set_union = BitVector::new(self.problem.instance.nops);
         let mut depth = usize::MAX;
 
-        println!("\n \n OOOOO WE MERGINGGGG");
+        // println!("\n \n OOOOO WE MERGINGGGG");
         for state in states {
             last_decision.extend(state.last_decision.clone());
             depth = cmp::min(depth, state.depth);
@@ -467,21 +475,21 @@ impl<'a> Relaxation for MmsRelax<'a> {
             maybe_sched_union.union_inplace(&state.maybe_scheduled);
             feasible_set_union.union_inplace(&state.feasible_set);
 
-            println!("est {:?}", state.est);
-            println!("lst {:?}", state.lst);
-            println!("def scheduled {:?}", state.def_scheduled);
-            println!("maybe scheduled {:?}", state.maybe_scheduled);
-            println!("last decision {:?}", state.last_decision);
-            println!("depth {:?}", state.depth);
+            // println!("est {:?}", state.est);
+            // println!("lst {:?}", state.lst);
+            // println!("def scheduled {:?}", state.def_scheduled);
+            // println!("maybe scheduled {:?}", state.maybe_scheduled);
+            // println!("last decision {:?}", state.last_decision);
+            // println!("depth {:?}", state.depth);
         }
 
-        println!("\n \n AND NOW WE MERGEDDD");
-        println!("est {:?}", est_min);
-        println!("lst {:?}", lst_max);
-        println!("def scheduled {:?}", def_sched_intersect);
-        println!("maybe scheduled {:?}", maybe_sched_union);
-        println!("last decision {:?}", last_decision);
-        println!("depth {:?}", depth);
+        // println!("\n \n AND NOW WE MERGEDDD");
+        // println!("est {:?}", est_min);
+        // println!("lst {:?}", lst_max);
+        // println!("def scheduled {:?}", def_sched_intersect);
+        // println!("maybe scheduled {:?}", maybe_sched_union);
+        // println!("last decision {:?}", last_decision);
+        // println!("depth {:?}", depth);
 
         // mostly getting minimums
         let new_state = State {
@@ -528,6 +536,7 @@ impl<'a> Relaxation for MmsRelax<'a> {
         };
 
         (new_obj - src_obj) as isize
+        // new_obj.saturating_sub(*src_obj) as isize
     }
 
     /// Returns a very rough estimation (upper bound) of the optimal value that
