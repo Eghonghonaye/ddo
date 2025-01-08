@@ -463,6 +463,7 @@ where
         
         if self.merge_quality.len() > 0{
             // *self.merge_quality.iter().max_by(|a, b| a.total_cmp(b)).unwrap()
+            // (self.merge_quality.iter().sum::<isize>()/self.merge_quality.len() as isize) as f64
             *self.merge_quality.iter().max().unwrap() as f64
         }
         else{
@@ -1371,8 +1372,8 @@ where
                 .reverse()
         }); // reverse because greater means more likely to be kept
 
-        let unmerged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-            rub.saturating_add(get!(node id, self).value_top)}).collect();
+        // let unmerged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+        //     rub.saturating_add(get!(node id, self).value_top)}).collect();
 
         let all_node_costs = curr_l.iter()
                 .map(|x| NodeClusterHelper::new(*x, get!(node x, self).value_top))
@@ -1461,12 +1462,12 @@ where
                     curr_l.push(merged_id);
                 }
 
-                // let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
-                //     get!(node merged_id, self).value_top);
-                // let to_merge_costs:Vec<_> = node_ids.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-                //                                                             merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
-                // let merge_err = to_merge_costs.iter().max().unwrap();
-                // max_merge_err = std::cmp::max(max_merge_err,*merge_err);
+                let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+                    get!(node merged_id, self).value_top);
+                let to_merge_costs:Vec<_> = node_ids.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+                                                                            merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
+                let merge_err = to_merge_costs.iter().max().unwrap();
+                max_merge_err = std::cmp::max(max_merge_err,*merge_err);
 
                 // total_merge_err += merge_err;
                 // total_merges += 1;
@@ -1475,17 +1476,17 @@ where
         }
 
         
-        let merged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-        rub.saturating_add(get!(node id, self).value_top)}).collect();
+        // let merged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+        // rub.saturating_add(get!(node id, self).value_top)}).collect();
 
-        let merge_err = merged_costs.iter().max().unwrap() - unmerged_costs.iter().max().unwrap();
+        // let merge_err = merged_costs.iter().max().unwrap() - unmerged_costs.iter().max().unwrap();
 
         // self.merge_quality.0 += total_merge_err;
         // self.merge_quality.1 += total_merges;
 
         // // average merge error over the layer
         // self.merge_quality.push(total_merge_err/curr_l.len() as isize);
-        self.merge_quality.push(merge_err);
+        self.merge_quality.push(max_merge_err);
     }
 
 
@@ -1575,15 +1576,15 @@ where
         }
 
         
-        // let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
-        //     get!(node merged_id, self).value_top);
-        // let to_merge_costs:Vec<_> = merge.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-        //                                                             merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
-        // let merge_err = to_merge_costs.iter().max().unwrap();
+        let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+            get!(node merged_id, self).value_top);
+        let to_merge_costs:Vec<_> = merge.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+                                                                    merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
+        let merge_err = to_merge_costs.iter().max().unwrap();
 
         
-        let unmerged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-                                                                rub.saturating_add(get!(node id, self).value_top)}).collect();
+        // let unmerged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+        //                                                         rub.saturating_add(get!(node id, self).value_top)}).collect();
         
         if recycled.is_some() {
             curr_l.truncate(input.max_width);
@@ -1594,14 +1595,14 @@ where
             curr_l.push(merged_id);
         }
 
-        let merged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-            rub.saturating_add(get!(node id, self).value_top)}).collect();
+        // let merged_costs:Vec<_> = curr_l.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+        //     rub.saturating_add(get!(node id, self).value_top)}).collect();
 
-        let merge_err = merged_costs.iter().max().unwrap() - unmerged_costs.iter().max().unwrap();
+        // let merge_err = merged_costs.iter().max().unwrap() - unmerged_costs.iter().max().unwrap();
 
         // // average merge error over the layer
         // self.merge_quality.push(merge_err/curr_l.len() as isize);
-        self.merge_quality.push(merge_err);
+        self.merge_quality.push(*merge_err);
     }
 
     fn _split_with_rub(&mut self,
