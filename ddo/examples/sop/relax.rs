@@ -135,58 +135,63 @@ impl Relaxation for SopRelax<'_> {
     }
 
     fn fast_upper_bound(&self, state: &SopState) -> isize {
-        let complete_tour = self.pb.nb_variables() - state.depth as usize;
-        let n_must_visit = state.must_schedule.len() as usize;
-        let mut to_must_visit = vec![];
-        let mut to_maybe_visit = vec![];
+        if self.pb.rub{
+            let complete_tour = self.pb.nb_variables() - state.depth as usize;
+            let n_must_visit = state.must_schedule.len() as usize;
+            let mut to_must_visit = vec![];
+            let mut to_maybe_visit = vec![];
 
-        // get the cheapest edge from position to any remaining node
-        // and get cheapest edge to reach all other nodes
+            // get the cheapest edge from position to any remaining node
+            // and get cheapest edge to reach all other nodes
 
-        let mut dist_from_position = isize::MAX;
- 
-        for i in state.must_schedule.iter() {
-            for (cost, j) in self.pb.cheapest_edges[i].iter() {
-                if state.must_schedule.contains(*j) {
-                    to_must_visit.push(*cost);
-                    break;
-                } else if let Some(maybes) = state.maybe_schedule.as_ref() {
-                    if maybes.contains(*j) {
+            let mut dist_from_position = isize::MAX;
+    
+            for i in state.must_schedule.iter() {
+                for (cost, j) in self.pb.cheapest_edges[i].iter() {
+                    if state.must_schedule.contains(*j) {
                         to_must_visit.push(*cost);
                         break;
-                    }
-                }
-            }
-            
-            dist_from_position = dist_from_position.min(self.pb.min_distance_to(state, i));
-        }
-
-        if n_must_visit < complete_tour {
-            if let Some(maybes) = state.maybe_schedule.as_ref() {
-                for i in maybes.iter() {
-                    for (cost, j) in self.pb.cheapest_edges[i].iter() {
-                        if state.must_schedule.contains(*j) || maybes.contains(*j) {
-                            to_maybe_visit.push(*cost);
+                    } else if let Some(maybes) = state.maybe_schedule.as_ref() {
+                        if maybes.contains(*j) {
+                            to_must_visit.push(*cost);
                             break;
                         }
                     }
-            
-                    dist_from_position = dist_from_position.min(self.pb.min_distance_to(state, i));
+                }
+                
+                dist_from_position = dist_from_position.min(self.pb.min_distance_to(state, i));
+            }
+
+            if n_must_visit < complete_tour {
+                if let Some(maybes) = state.maybe_schedule.as_ref() {
+                    for i in maybes.iter() {
+                        for (cost, j) in self.pb.cheapest_edges[i].iter() {
+                            if state.must_schedule.contains(*j) || maybes.contains(*j) {
+                                to_maybe_visit.push(*cost);
+                                break;
+                            }
+                        }
+                
+                        dist_from_position = dist_from_position.min(self.pb.min_distance_to(state, i));
+                    }
                 }
             }
-        }
-    
-        to_must_visit.sort_unstable();
-        to_maybe_visit.sort_unstable();
+        
+            to_must_visit.sort_unstable();
+            to_maybe_visit.sort_unstable();
 
-        if n_must_visit >= complete_tour {
-            - (dist_from_position + to_must_visit.iter().take(complete_tour - 1).sum::<isize>())
-        } else if to_must_visit.is_empty() {
-            - (dist_from_position + to_maybe_visit.iter().take(complete_tour - 1).sum::<isize>())
-        } else if to_must_visit[to_must_visit.len() - 1] <= to_maybe_visit[0] {
-            - (dist_from_position + to_must_visit.iter().sum::<isize>() + to_maybe_visit.iter().take(complete_tour - 1 - to_must_visit.len()).sum::<isize>())
-        } else {
-            - (dist_from_position + to_must_visit.iter().take(to_must_visit.len() - 1).sum::<isize>() + to_maybe_visit.iter().take(complete_tour - to_must_visit.len()).sum::<isize>())
+            if n_must_visit >= complete_tour {
+                - (dist_from_position + to_must_visit.iter().take(complete_tour - 1).sum::<isize>())
+            } else if to_must_visit.is_empty() {
+                - (dist_from_position + to_maybe_visit.iter().take(complete_tour - 1).sum::<isize>())
+            } else if to_must_visit[to_must_visit.len() - 1] <= to_maybe_visit[0] {
+                - (dist_from_position + to_must_visit.iter().sum::<isize>() + to_maybe_visit.iter().take(complete_tour - 1 - to_must_visit.len()).sum::<isize>())
+            } else {
+                - (dist_from_position + to_must_visit.iter().take(to_must_visit.len() - 1).sum::<isize>() + to_maybe_visit.iter().take(complete_tour - to_must_visit.len()).sum::<isize>())
+            }
+        }
+        else{
+            isize::MAX
         }
     }
 }

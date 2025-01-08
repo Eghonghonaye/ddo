@@ -74,6 +74,9 @@ struct Args {
     /// /// Whether or not to use dominance.
     #[clap(long, action)]
     dominance: bool,
+    /// /// Whether or not to use fast upper bound.
+    #[clap(long, action)]
+    rub: bool,
     /// Whether or not to write output to json file
     #[clap(short, long, action)]
     json_output: bool,
@@ -105,7 +108,7 @@ fn max_width<T>(nb_vars: usize, w: Option<usize>) -> Box<dyn WidthHeuristic<T> +
 fn main() {
     let args = Args::parse();
     let inst = TsptwInstance::from(File::open(&args.instance).unwrap());
-    let pb = Tsptw::new(inst,args.cluster);
+    let pb = Tsptw::new(inst,args.cluster,args.rub);
     let relax    = TsptwRelax::new(&pb);
     // let width = TsptwWidth::new(pb.nb_variables(), args.width.unwrap_or(1));
     let width = max_width(pb.nb_variables(), args.width);

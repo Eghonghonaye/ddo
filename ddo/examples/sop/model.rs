@@ -32,10 +32,11 @@ pub struct Sop {
     pub initial : SopState,
     pub cheapest_edges: Vec<Vec<(isize, usize)>>,
     /// Whether we split edges by clustering,
-    clustering: bool,
+    pub clustering: bool,
+    pub rub: bool,
 }
 impl Sop {
-    pub fn new(inst: SopInstance,clustering:bool) -> Self {
+    pub fn new(inst: SopInstance,clustering:bool, rub:bool) -> Self {
         let cheapest_edges: Vec<Vec<(isize, usize)>> = Self::compute_cheapest_edges(&inst);
         let mut must_schedule = BitSet::default();
         (1..inst.nb_jobs).for_each(|i| {must_schedule.add_inplace(i as usize);});
@@ -45,7 +46,7 @@ impl Sop {
             maybe_schedule: None,
             depth : 0
         };
-        Self { instance: inst, initial: state, cheapest_edges, clustering}
+        Self { instance: inst, initial: state, cheapest_edges, clustering, rub}
     }
 
     fn compute_cheapest_edges(inst: &SopInstance) -> Vec<Vec<(isize, usize)>> {

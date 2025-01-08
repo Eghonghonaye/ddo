@@ -37,9 +37,11 @@ pub struct Tsptw {
     pub initial : TsptwState,
     /// Whether we split edges by clustering,
     pub clustering: bool,
+    /// Whether we use rough upper bound,
+    pub rub: bool,
 }
 impl Tsptw {
-    pub fn new(inst: TsptwInstance,clustering: bool) -> Self {
+    pub fn new(inst: TsptwInstance,clustering: bool,rub: bool) -> Self {
         let mut must_visit = Set256::default();
         (1..inst.nb_nodes).for_each(|i| {must_visit.add_inplace(i as usize);});
         let state = TsptwState {
@@ -49,7 +51,7 @@ impl Tsptw {
             maybe_visit: None,
             depth : 0
         };
-        Self { instance: inst, initial: state, clustering }
+        Self { instance: inst, initial: state, clustering, rub }
     }
 }
 #[derive(Eq, PartialEq, Clone)]

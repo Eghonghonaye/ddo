@@ -60,6 +60,9 @@ struct Args {
     /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
     #[clap(short, long, action)]
     cluster: bool,
+    /// /// Whether or not to use fast upper bound.
+    #[clap(long, action)]
+    rub: bool,
     /// Whether or not to write output to json file
     #[clap(short, long, action)]
     json_output: bool,
@@ -147,7 +150,7 @@ fn main() {
     let args = Args::parse();
     let fname = &args.fname;
     let instance = read_instance(fname).unwrap();
-    let problem = Sop::new(instance,args.cluster);
+    let problem = Sop::new(instance,args.cluster,args.rub);
     let relaxation = SopRelax::new(&problem);
     let ranking = SopRanking;
 

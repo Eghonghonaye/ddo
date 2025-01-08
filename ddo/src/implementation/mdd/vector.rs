@@ -1388,6 +1388,7 @@ where
         for id in keep.drain(..) {
             curr_l.push(id);
         }
+        let mut total_merge_err = 0;
         let mut max_merge_err = 0;
         let mut total_merges:usize = 0;
 
@@ -1468,8 +1469,8 @@ where
                 //                                     get!(node merged_id, self).value_top) as f64;to_merge_costs.len()];
                 // let merge_err = rmse(&to_merge_costs,&merged_cost).unwrap();
 
-                // total_merge_err += merge_err;
-                // total_merges += 1;
+                total_merge_err += merge_err;
+                total_merges += 1;
                 
             }
         }
@@ -1478,7 +1479,8 @@ where
         // self.merge_quality.1 += total_merges;
 
         // // average merge error over the layer
-        self.merge_quality.push(max_merge_err);
+        self.merge_quality.push(total_merge_err/curr_l.len() as isize);
+        // self.merge_quality.push(max_merge_err);
     }
 
 
@@ -1600,8 +1602,8 @@ where
         }
 
         // // average merge error over the layer
-        // self.merge_quality.push(merge_err/curr_l.len() as f64);
-        self.merge_quality.push(*merge_err);
+        self.merge_quality.push(merge_err/curr_l.len() as isize);
+        // self.merge_quality.push(*merge_err);
     }
 
     fn _split_with_rub(&mut self,

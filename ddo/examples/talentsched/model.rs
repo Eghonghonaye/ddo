@@ -37,10 +37,11 @@ pub struct TalentSchedState {
 pub struct TalentSched {
     pub instance: TalentSchedInstance,
     pub actors: Vec<Set64>,
+    pub rub: bool,
 }
 
 impl TalentSched {
-    pub fn new(instance: TalentSchedInstance) -> Self {
+    pub fn new(instance: TalentSchedInstance,rub:bool) -> Self {
         let mut actors = vec![Set64::default(); instance.nb_scenes];
 
         for i in 0..instance.nb_actors {
@@ -51,7 +52,7 @@ impl TalentSched {
             }
         }
 
-        TalentSched {instance, actors }
+        TalentSched {instance, actors, rub }
     }
 
     fn get_present(&self, state: &TalentSchedState) -> Set64 {
@@ -189,40 +190,45 @@ impl Relaxation for TalentSchedRelax {
     }
 
     fn fast_upper_bound(&self, state: &Self::State) -> isize {
-        let mut lb = 0.0;
+        if self.pb.rub{
+            let mut lb = 0.0;
 
-        let present_actors = self.pb.get_present(state);
-        let mut r = (0..self.pb.instance.nb_actors).map(|i| (OrderedFloat(0.0), i)).collect::<Vec<(OrderedFloat<f64>, usize)>>();
+            let present_actors = self.pb.get_present(state);
+            let mut r = (0..self.pb.instance.nb_actors).map(|i| (OrderedFloat(0.0), i)).collect::<Vec<(OrderedFloat<f64>, usize)>>();
 
-        for scene in state.scenes.iter() {
-            let present_actors_from_scene = self.pb.actors[scene].inter(present_actors);
-            if !present_actors_from_scene.is_empty() {
-                let mut total_cost = 0.0;
-                let mut total_cost_sq = 0.0;
+            for scene in state.scenes.iter() {
+                let present_actors_from_scene = self.pb.actors[scene].inter(present_actors);
+                if !present_actors_from_scene.is_empty() {
+                    let mut total_cost = 0.0;
+                    let mut total_cost_sq = 0.0;
 
-                for actor in present_actors_from_scene.iter() {
-                    total_cost += self.pb.instance.cost[actor] as f64;
-                    total_cost_sq += (self.pb.instance.cost[actor] * self.pb.instance.cost[actor]) as f64;
+                    for actor in present_actors_from_scene.iter() {
+                        total_cost += self.pb.instance.cost[actor] as f64;
+                        total_cost_sq += (self.pb.instance.cost[actor] * self.pb.instance.cost[actor]) as f64;
+                    }
+
+                    for actor in present_actors_from_scene.iter() {
+                        r[actor].0 += self.pb.instance.duration[scene] as f64 / total_cost;
+                    }
+                    lb -= self.pb.instance.duration[scene] as f64 * (total_cost + total_cost_sq / total_cost) / 2.0;
                 }
+            }
 
-                for actor in present_actors_from_scene.iter() {
-                    r[actor].0 += self.pb.instance.duration[scene] as f64 / total_cost;
+            r.sort_unstable();
+
+            let mut sum_e = 0.0;
+            for (r_a, a) in r {
+                if present_actors.contains(a) {
+                    sum_e += r_a.0 * self.pb.instance.cost[a] as f64;
+                    lb += self.pb.instance.cost[a] as f64 * sum_e;
                 }
-                lb -= self.pb.instance.duration[scene] as f64 * (total_cost + total_cost_sq / total_cost) / 2.0;
             }
+            
+            - (lb.ceil() as isize)
         }
-
-        r.sort_unstable();
-
-        let mut sum_e = 0.0;
-        for (r_a, a) in r {
-            if present_actors.contains(a) {
-                sum_e += r_a.0 * self.pb.instance.cost[a] as f64;
-                lb += self.pb.instance.cost[a] as f64 * sum_e;
-            }
+        else{
+            isize::MAX
         }
-        
-        - (lb.ceil() as isize)
     }
 }
 

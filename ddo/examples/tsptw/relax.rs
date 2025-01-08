@@ -194,72 +194,77 @@ impl Relaxation for TsptwRelax<'_> {
     }
 
     fn fast_upper_bound(&self, state: &Self::State) -> isize {
-        let mut complete_tour = self.pb.nb_variables() - state.depth as usize;
+        if self.pb.rub{
+            let mut complete_tour = self.pb.nb_variables() - state.depth as usize;
 
-        let mut tmp = vec![];
-        let mut mandatory = 0;
-        let mut back_to_depot = usize::max_value();
+            let mut tmp = vec![];
+            let mut mandatory = 0;
+            let mut back_to_depot = usize::max_value();
 
-        for i in state.must_visit.iter() {
-            complete_tour -= 1;
-            mandatory += self.cheapest_edge[i];
-            back_to_depot = back_to_depot.min(self.pb.instance.distances[i][0]);
-
-            let latest = self.pb.instance.timewindows[i].latest;
-            let earliest = state.elapsed.add_duration(self.cheapest_edge[i]).earliest();
-            if earliest > latest {
-                return isize::min_value();
-            }
-        }
-
-        if let Some(maybes) = state.maybe_visit.as_ref() {
-            let mut violations = 0;
-
-            for i in maybes.iter() {
-                tmp.push(self.cheapest_edge[i]);
+            for i in state.must_visit.iter() {
+                complete_tour -= 1;
+                mandatory += self.cheapest_edge[i];
                 back_to_depot = back_to_depot.min(self.pb.instance.distances[i][0]);
 
                 let latest = self.pb.instance.timewindows[i].latest;
                 let earliest = state.elapsed.add_duration(self.cheapest_edge[i]).earliest();
                 if earliest > latest {
-                    violations += 1;
+                    return isize::min_value();
                 }
             }
 
-            if tmp.len() - violations < complete_tour {
-                return isize::min_value();
+            if let Some(maybes) = state.maybe_visit.as_ref() {
+                let mut violations = 0;
+
+                for i in maybes.iter() {
+                    tmp.push(self.cheapest_edge[i]);
+                    back_to_depot = back_to_depot.min(self.pb.instance.distances[i][0]);
+
+                    let latest = self.pb.instance.timewindows[i].latest;
+                    let earliest = state.elapsed.add_duration(self.cheapest_edge[i]).earliest();
+                    if earliest > latest {
+                        violations += 1;
+                    }
+                }
+
+                if tmp.len() - violations < complete_tour {
+                    return isize::min_value();
+                }
+
+                tmp.sort_unstable();
+                mandatory += tmp
+                    .iter()
+                    .copied()
+                    .take(complete_tour)
+                    .sum::<usize>();
             }
 
-            tmp.sort_unstable();
-            mandatory += tmp
-                .iter()
-                .copied()
-                .take(complete_tour)
-                .sum::<usize>();
-        }
+            // When there is no other city that MUST be visited, we must consider
+            // the shortest distance between *here* (current position) and the
+            // depot.
+            if mandatory == 0 {
+                back_to_depot = back_to_depot.min(match &state.position {
+                    Position::Node(x) => self.pb.instance.distances[*x as usize][0],
+                    Position::Virtual(bs) => bs.iter()
+                        .map(|x| self.pb.instance.distances[x][0])
+                        .min()
+                        .unwrap(),
+                });
+            }
 
-        // When there is no other city that MUST be visited, we must consider
-        // the shortest distance between *here* (current position) and the
-        // depot.
-        if mandatory == 0 {
-            back_to_depot = back_to_depot.min(match &state.position {
-                Position::Node(x) => self.pb.instance.distances[*x as usize][0],
-                Position::Virtual(bs) => bs.iter()
-                    .map(|x| self.pb.instance.distances[x][0])
-                    .min()
-                    .unwrap(),
-            });
+            // When it is impossible to get back to the depot in time, the current
+            // state is infeasible. So we can give it an infinitely negative ub.
+            let total_distance = mandatory + back_to_depot;
+            let earliest_arrival = state.elapsed.add_duration(total_distance).earliest();
+            let latest_deadline = self.pb.instance.timewindows[0].latest;
+            if earliest_arrival > latest_deadline {
+                isize::min_value()
+            } else {
+                -(total_distance as isize)
+            }
         }
-
-        // When it is impossible to get back to the depot in time, the current
-        // state is infeasible. So we can give it an infinitely negative ub.
-        let total_distance = mandatory + back_to_depot;
-        let earliest_arrival = state.elapsed.add_duration(total_distance).earliest();
-        let latest_deadline = self.pb.instance.timewindows[0].latest;
-        if earliest_arrival > latest_deadline {
-            isize::min_value()
-        } else {
-            -(total_distance as isize)
+        else{
+            isize::MAX
         }
     }
 }
