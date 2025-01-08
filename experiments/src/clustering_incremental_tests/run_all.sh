@@ -103,7 +103,7 @@ function run {
 			if [[ $experimenttype == "Cluster" ]]; then
 				# $runmdd  $f -s IR -w $t_width -c -j -x "experiments/results/$experimenttype/$folder/c_1_w1_10_w2_$t_width/"
 				# $runmdd  $f -s IR -w $t_width -j -x "experiments/results/$experimenttype/$folder/c_0_w1_10_w2_$t_width/"
-				$runmdd  $f -s TD -w $t_width -j -k -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s TD -w $t_width -j --rub -k -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
 			
 			elif [[ $experimenttype == "Dominance" ]]; then
 				
@@ -147,7 +147,7 @@ function run {
 			
 			elif [[ $experimenttype == "Gewoon" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s TD -w $t_width -j --rub -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
 			
 			else
 				echo "unknown experiment setup"
@@ -199,16 +199,16 @@ run "lcs" "lcs" "max" "Gewoon"
 ################
 
 # #############
-# run "talentsched" "talentsched" "min" "Cluster"
-# run "srflp" "srflp" "min" "Cluster"
-# run "tsptw" "tsptw/AFG" "min" "Cluster"
-# run "misp" "misp" "max" "Cluster"
-# run "sop" "sop" "min" "Cluster"
-# run "mcp" "mcp" "max" "Cluster"
-# run "knapsack" "knapsack" "max" "Cluster"
-# run "max2sat" "max2sat" "max" "Cluster"
-# run "psp" "psp/instancesWith2items" "min" "Cluster"
-# run "lcs" "lcs" "max" "Cluster"
+run "talentsched" "talentsched" "min" "Cluster"
+run "srflp" "srflp" "min" "Cluster"
+run "tsptw" "tsptw/AFG" "min" "Cluster"
+run "misp" "misp" "max" "Cluster"
+run "sop" "sop" "min" "Cluster"
+run "mcp" "mcp" "max" "Cluster"
+run "knapsack" "knapsack" "max" "Cluster"
+run "max2sat" "max2sat" "max" "Cluster"
+run "psp" "psp/instancesWith2items" "min" "Cluster"
+run "lcs" "lcs" "max" "Cluster"
 # ###############
 
 ##############

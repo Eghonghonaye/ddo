@@ -543,7 +543,6 @@ pub enum Error {
 fn read_instance(args: &Args) -> Result<Knapsack, Error> {
     let f = File::open(&args.fname)?;
     let f = BufReader::new(f);
-    let clustering = args.cluster;
 
     let mut is_first = true;
     let mut n = 0;

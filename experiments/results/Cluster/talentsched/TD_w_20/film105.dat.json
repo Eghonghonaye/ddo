@@ -1,1 +1,1 @@
-{"Aborted":"false","Binary Split":"false","Compile Cluster":"true","Duration":"0.007","Gap":"1.000","Lower Bnd":"-9223372036854775808","MergeQuality":"389.000","Objective":"-1","Refine Cluster":"false","Solution":"[]","Solver":"TD","Upper Bnd":"739","Width":"20"}
+{"Aborted":"false","Binary Split":"false","Compile Cluster":"true","Duration":"0.006","Gap":"1.000","Lower Bnd":"-9223372036854775808","MergeQuality":"74.000","Objective":"-1","Refine Cluster":"false","Solution":"[]","Solver":"TD","Upper Bnd":"739","Width":"20"}
