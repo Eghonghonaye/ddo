@@ -26,14 +26,14 @@ use crate::state::SopState;
 pub struct SopKey(Arc<SopState>);
 impl Hash for SopKey {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.0.previous.hash(state);
+        // self.0.previous.hash(state);
         self.0.must_schedule.hash(state);
     }
 }
 impl PartialEq for SopKey {
     fn eq(&self, other: &Self) -> bool {
-        self.0.previous == other.0.previous &&
-            self.0.must_schedule == other.0.must_schedule
+        // self.0.previous == other.0.previous &&
+        self.0.must_schedule == other.0.must_schedule
     }
 }
 impl Eq for SopKey {}
