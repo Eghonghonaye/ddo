@@ -57,6 +57,7 @@ function run {
     folder=$2
     problemtype=$3
 	experimenttype=$4
+	solvertype=$5
 	F="resources/$folder/*"
     runmdd="./target/release/examples/$problemname"
 
@@ -94,60 +95,60 @@ function run {
 
 	# # # for t_width in {20,50,100,200,500,1000}; do
 	# for t_width in {20,50,100,200,500,1000}; do
-	for t_width in {20,50,100}; do
+	for t_width in {20,50,100,200,500,1000}; do
 
-		rm -r experiments/results/$experimenttype/$folder/TD_w_$t_width
-		mkdir experiments/results/$experimenttype/$folder/TD_w_$t_width		
+		rm -r "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}"
+		mkdir "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}"	
 
 		for f in $F; do
 			if [[ $experimenttype == "Cluster" ]]; then
 				# $runmdd  $f -s IR -w $t_width -c -j -x "experiments/results/$experimenttype/$folder/c_1_w1_10_w2_$t_width/"
 				# $runmdd  $f -s IR -w $t_width -j -x "experiments/results/$experimenttype/$folder/c_0_w1_10_w2_$t_width/"
-				$runmdd  $f -s TD -w $t_width -j -k -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j -k -c -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "Dominance" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --dominance -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --dominance -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "RUB" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --rub -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --rub -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "VarOrd" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --variable-order -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --variable-order -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "Cluster+VarOrd" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j -k --variable-order -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j -k -c --variable-order -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "Dominance+VarOrd" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --dominance --variable-order -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --dominance --variable-order -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "RUB+VarOrd" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --rub --variable-order -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --rub --variable-order -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "RUB+Cluster" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --rub -k -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --rub -k -c -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "RUB+Dominance" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --rub --dominance -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --rub --dominance -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "Dominance+Cluster" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --dominance -k -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --dominance -k -c -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "All" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j --dominance --variable-order -k --rub -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j --dominance --variable-order -k --rub -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			elif [[ $experimenttype == "Gewoon" ]]; then
 				
-				$runmdd  $f -s TD -w $t_width -j -x "experiments/results/$experimenttype/$folder/TD_w_$t_width/"
+				$runmdd  $f -s $solvertype -w $t_width -j -x "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}/"
 			
 			else
 				echo "unknown experiment setup"
@@ -158,122 +159,153 @@ function run {
 		rm experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
 		echo Name,Lower,Upper,Duration,Aborted,RefineCluster,CompileCluster,Dominance,MergeQuality,Binary,Solver,Width,Gap,Objective  > experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
 		
-		python3 experiments/src/clustering_incremental_tests/analyse.py -i experiments/results/$experimenttype/$folder/TD_w_$t_width -o  experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
+		python3 experiments/src/clustering_incremental_tests/analyse.py -i "experiments/results/$experimenttype/$folder/${solvertype}_w_${t_width}" -o  experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
 		python3 experiments/src/clustering_incremental_tests/analyse.py -i experiments/results/BnB/$folder/TD_B_n_B -o  experiments/results/$experimenttype/$folder/summary_w1_10_w2_$t_width.csv
 	done
 
-		# python experiments/src/clustering_incremental_tests/plot.py -i experiments/results/$experimenttype/$folder/summary_w1_10_w2_20.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_50.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_100.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_200.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_500.csv \
-        # -t $problemtype
-
-		# python experiments/src/clustering_incremental_tests/plot.py -n {$problemname}TD_c_no_c.png\
-		# -i experiments/results/$experimenttype/$folder/summary_w1_10_w2_20.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_50.csv,experiments/results/$experimenttype/$folder/summary_w1_10_w2_100.csv \
-        # -t $problemtype
-
 }
 
-
+################################################################################################# TD experiments
 # ##############
-# run "talentsched" "talentsched" "min" "All"
-# run "srflp" "srflp" "min" "All"
-# run "tsptw" "tsptw/AFG" "min" "All"
-# run "misp" "misp" "max" "All"
-# run "sop" "sop" "min" "All"
-# run "mcp" "mcp" "max" "All"
-# run "knapsack" "knapsack" "max" "All"
-# run "max2sat" "max2sat" "max" "All"
-# run "psp" "psp/instancesWith2items" "min" "All"
-# run "lcs" "lcs" "max" "All"
+# run "talentsched" "talentsched" "min" "All" "TD"
+# run "srflp" "srflp" "min" "All" "TD"
+# run "tsptw" "tsptw/AFG" "min" "All" "TD"
+# run "misp" "misp" "max" "All" "TD"
+# run "sop" "sop" "min" "All" "TD"
+# run "mcp" "mcp" "max" "All" "TD"
+# run "knapsack" "knapsack" "max" "All" "TD"
+# run "max2sat" "max2sat" "max" "All" "TD"
+# run "psp" "psp/instancesWith2items" "min" "All" "TD"
+# run "lcs" "lcs" "max" "All" "TD"
 # ################
 
 ##############
-# run "talentsched" "talentsched" "min" "Gewoon"
-# run "srflp" "srflp" "min" "Gewoon"
-run "tsptw" "tsptw/AFG" "min" "Gewoon"
-# run "misp" "misp" "max" "Gewoon"
-# run "sop" "sop" "min" "Gewoon"
-# run "mcp" "mcp" "max" "Gewoon"
-# run "knapsack" "knapsack" "max" "Gewoon"
-# run "max2sat" "max2sat" "max" "Gewoon"
-# run "psp" "psp/instancesWith2items" "min" "Gewoon"
-# run "lcs" "lcs" "max" "Gewoon"
+# run "talentsched" "talentsched" "min" "Gewoon" "TD"
+# run "srflp" "srflp" "min" "Gewoon" "TD"
+# run "tsptw" "tsptw/AFG" "min" "Gewoon" "TD"
+# run "misp" "misp" "max" "Gewoon" "TD"
+# run "sop" "sop" "min" "Gewoon" "TD"
+# run "mcp" "mcp" "max" "Gewoon" "TD"
+# run "knapsack" "knapsack" "max" "Gewoon" "TD"
+# run "max2sat" "max2sat" "max" "Gewoon" "TD"
+# run "psp" "psp/instancesWith2items" "min" "Gewoon" "TD"
+# run "lcs" "lcs" "max" "Gewoon" "TD"
 ################
 
 # #############
-# run "talentsched" "talentsched" "min" "Cluster"
-# run "srflp" "srflp" "min" "Cluster"
-run "tsptw" "tsptw/AFG" "min" "Cluster"
-# run "misp" "misp" "max" "Cluster"
-# run "sop" "sop" "min" "Cluster"
-# run "mcp" "mcp" "max" "Cluster"
-# run "knapsack" "knapsack" "max" "Cluster"
-# run "max2sat" "max2sat" "max" "Cluster"
-# run "psp" "psp/instancesWith2items" "min" "Cluster"
-# run "lcs" "lcs" "max" "Cluster"
+# run "talentsched" "talentsched" "min" "Cluster" "TD"
+# run "srflp" "srflp" "min" "Cluster" "TD"
+# run "tsptw" "tsptw/AFG" "min" "Cluster" "TD"
+# run "misp" "misp" "max" "Cluster" "TD"
+# run "sop" "sop" "min" "Cluster" "TD"
+# run "mcp" "mcp" "max" "Cluster" "TD"
+# run "knapsack" "knapsack" "max" "Cluster" "TD"
+# run "max2sat" "max2sat" "max" "Cluster" "TD"
+# run "psp" "psp/instancesWith2items" "min" "Cluster" "TD"
+# run "lcs" "lcs" "max" "Cluster" "TD"
 # ###############
 
 ##############
-# run "knapsack" "knapsack" "max" "Dominance"
-# run "lcs" "lcs" "max" "Dominance"
-# run "tsptw" "tsptw/AFG" "min" "Dominance"
+# run "knapsack" "knapsack" "max" "Dominance" "TD"
+# run "lcs" "lcs" "max" "Dominance" "TD"
+# run "tsptw" "tsptw/AFG" "min" "Dominance" "TD"
+run "sop" "sop" "min" "Dominance" "TD"
 ################
 
 ##############
-# run "knapsack" "knapsack" "max" "RUB"
-# # run "talentsched" "talentsched" "min" "RUB"
-# # run "sop" "sop" "min" "RUB"
-# run "misp" "misp" "max" "RUB"
-# run "max2sat" "max2sat" "max" "RUB"
-# # run "tsptw" "tsptw/AFG" "min" "RUB"
+# run "knapsack" "knapsack" "max" "RUB" "TD"
+# # run "talentsched" "talentsched" "min" "RUB" "TD"
+# # run "sop" "sop" "min" "RUB" "TD"
+# run "misp" "misp" "max" "RUB" "TD"
+# run "max2sat" "max2sat" "max" "RUB" "TD"
+# # run "tsptw" "tsptw/AFG" "min" "RUB" "TD"
 ################
 
 ##############
-# run "knapsack" "knapsack" "max" "VarOrd"
-# run "misp" "misp" "max" "VarOrd"
-# run "max2sat" "max2sat" "max" "VarOrd"
+# run "knapsack" "knapsack" "max" "VarOrd" "TD"
+# run "misp" "misp" "max" "VarOrd" "TD"
+# run "max2sat" "max2sat" "max" "VarOrd" "TD"
 ################
 
 ##############
 # ############## "Cluster+VarOrd"
-# run "knapsack" "knapsack" "max" "Cluster+VarOrd"
-# run "misp" "misp" "max" "Cluster+VarOrd"
-# run "max2sat" "max2sat" "max" "Cluster+VarOrd"
+# run "knapsack" "knapsack" "max" "Cluster+VarOrd" "TD"
+# run "misp" "misp" "max" "Cluster+VarOrd" "TD"
+# run "max2sat" "max2sat" "max" "Cluster+VarOrd" "TD"
 ##############
 
 ##############
 # ############## "Dominance+VarOrd" 
-# run "knapsack" "knapsack" "max" "Dominance+VarOrd" 
+# run "knapsack" "knapsack" "max" "Dominance+VarOrd" "TD"
 ##############
 
 ############### 
 # ############## "RUB+VarOrd"	
-# run "knapsack" "knapsack" "max" "RUB+VarOrd"	
-# run "misp" "misp" "max" "RUB+VarOrd"	
-# run "max2sat" "max2sat" "max" "RUB+VarOrd"	
+# run "knapsack" "knapsack" "max" "RUB+VarOrd" "TD"
+# run "misp" "misp" "max" "RUB+VarOrd" "TD"	 
+# run "max2sat" "max2sat" "max" "RUB+VarOrd" "TD"	
 ##############
 
 
 ##############
 # ############## "RUB+Cluster" 
-# run "knapsack" "knapsack" "max" "RUB+Cluster" 
-# # run "talentsched" "talentsched" "min" "RUB+Cluster" 
-# # run "sop" "sop" "min" "RUB+Cluster" 
-# run "misp" "misp" "max" "RUB+Cluster" 
-# run "max2sat" "max2sat" "max" "RUB+Cluster" 
-# # run "tsptw" "tsptw/AFG" "min" "RUB+Cluster" 
+# run "knapsack" "knapsack" "max" "RUB+Cluster" "TD" 
+# # run "talentsched" "talentsched" "min" "RUB+Cluster" "TD" 
+# # run "sop" "sop" "min" "RUB+Cluster" "TD"
+# run "misp" "misp" "max" "RUB+Cluster" "TD"
+# run "max2sat" "max2sat" "max" "RUB+Cluster" "TD"
+# # run "tsptw" "tsptw/AFG" "min" "RUB+Cluster" "TD"
 ##############
 
 # ##############
 # # ############## "RUB+Dominance"
-# run "knapsack" "knapsack" "max" "RUB+Dominance"
-# run "tsptw" "tsptw/AFG" "min" "RUB+Dominance" 
+# run "knapsack" "knapsack" "max" "RUB+Dominance" "TD"
+# run "tsptw" "tsptw/AFG" "min" "RUB+Dominance" "TD"
 # ##############
 
 # ##############
 # # ############## "Dominance+Cluster" 
-# run "knapsack" "knapsack" "max" "Dominance+Cluster" 
-# run "lcs" "lcs" "max" "Dominance+Cluster" 
-# run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster" 
+# run "knapsack" "knapsack" "max" "Dominance+Cluster" "TD"
+# run "lcs" "lcs" "max" "Dominance+Cluster" "TD"
+# run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster" "TD"
+run "sop" "sop" "min" "Dominance+Cluster" "TD"
 # ##############
+################################################################################################# TD experiments
+
+
+
+
+################################################################################################# IR experiments
+#############
+run "tsptw" "tsptw/AFG" "min" "Gewoon" "IR"
+run "misp" "misp" "max" "Gewoon" "IR"
+run "sop" "sop" "min" "Gewoon" "IR"
+run "knapsack" "knapsack" "max" "Gewoon" "IR"
+###############
+
+#############
+run "tsptw" "tsptw/AFG" "min" "Cluster" "IR"
+run "misp" "misp" "max" "Cluster" "IR"
+run "sop" "sop" "min" "Cluster" "IR"
+run "knapsack" "knapsack" "max" "Cluster" "IR"
+###############
+
+#############
+run "tsptw" "tsptw/AFG" "min" "Dominance" "IR"
+run "sop" "sop" "min" "Dominance" "IR"
+run "knapsack" "knapsack" "max" "Dominance" "IR"
+###############
+
+##############
+# ############## "Dominance+Cluster" 
+run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster"  "IR"
+run "sop" "sop" "min" "Dominance+Cluster"  "IR"
+run "knapsack" "knapsack" "max" "Dominance+Cluster"  "IR"
+##############
+################################################################################################# IR experiments
+
+
+
 
 ##############
 # runOracle "talentsched" "talentsched" "min" "All"

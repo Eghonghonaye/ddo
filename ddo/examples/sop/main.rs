@@ -28,7 +28,7 @@ use heuristics::SopWidth;
 use serde_json::json;
 use smallbitset::Set256;
 
-use crate::{io_utils::read_instance, relax::SopRelax, heuristics::SopRanking, model::Sop};
+use crate::{io_utils::read_instance, relax::SopRelax, state::SopState, dominance::SopDominance, heuristics::SopRanking, model::Sop};
 
 type BitSet = Set256;
 
@@ -36,6 +36,7 @@ mod state;
 mod model;
 mod relax;
 mod heuristics;
+mod dominance;
 mod io_utils;
 
 #[cfg(test)]
@@ -60,6 +61,9 @@ struct Args {
     /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
     #[clap(short, long, action)]
     cluster: bool,
+    /// /// Whether or not to use dominance.
+    #[clap(long, action)]
+    dominance: bool,
     /// /// Whether or not to use fast upper bound.
     #[clap(long, action)]
     rub: bool,
@@ -156,7 +160,8 @@ fn main() {
 
     // let width = SopWidth::new(problem.nb_variables(), args.width.unwrap_or(1));
     let width = max_width(problem.nb_variables(), args.width);
-    let dominance = EmptyDominanceChecker::default();
+    let dominance = SimpleDominanceChecker::new(SopDominance, problem.nb_variables());
+    let no_dominance:EmptyDominanceChecker<SopState> = EmptyDominanceChecker::default();
     let cutoff = cutoff(args.duration);
     let mut fringe = NoDupFringe::new(MaxUB::new(&ranking));
 
@@ -187,6 +192,7 @@ fn main() {
             "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
             "MergeQuality":    format!("{:.3}", merge_quality),
+            "Dominance":    format!("{}", args.dominance),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
             "Solution":   format!("{:?}", best_solution)
@@ -232,7 +238,7 @@ fn main() {
                 &relaxation,
                 &ranking,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 cutoff.as_ref(),
                 &mut fringe,
                 args.cluster_compile,
@@ -245,7 +251,7 @@ fn main() {
                 &relaxation,
                 &ranking,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 cutoff.as_ref(),
                 &mut fringe,
                 args.binary_split,
@@ -259,7 +265,7 @@ fn main() {
                 &relaxation,
                 &ranking,
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 cutoff.as_ref(),
                 &mut fringe,
             );

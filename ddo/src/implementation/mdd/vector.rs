@@ -1462,13 +1462,13 @@ where
                     curr_l.push(merged_id);
                 }
 
-                // let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
-                //     get!(node merged_id, self).value_top);
-                // let to_merge_costs:Vec<_> = node_ids.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-                //                                                             merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
+                let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+                    get!(node merged_id, self).value_top);
+                let to_merge_costs:Vec<_> = node_ids.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+                                                                            merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
                 
-                let merged_cost = get!(node merged_id, self).value_top;
-                let to_merge_costs:Vec<_> = node_ids.iter().map(|id| {merged_cost.saturating_sub(get!(node id, self).value_top)}).collect();
+                // let merged_cost = get!(node merged_id, self).value_top;
+                // let to_merge_costs:Vec<_> = node_ids.iter().map(|id| {merged_cost.saturating_sub(get!(node id, self).value_top)}).collect();
 
                 let merge_err = to_merge_costs.iter().max().unwrap();
                 max_merge_err = std::cmp::max(max_merge_err,*merge_err);
@@ -1580,13 +1580,13 @@ where
         }
 
         
-        // let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
-        //     get!(node merged_id, self).value_top);
-        // let to_merge_costs:Vec<_> = merge.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
-                                                                    // merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
+        let merged_cost = (input.relaxation.fast_upper_bound(get!(node merged_id, self).state.as_ref())).saturating_add(
+            get!(node merged_id, self).value_top);
+        let to_merge_costs:Vec<_> = merge.iter().map(|id| {let rub = input.relaxation.fast_upper_bound(get!(node id, self).state.as_ref());
+                                                                    merged_cost.saturating_sub(rub.saturating_add(get!(node id, self).value_top))}).collect();
         
-        let merged_cost = get!(node merged_id, self).value_top;
-        let to_merge_costs:Vec<_> = merge.iter().map(|id| {merged_cost.saturating_sub(get!(node id, self).value_top)}).collect();
+        // let merged_cost = get!(node merged_id, self).value_top;
+        // let to_merge_costs:Vec<_> = merge.iter().map(|id| {merged_cost.saturating_sub(get!(node id, self).value_top)}).collect();
         
         let merge_err = to_merge_costs.iter().max().unwrap();
 

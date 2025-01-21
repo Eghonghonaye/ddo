@@ -11,3 +11,6 @@ resources/knapsack_subset/*
 venv/*
 perf.*
 trained_models/*
+experiments/results/*
+*.png
+*.csv
