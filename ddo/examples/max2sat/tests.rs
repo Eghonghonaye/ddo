@@ -37,7 +37,7 @@ pub fn solve_id(id: &str) -> isize {
     let fname = fname.to_str();
     let fname = fname.unwrap();
     
-    let problem = Max2Sat::new(read_instance(fname).unwrap());
+    let problem = Max2Sat::new(read_instance(fname).unwrap(),true,true);
     let relaxation = Max2SatRelax(&problem);
     let ranking = Max2SatRanking;
 

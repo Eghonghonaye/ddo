@@ -28,20 +28,19 @@ plot_cluster <- function(){
   
   gap <- ggplot(df, aes(x=Width)) +
     geom_line(aes(y = RealGap,group=Conditions,color=Conditions)) + 
-    facet_grid(Problem~., scales = "free_y") +
+    facet_wrap(. ~ Problem, scales = "free_y", nrow=1) +
     scale_color_manual(values=c("darkgreen", "darkblue", "#56B4E9")) +
-    ylab("") +
+    ylab("Optimality Gap") +
     xlab("")  +
-    ggtitle("Optimality Gap")
+    ggtitle("")
   
   error <- ggplot(df, aes(x=Width)) +
     geom_line(aes(y = MergeQuality, group=Conditions,color=Conditions)) + 
-    facet_grid(Problem~., scales = "free_y") +
+    facet_wrap(. ~ Problem, scales = "free_y", nrow=1) +
     scale_color_manual(values=c("darkgreen", "darkblue", "#56B4E9")) +
-    ylab("") +
+    ylab("Merge Error") +
     xlab("")  +
-    ggtitle("Merge Error")
-  
+    ggtitle("")
   
   
   ggarrange(gap + 
@@ -59,15 +58,15 @@ plot_cluster <- function(){
                     axis.text.x = element_text(size =8),
                     axis.text.y =  element_text(size = 8),
                     axis.ticks.y = element_blank(),
-                    axis.title.y = element_blank(),
                     plot.margin = margin(r=1,l=1),
-                    legend.position="top",
+                    legend.position="none",
                     legend.title=element_blank(),
                     panel.border = element_rect(color = "grey",
                                                 fill = NA,
                                                 size = 0.1),
-                    plot.title = element_text(size = 16,hjust = 0.5)), 
-            nrow = 1)
+                    plot.title = element_text(size = 16,hjust = 0.5)
+                    ), 
+            nrow = 2)
 }
 
 plot_dominance <- function(){
@@ -77,7 +76,7 @@ plot_dominance <- function(){
   View(df)
   
   gap <- ggplot(df, aes(x=Width)) +
-    geom_line(aes(y = RealGap,color=Conditions)) + 
+    geom_line(aes(y = RealGap,color=Label)) + 
     facet_wrap(Problem~., scales = "free_y") +
     scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
     ylab("") +
@@ -127,7 +126,7 @@ plot_cluster_dominance <- function(){
   df <-read.csv("~/Documents/PhD/ddo/experiments/all_['Dominance', 'Dominance+Cluster', 'Gewoon', 'Cluster'].csv")
   colnames(df)
   View(df)
-  
+  df <- subset(df, Solver == "incremental")
   gap <- ggplot(df, aes(x=Width)) +
     geom_line(aes(y = RealGap,color=Conditions)) + 
     facet_wrap(Problem~., scales = "free_y") +

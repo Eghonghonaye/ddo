@@ -190,6 +190,7 @@ function run {
 # run "max2sat" "max2sat" "max" "Gewoon" "TD"
 # run "psp" "psp/instancesWith2items" "min" "Gewoon" "TD"
 # run "lcs" "lcs" "max" "Gewoon" "TD"
+run "alp" "alp" "min" "Gewoon" "TD"
 ################
 
 # #############
@@ -203,13 +204,15 @@ function run {
 # run "max2sat" "max2sat" "max" "Cluster" "TD"
 # run "psp" "psp/instancesWith2items" "min" "Cluster" "TD"
 # run "lcs" "lcs" "max" "Cluster" "TD"
+run "alp" "alp" "min" "Cluster" "TD"
 # ###############
 
 ##############
 # run "knapsack" "knapsack" "max" "Dominance" "TD"
 # run "lcs" "lcs" "max" "Dominance" "TD"
 # run "tsptw" "tsptw/AFG" "min" "Dominance" "TD"
-run "sop" "sop" "min" "Dominance" "TD"
+# run "sop" "sop" "min" "Dominance" "TD"
+run "alp" "alp" "min" "Dominance" "TD"
 ################
 
 ##############
@@ -268,7 +271,8 @@ run "sop" "sop" "min" "Dominance" "TD"
 # run "knapsack" "knapsack" "max" "Dominance+Cluster" "TD"
 # run "lcs" "lcs" "max" "Dominance+Cluster" "TD"
 # run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster" "TD"
-run "sop" "sop" "min" "Dominance+Cluster" "TD"
+# run "sop" "sop" "min" "Dominance+Cluster" "TD"
+run "alp" "alp" "min" "Dominance+Cluster" "TD"
 # ##############
 ################################################################################################# TD experiments
 
@@ -276,32 +280,32 @@ run "sop" "sop" "min" "Dominance+Cluster" "TD"
 
 
 ################################################################################################# IR experiments
-#############
-run "tsptw" "tsptw/AFG" "min" "Gewoon" "IR"
-run "misp" "misp" "max" "Gewoon" "IR"
-run "sop" "sop" "min" "Gewoon" "IR"
-run "knapsack" "knapsack" "max" "Gewoon" "IR"
-###############
+# #############
+# run "tsptw" "tsptw/AFG" "min" "Gewoon" "IR"
+# run "misp" "misp" "max" "Gewoon" "IR"
+# run "sop" "sop" "min" "Gewoon" "IR"
+# run "knapsack" "knapsack" "max" "Gewoon" "IR"
+# ###############
 
-#############
-run "tsptw" "tsptw/AFG" "min" "Cluster" "IR"
-run "misp" "misp" "max" "Cluster" "IR"
-run "sop" "sop" "min" "Cluster" "IR"
-run "knapsack" "knapsack" "max" "Cluster" "IR"
-###############
+# #############
+# run "tsptw" "tsptw/AFG" "min" "Cluster" "IR"
+# run "misp" "misp" "max" "Cluster" "IR"
+# run "sop" "sop" "min" "Cluster" "IR"
+# run "knapsack" "knapsack" "max" "Cluster" "IR"
+# ###############
 
-#############
-run "tsptw" "tsptw/AFG" "min" "Dominance" "IR"
-run "sop" "sop" "min" "Dominance" "IR"
-run "knapsack" "knapsack" "max" "Dominance" "IR"
-###############
+# #############
+# run "tsptw" "tsptw/AFG" "min" "Dominance" "IR"
+# run "sop" "sop" "min" "Dominance" "IR"
+# run "knapsack" "knapsack" "max" "Dominance" "IR"
+# ###############
 
-##############
-# ############## "Dominance+Cluster" 
-run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster"  "IR"
-run "sop" "sop" "min" "Dominance+Cluster"  "IR"
-run "knapsack" "knapsack" "max" "Dominance+Cluster"  "IR"
-##############
+# ##############
+# # ############## "Dominance+Cluster" 
+# run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster"  "IR"
+# run "sop" "sop" "min" "Dominance+Cluster"  "IR"
+# run "knapsack" "knapsack" "max" "Dominance+Cluster"  "IR"
+# ##############
 ################################################################################################# IR experiments
 
 

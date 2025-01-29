@@ -1,4 +1,7 @@
+import json
 from os import listdir
+import os
+import sys
 from click import FloatRange
 import pandas as pd
 import numpy as np
@@ -13,69 +16,7 @@ def main(args):
     # file = "/home/eaeigbe/Documents/PhD/ddo/experiments/summary_w1_10_w2_100.csv"
     # plot_how_many_better(args)
     plot_bound_width(args)
-    
 
-def plot_how_many_better(args):
-    files = args.input
-    save_path = files[0].split("summary")[0]
-
-    fig, axs = plt.subplots(ncols=len(args.input))
-
-    for index,file in enumerate(files):
-        df = pd.read_csv(file,header=0)
-        all_df = []
-
-        if args.type == "max":
-            df["RealUpper"] = df.groupby('Name')['Upper'].transform('min')
-            df["RealGap"] = (df['Upper'] - df['RealUpper'])/df['Upper']
-            print(df["RealGap"].min(),df["RealGap"].max())
-            print(df)
-            for i in np.arange(df["RealGap"].min(),df["RealGap"].max()+0.1,0.01):
-                
-                new_df = df.groupby(["Solver","CompileCluster"],as_index=False)["RealGap"].agg(lambda x: 
-                                                                        len(x[x<=i])/len(x)
-                                                                        )
-
-                
-                # new_df.insert(0,"Gap_Level",[i for j in range(len(new_df))],True)
-                new_df["Gap_Level"] = i
-                all_df.append(new_df)
-        else: #is min
-            df["RealUpper"] = df.groupby('Name')['Upper'].transform('max')
-            df["RealGap"] = (df['RealUpper'] - df['Upper'])/df['RealUpper']
-            print(df["RealGap"].min(),df["RealGap"].max())
-            print(df)
-            for i in np.arange(df["RealGap"].min(),df["RealGap"].max()+0.1,0.01):
-                
-                new_df = df.groupby(["Solver","CompileCluster"],as_index=False)["RealGap"].agg(lambda x: 
-                                                                        len(x[x>=i])/len(x)
-                                                                        )
-
-                
-                # new_df.insert(0,"Gap_Level",[i for j in range(len(new_df))],True)
-                new_df["Gap_Level"] = i
-                all_df.append(new_df)
-        all_df = pd.concat(all_df)
-        all_df['Solver'] = all_df['Solver'].str.strip()
-        all_df['CompileCluster'] = all_df['CompileCluster'].str.strip()
-        all_df['Solver'] = all_df['Solver'].map({'IR': 'incremental', 'TD': 'top-down', 'BB': 'branch-bound'})
-        all_df['CompileCluster'] = all_df['CompileCluster'].map({'true': 'CompileCluster', 'false': ''})
-        all_df['Label'] = all_df['Solver'] + "-" + all_df['CompileCluster']
-        print(all_df['Solver'].unique())
-        print(all_df.columns)
-        #to use multiple columns for label or hue
-        #hue=all_df[["Solver", "CompileCluster"]].apply(tuple, axis=1)
-        ax = sns.lineplot(x="Gap_Level", y="RealGap", hue="Label", data=all_df, ax=axs[index])
-        ax.legend_.set_title(None)
-        if args.type == "min":
-            ax.invert_xaxis()
-        ax.set_ylabel("% of Instances with Better Bound")
-        ax.set_xlabel("Normalised Bound")
-        name = file.split("/")[-1].split(".")[0].split("_")[-1]
-        ax.set_title(f"width {name}")
-    print(save_path)
-    plt.savefig(f'{save_path}/plot.png')
-    # plt.show()
 
 def plot_bound_width(files,type):
     # files = args.input
@@ -89,6 +30,8 @@ def plot_bound_width(files,type):
 
         if type == "max":
             df["MergeQuality"] = abs(df["MergeQuality"].astype(float))
+            df['Upper'] = df['Upper'].astype(float)
+
             df["RealUpper"] = df.groupby('Name')['Upper'].transform('min')
             df["RealGap"] = (df['Upper'] - df['RealUpper'])/df['Upper']
             print(df["RealGap"].min(),df["RealGap"].max())
@@ -100,6 +43,8 @@ def plot_bound_width(files,type):
         else: #is min
             # df["Upper"] = df["Upper"]*(-1)
             df["MergeQuality"] = abs(df["MergeQuality"].astype(float))
+            df['Upper'] = df['Upper'].astype(float)
+
             df["RealUpper"] = df.groupby('Name')['Upper'].transform('max')
             df["RealGap"] = (df['RealUpper'] - df['Upper'])/df['RealUpper']
             print(df["RealGap"].min(),df["RealGap"].max())
@@ -131,32 +76,57 @@ def plot_bound_width(files,type):
     # all_df['Label'] = all_df['Solver'] + "-" + all_df['CompileCluster'] + "-" + all_df['RefineCluster'] + "-" + all_df['Binary']
     # all_df['Label'] = all_df['Solver'] + "-" + all_df['Dominance'] + "-" + all_df['RefineCluster'] + "-" + all_df['Binary']
     return(all_df)
-    # print(all_df['Solver'].unique())
-    # print(all_df.columns)
-    #to use multiple columns for label or hue
-    #hue=all_df[["Solver", "CompileCluster"]].apply(tuple, axis=1)
-    ax = sns.lineplot(x="Width", y="RealGap", hue="Label", data=all_df)
-    ax.legend_.set_title(None)
-    # if args.type == "min":
-    #     ax.invert_xaxis()
-    ax.set_ylabel("Normalised Bound")
-    ax.set_xlabel("Width")
-    name = file.split("/")[-1].split(".")[0].split("_")[-1]
-    # ax.set_title(f"width {name}")
-    
-    print(save_path)
-    # plt.savefig(f'{save_path}/{args.name}')
-    plt.show()
-    
+
+
+def analyse(input,output):
+    # Open and read the JSON file
+    pathlist = Path(input).glob("*")
+    outputfile = open(output,'a')
+    for file in pathlist:
+        filename = os.fsdecode(file)
+        with open(filename, 'r') as f:
+            results = json.load(f)
+            outputfile.write(f"""{filename.split("/")[-1].split(".")[0]}, \
+            {float(results["Lower Bnd"])}, \
+            {float(results["Upper Bnd"])}, \
+            {results["Duration"]},\
+            {results["Aborted"]}, \
+            {results["Refine Cluster"]},\
+            {results["Compile Cluster"]},\
+            {"-" if "Dominance" not in results else results["Dominance"]},\
+            {float(0) if "MergeQuality" not in results else float(results["MergeQuality"])},\
+            {results["Binary Split"]},\
+            {results["Solver"]},\
+            {results["Width"]},\
+            {results["Gap"]},\
+            {float(results["Objective"])}\n""")
+            # {str(results["Solution"]) } \n""")
+
 
 
 def plot(problem_names):
     all_df = []
     for (problem,subfolder,experiments,type) in problem_names:
-        for folder in experiments:
-            print(problem)
+        for folder in experiments:           
             path = f"/home/eaeigbe/Documents/PhD/ddo/experiments/results/{folder}/{subfolder}"
-            filenames = [ path+"/"+filename for filename in listdir(path) if filename.endswith( "csv" ) ]
+            summary_file = f"/home/eaeigbe/Documents/PhD/ddo/experiments/results/{folder}/{subfolder}/summary.csv"
+            if os.path.exists(summary_file):
+                os.remove(summary_file)
+            with open(summary_file,'a') as f:
+                f.write("Name,Lower,Upper,Duration,Aborted,RefineCluster,CompileCluster,Dominance,MergeQuality,Binary,Solver,Width,Gap,Objective")
+
+
+            directories = [x[0] for x in os.walk(path) if x[0]!=path]
+            directories.append(f"/home/eaeigbe/Documents/PhD/ddo/experiments/results/BnB/{subfolder}/TD_B_n_B")
+
+
+            for directory in directories:
+                analyse(directory,summary_file)
+ 
+
+            # filenames = [ path+"/"+filename for filename in listdir(path) if filename.endswith( "csv" ) ]
+            filenames = [summary_file]
+            # sys.exit()
             df = plot_bound_width(filenames,type)
             df["Problem"] = problem
             df["Conditions"] = folder
@@ -168,7 +138,7 @@ def plot(problem_names):
     all_df.reset_index(level=None, drop=False, inplace=True, col_level=0, col_fill="")
 
     # print(all_df.to_string())
-    all_df = all_df.drop(all_df[all_df["Solver"] == 'incremental'].index)
+    # all_df = all_df.drop(all_df[all_df["Solver"] == 'incremental'].index)
     all_df = all_df.drop(all_df[all_df["Solver"] == 'branch-bound'].index)
     all_df["MergeQuality"] =  all_df["MergeQuality"].astype(float)
     all_df = all_df.dropna()
@@ -202,167 +172,18 @@ def plot(problem_names):
     # plt.show()
 
 
+
+
+
 if __name__ == "__main__":
-
-
-    ["Cluster","Dominance","RUB","VarOrd" ,
-     "Cluster+VarOrd","Dominance+VarOrd","RUB+VarOrd",
-     "RUB+Cluster","RUB+Dominance" ,"Dominance+Cluster",
-      "All","Gewoon"]
-    
-    ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"]
-    ["VarOrd","Gewoon"]
-			
-    #RUB does nothing??? even in tsptw?
-
-
-    # #Dominance
     # plot([
-    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
-    #     ("srflp", "srflp", ["Gewoon"],"min"),
-    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
-    #     ("misp", "misp", ["VarOrd","Gewoon"],"max"),
-    #     ("sop", "sop", ["Gewoon"],"min"),
-    #     ("mcp", "mcp", ["Gewoon"],"max"),
-    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
-    #     ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
-    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
-    #     ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
-    #     ])
-    
-    # #VarOrd
-    # plot([
-    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
-    #     ("srflp", "srflp", ["Gewoon"],"min"),
-    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
-    #     ("misp", "misp", ["VarOrd","Gewoon"],"max"),
-    #     ("sop", "sop", ["Gewoon"],"min"),
-    #     ("mcp", "mcp", ["Gewoon"],"max"),
-    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
-    #     ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
-    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
-    #     ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
-    #     ])
-    
-    # #RUB
-    # plot([
-    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
-    #     ("srflp", "srflp", ["Gewoon"],"min"),
-    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
-    #     ("misp", "misp", ["VarOrd","Gewoon"],"max"),
-    #     ("sop", "sop", ["Gewoon"],"min"),
-    #     ("mcp", "mcp", ["Gewoon"],"max"),
-    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
-    #     ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
-    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
-    #     ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
-    #     ])
-    
-
-    # plot([
-    #     # ("talentsched", "talentsched", ["Gewoon"],"min"),
-    #     # ("srflp", "srflp", ["Gewoon"],"min"),
-    #     # ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
-    #     # ("misp", "misp", ["VarOrd","Gewoon"],"max"),
-    #     # ("sop", "sop", ["Gewoon"],"min"),
-    #     # ("mcp", "mcp", ["Gewoon"],"max"),
-    #     ("knapsack", "knapsack", ["Gewoon"],"max"),
-    #     # ("max2sat", "max2sat", ["VarOrd","Gewoon"],"max"),
-    #     # ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
-    #     # ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
-    #     ])
-
-    # plot([
-    #     ("talentsched", "talentsched", ["Gewoon"],"min"),
-    #     ("srflp", "srflp", ["Gewoon"],"min"),
     #     ("tsptw", "tsptw/AFG",  ["Gewoon"],"min"),
-    #     ("misp", "misp", ["Gewoon"],"max"),
-    #     ("sop", "sop", ["Gewoon"],"min"),
-    #     ("mcp", "mcp", ["Gewoon"],"max"),
     #     ("knapsack", "knapsack", ["Gewoon"],"max"),
-    #     ("max2sat", "max2sat", ["Gewoon"],"max"),
-    #     ("psp", "psp/instancesWith2items", ["Gewoon"],"min"),
-    #     ("lcs", "lcs",  ["Gewoon"],"max"),
-    #     ])
-    
-    # plot([
-    #     ("talentsched", "talentsched", ["Cluster"],"min"),
-    #     ("srflp", "srflp", ["Cluster"],"min"),
-    #     ("tsptw", "tsptw/AFG",  ["Cluster"],"min"),
-    #     ("misp", "misp", ["Cluster"],"max"),
-    #     ("sop", "sop", ["Cluster"],"min"),
-    #     ("mcp", "mcp", ["Cluster"],"max"),
-    #     ("knapsack", "knapsack", ["Cluster"],"max"),
-    #     ("max2sat", "max2sat", ["Cluster"],"max"),
-    #     ("psp", "psp/instancesWith2items", ["Cluster"],"min"),
-    #     ("lcs", "lcs",  ["Cluster"],"max"),
-    #     ])
-    
-    # plot([
-    #     ("talentsched", "talentsched", ["Gewoon","Cluster"],"min"),
-    #     ("srflp", "srflp", ["Gewoon","Cluster"],"min"),
-    #     ("tsptw", "tsptw/AFG",  ["Gewoon","Cluster"],"min"),
-    #     ("misp", "misp", ["Gewoon","Cluster"],"max"),
-    #     ("sop", "sop", ["Gewoon","Cluster"],"min"),
-    #     ("mcp", "mcp", ["Gewoon","Cluster"],"max"),
-    #     ("knapsack", "knapsack", ["Gewoon","Cluster"],"max"),
-    #     ("max2sat", "max2sat", ["Gewoon","Cluster"],"max"),
-    #     ("psp", "psp/instancesWith2items", ["Gewoon","Cluster"],"min"),
-    #     ("lcs", "lcs",  ["Gewoon","Cluster"],"max"),
-    #     ])
-    
-
-    # plot([
-    #     ("tsptw", "tsptw/AFG",  ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
-    #     ("knapsack", "knapsack", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
-    #     ("lcs", "lcs",  ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
-    #     ])
-
-    # plot([
-    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
-    #     ("knapsack", "knapsack", ["Dominance","Gewoon"],"max"),
-    #     ("lcs", "lcs",  ["Dominance","Gewoon"],"max"),
-    #     ])
-    
-    # plot([
-    #     ("max2sat", "max2sat",  ["VarOrd","Gewoon"],"max"),
-    #     ("knapsack", "knapsack", ["VarOrd","Gewoon"],"max"),
-    #     ("misp", "misp",  ["VarOrd","Gewoon"],"max"),
-    #     ])
-
-    # plot([
-    #     ("max2sat", "max2sat",  ["Cluster","VarOrd","Cluster+VarOrd","Gewoon"],"max"),
-    #     ("knapsack", "knapsack", ["Cluster","VarOrd","Cluster+VarOrd","Gewoon"],"max"),
-    #     ("misp", "misp",  ["Cluster","VarOrd","Cluster+VarOrd","Gewoon"],"max"),
+    #     ("sop", "sop", ["Gewoon"],"min"),
     #     ])
     
     plot([
-        ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+        ("tsptw", "tsptw/AFG",  ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
+        ("knapsack", "knapsack", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
+        ("sop", "sop", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
         ])
-    
-
-
-
-    parser = argparse.ArgumentParser(description='Choose full or abridged verification.')
-    # '''custom argument type for string list'''
-    # def list_of_strings(arg):
-    #     return arg.split(',')
-    # parser.add_argument('--input',
-    #                     '-i', 
-    #                     type=list_of_strings,
-    #                     help='input file to plot results from')
-    # parser.add_argument('--name',
-    #                     '-n', 
-    #                     type=str,
-    #                     help='problem/output file name')
-    # parser.add_argument('--type',
-    #                     '-t',  
-    #                     type=str,
-    #                     default='max',
-    #                     help='max(min) for maximisation(minimisation)')
-    
-
-
-
-    # args = parser.parse_args()
-    # main(args)
