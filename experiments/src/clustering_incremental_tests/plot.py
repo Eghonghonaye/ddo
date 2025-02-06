@@ -229,6 +229,7 @@ if __name__ == "__main__":
     #     ("knapsack", "knapsack_subset", ["BinaryConflict","BinaryGewoon"],"max"),
     #     ])
 
-    # plot([
-    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
-    #     ])
+    plot([
+        ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+        ("misp", "misp", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+        ])

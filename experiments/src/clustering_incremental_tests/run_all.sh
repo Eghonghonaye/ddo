@@ -290,6 +290,7 @@ function runConflictCount {
 # run "tsptw" "tsptw/AFG" "min" "Dominance" "TD"
 # run "sop" "sop" "min" "Dominance" "TD"
 # run "alp" "alp" "min" "Dominance" "TD"
+run "misp" "misp" "max" "Dominance" "TD"
 ################
 
 ##############
@@ -317,7 +318,7 @@ function runConflictCount {
 ##############
 # ############## "Dominance+VarOrd" 
 # run "knapsack" "knapsack" "max" "Dominance+VarOrd" "TD"
-run "misp" "misp" "max" "Dominance+VarOrd" "TD"
+# run "misp" "misp" "max" "Dominance+VarOrd" "TD"
 ##############
 
 ############### 

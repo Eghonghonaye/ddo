@@ -1838,18 +1838,18 @@ where
         curr_layer_id: usize,
     ) -> bool {
 
-        // /* 
-        // ***************** visualise *****************
-        // *********************************************
-        let mut config = VizConfigBuilder::default().build().unwrap();
-        // config.show_deleted = true;
-        // config.show_deleted = true;
-        config.group_merged = true;
-        print!("\n before split layer {curr_layer_id}\n\n");
-        let s = self.as_graphviz(&config);
-        fs::write("incremental.dot", s).expect("Unable to write file");
-        // *************************************************
-        // */
+        // // /* 
+        // // ***************** visualise *****************
+        // // *********************************************
+        // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
+        // // config.show_deleted = true;
+        // config.group_merged = true;
+        // print!("\n before split layer {curr_layer_id}\n\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
+        // // *************************************************
+        // // */
 
         // // order vec node by ranking
         // curr_l.sort_unstable_by(|a, b| {
@@ -1935,18 +1935,18 @@ where
                 }
             }
         }
-        // /* 
-        // ***************** visualise *****************
-        // *********************************************
-        let mut config = VizConfigBuilder::default().build().unwrap();
-        // config.show_deleted = true;
-        // config.show_deleted = true;
-        config.group_merged = true;
-        print!("\n after split layer {curr_layer_id}\n\n");
-        let s = self.as_graphviz(&config);
-        fs::write("incremental.dot", s).expect("Unable to write file");
-        // *************************************************
-        // */
+        // // /* 
+        // // ***************** visualise *****************
+        // // *********************************************
+        // let mut config = VizConfigBuilder::default().build().unwrap();
+        // // config.show_deleted = true;
+        // // config.show_deleted = true;
+        // config.group_merged = true;
+        // print!("\n after split layer {curr_layer_id}\n\n");
+        // let s = self.as_graphviz(&config);
+        // fs::write("incremental.dot", s).expect("Unable to write file");
+        // // *************************************************
+        // // */
 
         true
     }
