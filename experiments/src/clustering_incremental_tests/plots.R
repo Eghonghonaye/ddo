@@ -23,50 +23,82 @@ par(mfrow=c(1,2))
 plot_cluster <- function(){
   # load data
   df <-read.csv("~/Documents/PhD/ddo/experiments/all.csv")
+  df$Conditions[df$Conditions == "Gewoon"] <- "minLB"
+  df$Problem <- toupper(df$Problem)
   colnames(df)
   View(df)
   
   gap <- ggplot(df, aes(x=Width)) +
     geom_line(aes(y = RealGap,group=Conditions,color=Conditions)) + 
-    facet_wrap(. ~ Problem, scales = "free_y", nrow=1) +
+    geom_point(aes(y=RealGap,shape=Conditions,color=Conditions)) +
+    facet_wrap(.~Problem, scales = "free_y", nrow=1) +
+    scale_shape_manual(values = c(16,17,18,19)) +
+    scale_linetype_manual(values = c("dashed","solid","dashed","solid")) +
     scale_color_manual(values=c("darkgreen", "darkblue", "#56B4E9")) +
-    ylab("Optimality Gap") +
-    xlab("")  +
+    ylab("Gap") +
+    xlab("Width")  +
     ggtitle("")
   
   error <- ggplot(df, aes(x=Width)) +
     geom_line(aes(y = MergeQuality, group=Conditions,color=Conditions)) + 
-    facet_wrap(. ~ Problem, scales = "free_y", nrow=1) +
+    geom_point(aes(y=MergeQuality,shape=Conditions,color=Conditions)) +
+    facet_wrap(.~Problem, scales = "free_y", nrow=1) +
+    scale_shape_manual(values = c(16,17,18,19)) +
+    scale_linetype_manual(values = c("dashed","solid","dashed","solid")) +
     scale_color_manual(values=c("darkgreen", "darkblue", "#56B4E9")) +
     ylab("Merge Error") +
-    xlab("")  +
+    xlab("Width")  +
     ggtitle("")
   
-  
-  ggarrange(gap + 
-              theme(panel.border = element_rect(color = "grey",
+  finalplot <- ggarrange(gap + 
+              theme(panel.border = element_rect(color = "black",
                                                 fill = NA,
                                                 size = 0.1),
-                    axis.title = element_text(size = 16),
-                    axis.text.x = element_text(size = 8),
-                    axis.text.y = element_text(size = 8),
-                    plot.title = element_text(size = 16,hjust = 0.5),
-                    legend.position="top",
-                    legend.title=element_blank()), 
-            error + 
-              theme(axis.title = element_text(size = 16),
-                    axis.text.x = element_text(size =8),
-                    axis.text.y =  element_text(size = 8),
-                    axis.ticks.y = element_blank(),
-                    plot.margin = margin(r=1,l=1),
-                    legend.position="none",
+                    axis.title = element_text(size = 18,face="bold"),
+                    axis.text.x = element_text(size = 12,color="black"),
+                    axis.text.y = element_text(size = 12,color="black"),
+                    plot.title = element_text(size = 18,hjust = 0.5),
+                    strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+                    strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+                    legend.position="right",
                     legend.title=element_blank(),
-                    panel.border = element_rect(color = "grey",
+                    legend.text=element_text(size=12)),
+            error + 
+              theme(panel.border = element_rect(color = "black",
                                                 fill = NA,
                                                 size = 0.1),
-                    plot.title = element_text(size = 16,hjust = 0.5)
-                    ), 
+                    axis.title = element_text(size = 18,face="bold"),
+                    axis.text.x = element_text(size = 12,color="black"),
+                    axis.text.y = element_text(size = 12,color="black"),
+                    plot.title = element_text(size = 18,hjust = 0.5),
+                    strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+                    strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+                    legend.position="right",
+                    legend.title=element_blank(),
+                    legend.text=element_text(size=12)), 
             nrow = 2)
+  finalplot
+  ggsave(plot = finalplot, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/cluster.pdf")
+}
+plot_cluster()
+
+
+
+plot_cluster_raw <- function(){
+  # load data
+  df <-read.csv("~/Documents/PhD/ddo/experiments/all_['Cluster', 'Gewoon'].csv")
+  colnames(df)
+  View(df)
+  
+  gap <- ggplot(df, aes(x=Width)) +
+    geom_line(aes(y = RealGap,color=Label)) + 
+    facet_wrap(Problem~., scales = "free_y") +
+    scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
+    ylab("") +
+    xlab("")  +
+    ggtitle("Optimality Gap")
+  
+  gap
 }
 
 plot_dominance <- function(){
@@ -103,56 +135,115 @@ plot_varOrd <- function(){
   gap
 }
 
-
 plot_varOrd_cluster <- function(){
   # load data
   df <-read.csv("~/Documents/PhD/ddo/experiments/all_['Cluster', 'VarOrd', 'Cluster+VarOrd', 'Gewoon'].csv")
-  colnames(df)
+
+  df$Conditions[df$Conditions == "Gewoon"] <- "minLB"
+  df$Conditions[df$Conditions == "Dominance"] <- "Dominance+minLB"
+  df$Problem <- toupper(df$Problem)
   View(df)
-  
+  # df <- subset(df, Solver == "incremental")
+  df <- subset(df, Solver == "top-down")
   gap <- ggplot(df, aes(x=Width)) +
-    geom_line(aes(y = RealGap,color=Conditions)) + 
-    facet_wrap(Problem~., scales = "free_y") +
+    geom_line(aes(y = RealGap,color=Conditions,linetype=Conditions)) + 
+    geom_point(aes(y=RealGap,shape=Conditions,color=Conditions)) +
+    facet_wrap(Problem~., scales = "free_y", nrow=1) +
+    scale_shape_manual(values = c(16,17,18,19)) +
+    scale_linetype_manual(values = c("dashed","solid","dashed","solid")) +
     scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
-    ylab("") +
-    xlab("")  +
-    ggtitle("Optimality Gap")
+    ylab("Gap") +
+    xlab("Width")  +
+    ggtitle("") + 
+    theme(panel.border = element_rect(color = "black",
+                                      fill = NA,
+                                      size = 0.1),
+          axis.title = element_text(size = 18,face="bold"),
+          axis.text.x = element_text(size = 12,color="black"),
+          axis.text.y = element_text(size = 12,color="black"),
+          plot.title = element_text(size = 18,hjust = 0.5),
+          strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+          strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+          legend.position="right",
+          legend.title=element_blank(),
+          legend.text=element_text(size=12))
   
   gap
+  ggsave(plot = gap, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/varordcluster.pdf")
 }
 
 plot_cluster_dominance <- function(){
   # load data
   df <-read.csv("~/Documents/PhD/ddo/experiments/all_['Dominance', 'Dominance+Cluster', 'Gewoon', 'Cluster'].csv")
   colnames(df)
+  df$Conditions[df$Conditions == "Gewoon"] <- "minLB"
+  df$Conditions[df$Conditions == "Dominance"] <- "Dominance+minLB"
+  df$Problem <- toupper(df$Problem)
   View(df)
   df <- subset(df, Solver == "incremental")
+  # df <- subset(df, Solver == "top-down")
   gap <- ggplot(df, aes(x=Width)) +
-    geom_line(aes(y = RealGap,color=Conditions)) + 
-    facet_wrap(Problem~., scales = "free_y") +
+    geom_line(aes(y = RealGap,color=Conditions,linetype=Conditions)) + 
+    geom_point(aes(y=RealGap,shape=Conditions,color=Conditions)) +
+    facet_wrap(Problem~., scales = "free_y", nrow=1) +
+    scale_shape_manual(values = c(16,17,18,19)) +
+    scale_linetype_manual(values = c("dashed","solid","dashed","solid")) +
     scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
-    ylab("") +
-    xlab("")  +
-    ggtitle("Optimality Gap")
+    ylab("Gap") +
+    xlab("Width")  +
+    ggtitle("") + 
+    theme(panel.border = element_rect(color = "black",
+                                      fill = NA,
+                                      size = 0.1),
+          axis.title = element_text(size = 18,face="bold"),
+          axis.text.x = element_text(size = 12,color="black"),
+          axis.text.y = element_text(size = 12,color="black"),
+          plot.title = element_text(size = 18,hjust = 0.5),
+          strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+          strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+          legend.position="right",
+          legend.title=element_blank(),
+          legend.text=element_text(size=12))
   
   gap
+  ggsave(plot = gap, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/clusterdomIR.pdf")
 }
+plot_cluster_dominance()
 
 plot_varOrd_dominance <- function(){
   # load data
   df <-read.csv("~/Documents/PhD/ddo/experiments/all_['Dominance', 'VarOrd', 'Dominance+VarOrd', 'Gewoon'].csv")
-  colnames(df)
+  df$Conditions[df$Conditions == "Gewoon"] <- "minLB"
+  df$Conditions[df$Conditions == "Dominance"] <- "Dominance+minLB"
+  df$Problem <- toupper(df$Problem)
   View(df)
-  
+  # df <- subset(df, Solver == "incremental")
+  df <- subset(df, Solver == "top-down")
   gap <- ggplot(df, aes(x=Width)) +
-    geom_line(aes(y = RealGap,color=Conditions)) + 
-    facet_wrap(Problem~., scales = "free_y") +
+    geom_line(aes(y = RealGap,color=Conditions,linetype=Conditions)) + 
+    geom_point(aes(y=RealGap,shape=Conditions,color=Conditions)) +
+    facet_wrap(Problem~., scales = "free_y", nrow=1) +
+    scale_shape_manual(values = c(16,17,18,19)) +
+    scale_linetype_manual(values = c("dashed","solid","dashed","solid")) +
     scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
-    ylab("") +
-    xlab("")  +
-    ggtitle("Optimality Gap")
+    ylab("Gap") +
+    xlab("Width")  +
+    ggtitle("") + 
+    theme(panel.border = element_rect(color = "black",
+                                      fill = NA,
+                                      size = 0.1),
+          axis.title = element_text(size = 18,face="bold"),
+          axis.text.x = element_text(size = 12,color="black"),
+          axis.text.y = element_text(size = 12,color="black"),
+          plot.title = element_text(size = 18,hjust = 0.5),
+          strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+          strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+          legend.position="right",
+          legend.title=element_blank(),
+          legend.text=element_text(size=12))
   
   gap
+  ggsave(plot = gap, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/varorddom.pdf")
 }
 
 plot_cluster()

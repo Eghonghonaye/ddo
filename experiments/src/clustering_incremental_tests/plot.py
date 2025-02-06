@@ -87,8 +87,8 @@ def analyse(input,output):
         with open(filename, 'r') as f:
             results = json.load(f)
             outputfile.write(f"""{filename.split("/")[-1].split(".")[0]}, \
-            {float(results["Lower Bnd"])}, \
-            {float(results["Upper Bnd"])}, \
+            {abs(float(results["Lower Bnd"]))}, \
+            {abs(float(results["Upper Bnd"]))}, \
             {results["Duration"]},\
             {results["Aborted"]}, \
             {results["Refine Cluster"]},\
@@ -113,7 +113,7 @@ def plot(problem_names):
             if os.path.exists(summary_file):
                 os.remove(summary_file)
             with open(summary_file,'a') as f:
-                f.write("Name,Lower,Upper,Duration,Aborted,RefineCluster,CompileCluster,Dominance,MergeQuality,Binary,Solver,Width,Gap,Objective")
+                f.write("Name,Lower,Upper,Duration,Aborted,RefineCluster,CompileCluster,Dominance,MergeQuality,Binary,Solver,Width,Gap,Objective\n")
 
 
             directories = [x[0] for x in os.walk(path) if x[0]!=path]
@@ -131,14 +131,14 @@ def plot(problem_names):
             df["Problem"] = problem
             df["Conditions"] = folder
             df['Label'] = df['Solver'] + "-->" + df['Conditions']
-            # print(df.to_string())
+            print(df.to_string())
             all_df.append(df)
 
     all_df = pd.concat(all_df)
     all_df.reset_index(level=None, drop=False, inplace=True, col_level=0, col_fill="")
 
     # print(all_df.to_string())
-    # all_df = all_df.drop(all_df[all_df["Solver"] == 'incremental'].index)
+    # all_df = all_df.drop(all_df[all_df["Solver"] == 'top-down'].index)
     all_df = all_df.drop(all_df[all_df["Solver"] == 'branch-bound'].index)
     all_df["MergeQuality"] =  all_df["MergeQuality"].astype(float)
     all_df = all_df.dropna()
@@ -182,8 +182,53 @@ if __name__ == "__main__":
     #     ("sop", "sop", ["Gewoon"],"min"),
     #     ])
     
+    # plot([
+    #     ("tsptw", "tsptw/AFG",  ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
+    #     ("knapsack", "knapsack", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
+    #     ("sop", "sop", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
+    #     ])
+    
+    # plot([
+        # ("talentsched", "talentsched", ["Gewoon","Cluster"],"min"),
+        # ("srflp", "srflp", ["Gewoon","Cluster"],"min"),
+        # ("tsptw", "tsptw/AFG",  ["Gewoon","Cluster"],"min"),
+        # ("misp", "misp", ["Gewoon","Cluster"],"max"),
+        # ("sop", "sop", ["Gewoon","Cluster"],"min"),
+        # ("mcp", "mcp", ["Gewoon","Cluster"],"max"),
+        # ("knapsack", "knapsack", ["Gewoon","Cluster"],"max"),
+        # ("max2sat", "max2sat", ["Gewoon","Cluster"],"max"),
+        # ("psp", "psp/instancesWith2items", ["Gewoon","Cluster"],"min"),
+        # ("lcs", "lcs",  ["Gewoon","Cluster"],"max"),
+        # ("sop", "sop",  ["Gewoon","Dominance","Cluster","Dominance+Cluster"],"min"),
+        # ("alp", "alp",  ["Gewoon","Dominance","Cluster","Dominance+Cluster"],"min"),
+        # ])
+    
     plot([
         ("tsptw", "tsptw/AFG",  ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
         ("knapsack", "knapsack", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
         ("sop", "sop", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
+        ("alp", "alp", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
+        ("lcs", "lcs",  ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
         ])
+
+    # plot([
+    #     # ("max2sat", "max2sat",  ["Cluster","VarOrd","Cluster+VarOrd","Gewoon"],"max"),
+    #     ("knapsack", "knapsack", ["Cluster","VarOrd","Cluster+VarOrd","Gewoon"],"max"),
+    #     ("misp", "misp",  ["Cluster","VarOrd","Cluster+VarOrd","Gewoon"],"max"),
+    #     ])
+    
+    # plot([
+    #     ("tsptw", "tsptw/AFG",  ["Dominance","Gewoon"],"min"),
+    #     ("knapsack", "knapsack", ["Dominance","Gewoon"],"max"),
+    #     ("sop", "sop", ["Dominance","Gewoon"],"min"),
+    #     ("alp", "alp", ["Dominance","Gewoon"],"min"),
+    #     ])
+    
+    # plot([
+    #     ("knapsack", "knapsack_subset", ["BinaryConflict","BinaryGewoon"],"max"),
+    #     ("knapsack", "knapsack_subset", ["BinaryConflict","BinaryGewoon"],"max"),
+    #     ])
+
+    # plot([
+    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+    #     ])

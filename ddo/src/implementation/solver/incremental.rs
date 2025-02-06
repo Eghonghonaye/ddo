@@ -282,7 +282,7 @@ where
                 residual: &root,
                 //
                 best_lb,
-                binary_split: false,
+                binary_split: self.binary_split,
                 cluster_compile: self.cluster_compile,
             };
 

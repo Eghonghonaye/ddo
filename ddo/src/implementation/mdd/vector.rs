@@ -1169,13 +1169,14 @@ where
         must_keep: bool,
     ) {
         let state = get!(node from_id, self).state.as_ref();
+        let mut parent = get!(node from_id, self).clone();
         let next_state = Arc::new(problem.transition(state, decision));
         let cost = problem.transition_cost(state, next_state.as_ref(), decision);
         let next_layer_id = from_id.0 + 1;
 
         match self.next_l.entry(next_state.clone()) {
             Entry::Vacant(e) => {
-                let parent = get!(node from_id, self).clone();
+                
                 let node_id = NodeId(next_layer_id, self.nodes[next_layer_id].len());
                 let mut flags = NodeFlags::new_exact();
                 flags.set_exact(parent.flags.is_exact());
@@ -1207,6 +1208,15 @@ where
                     }
                 );
                 e.insert(node_id);
+                //check if this edge induced conflicts and update parent conflict count
+                foreach!(incoming edge of from_id, self, |in_edge: Edge<T>| {
+                    parent.conflict_count += get!(node in_edge.from,self).conflict_count;
+                    if problem
+                    .check_conflict(&in_edge.state, &in_edge.decision, &next_state, &decision)
+                        {
+                            parent.conflict_count += 1;
+                        }
+                });
             }
             Entry::Occupied(e) => {
                 // println!("found similar state node layer {:?}",from_id.0);
@@ -1221,8 +1231,19 @@ where
                         state: next_state.clone()
                     }
                 );
+
+                //check if this edge induced conflicts and update parent conflict count
+                foreach!(incoming edge of from_id, self, |in_edge: Edge<T>| {
+                    parent.conflict_count += get!(node in_edge.from,self).conflict_count;
+                    if problem
+                    .check_conflict(&in_edge.state, &in_edge.decision, &next_state, &decision)
+                        {
+                            parent.conflict_count += 1;
+                        }
+                });
             }
         }
+     
     }
 
     fn _squash_if_needed(&mut self, input: &CompilationInput<T>, curr_l: &mut Vec<NodeId>) {
@@ -1559,7 +1580,6 @@ where
 
         get!(mut node merged_id, self).flags.set_relaxed(true);
 
-
         for drop_id in merge.iter() {
             get!(mut node drop_id, self).flags.set_deleted(true);
 
@@ -1613,362 +1633,6 @@ where
         self.merge_quality.push(*merge_err);
     }
 
-    fn _split_with_rub(&mut self,
-        input: &CompilationInput<T>,
-        curr_l: &mut Vec<NodeId>,
-        curr_layer_id: usize,) -> bool {
-
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("before split layer {curr_layer_id}\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file"); 
-        // // *************************************************************
-        // // */
-
-        // order vec node by ranking
-        curr_l.sort_unstable_by(|a, b| {
-            get!(node a, self)
-                .value_top
-                .cmp(&get!(node b, self).value_top)
-                .then_with(|| {
-                    get!(node a, self)
-                        .conflict_count
-                        .cmp(&get!(node b, self).conflict_count)
-                })
-        }); // no reverse because greater means more likely to be split
-
-        // send all inbound to be split into n nodes
-        let mut how_many = input.max_width;
-
-        let mut to_split = curr_l.clone();
-        // Don't split already exact nodes
-        to_split.retain(|node_id: &NodeId| {
-            if get!(node node_id, self).flags.is_exact() {
-                how_many -= 1;
-                false
-            } else {
-                true
-            }
-        });
-
-        //Delete nodes to be split from curr_l
-        curr_l.retain(|&x| !to_split.contains(&x));
-
-        // Done with figuring out which/how many to split
-        // let how_many = how_many;
-        let to_split = to_split;
-
-        // create to be split hashmap to manage things
-        //TODO add best cost to state
-        let mut to_split_map: FxHashMap<Arc<T>, (usize,isize,Vec<EdgeId>)> = Default::default();
-        let mut split_count = 0; // using this as split id
-        for node_id in &to_split{
-            for edge_id in &get!(node node_id,self).incoming{
-                match to_split_map.entry(get!(edge edge_id,self).state.clone()) {
-                    Entry::Vacant(e) => {
-                        e.insert((split_count,
-                            get!(node self.edges[edge_id.0].from,self).value_top.saturating_add(self.edges[edge_id.0].cost),
-                            vec![*edge_id]));
-                        split_count += 1;
-                    }
-                    Entry::Occupied(mut e) => {
-                        let ids = e.get_mut();
-                        //update cost
-                        ids.1 = std::cmp::max(ids.1,
-                            get!(node self.edges[edge_id.0].from,self).value_top.saturating_add(self.edges[edge_id.0].cost));
-                        ids.2.push(*edge_id);
-                    }
-                }
-            }
-        }
-
-        //to split map is collection of inbound edges
-        let fully_split = how_many >= to_split_map.len();
-
-        let split_state_edges: Vec<(Vec<Arc<T>>,Vec<EdgeId>)> = if fully_split {
-            to_split_map
-                .into_iter()
-                .map(|(state,(id,cost,edge_ids))| (vec![state],Vec::from(edge_ids)))
-                .collect()
-        } else {
-            let all_node_costs = to_split_map.iter()
-                .map(|(_,(id,cost,_))| NodeClusterHelper::new(NodeId(*id,0),*cost))
-                .collect::<Vec<_>>();
-            let clustering = kmeans(how_many, &all_node_costs, 100);
-            let mut result = vec![Vec::new(); clustering.membership.len()];
-            for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
-                result[label].push(h.id);
-            }
-            result.retain(|v| !v.is_empty()); 
-
-
-            to_split_map
-                .into_iter()
-                .map(|(state,(id,cost,edge_ids))| (vec![state],Vec::from(edge_ids)))
-                .collect()
-        };
-
-        
-        let mut split_states: Vec<(Arc<T>, bool, Vec<EdgeId>)> = vec![];
-
-        for (states,inbound_edges) in split_state_edges {
-            let mut is_merged = false;
-            //if cluster state is all one state just return that state and don't merge anything
-            let merged = if states.len()>1 
-                                    {is_merged = true; 
-                                    self._merge_states_from_incoming_edges(input, &inbound_edges)}
-                                 else
-                                    {states[0].clone()};
-            
-            //if cluster state is recycled, ignore it? NO! Redirect incoming edges there --- but how?
-            //check both with curr_l and recycling w/i the new set
-            let recycled_kept = curr_l
-                .iter()
-                .find(|id| get!(node *id, self).state.eq(&merged))
-                .copied();
-
-            let recycled_split = split_states
-                .iter()
-                .position(|(state,is_merged,edge_ids)| state.eq(&merged));
-
-            if recycled_kept.is_some(){
-                //redirect incoming edges to the kept node
-                for e_id in inbound_edges {       
-                    // update edge destination (cost and state stay the same)
-                    get!(mut edge e_id, self).to = recycled_kept.unwrap();
-                    redirect_edge!(self, e_id, get!(edge e_id, self));
-                }
-            }
-            else if recycled_split.is_some(){
-                //redirect incoming edges to the already split node
-                split_states[recycled_split.unwrap()].2.extend(inbound_edges);
-                split_states[recycled_split.unwrap()].1 = split_states[recycled_split.unwrap()].1 || is_merged;
-            }
-            else{
-                // add it to the set of split states to redirect
-                split_states.push((merged,is_merged,inbound_edges));
-            }
-
-        }
-
-        
-        // for each split state, create new nodes and redirect outbound edges
-        // rub check handled during edge redirection
-        let mut new_nodes =
-            self._redirect_edges_after_split(input, &split_states, LayerId(curr_layer_id));
-
-        curr_l.retain(|&x| !to_split.contains(&x));
-        curr_l.append(&mut new_nodes);
-
-        for node_id in &to_split {
-            //Delete split node
-            get!(mut node node_id, self).flags.set_deleted(true);
-        }
-        
-        // // /* 
-        // // ***************** visualise *****************
-        // // *********************************************
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("\n after split layer {curr_layer_id}\n\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
-        // // *************************************************
-        // // */
-        // for node_id in curr_l.iter(){
-        //     let state = get!(node node_id, self).state.as_ref();
-        //     input.problem.print_state(state);
-        // }
-
-
-        fully_split
-
-    }
-   
-    // fn _split(
-    //     &mut self,
-    //     input: &CompilationInput<T>,
-    //     curr_l: &mut Vec<NodeId>,
-    //     curr_layer_id: usize,) -> bool {
-
-    //     // // /* 
-    //     // // ***************** visualise *****************
-    //     // // *********************************************
-    //     // let mut config = VizConfigBuilder::default().build().unwrap();
-    //     // // config.show_deleted = true;
-    //     // // config.show_deleted = true;
-    //     // config.group_merged = true;
-    //     // print!("before split layer {curr_layer_id}\n");
-    //     // let s = self.as_graphviz(&config);
-    //     // fs::write("incremental.dot", s).expect("Unable to write file"); 
-    //     // // *************************************************************
-    //     // // */
-
-    //     // order vec node by ranking
-    //     curr_l.sort_unstable_by(|a, b| {
-    //         get!(node a, self)
-    //             .value_top
-    //             .cmp(&get!(node b, self).value_top)
-    //     }); // no reverse because greater means more likely to be split
-
-    //     // send all inbound to be split into n nodes
-    //     let mut how_many = input.max_width;
-
-    //     let mut to_split = curr_l.clone();
-    //     // Don't split already exact nodes
-    //     to_split.retain(|node_id: &NodeId| {
-    //         if get!(node node_id, self).flags.is_exact() {
-    //             how_many -= 1;
-    //             false
-    //         } else {
-    //             true
-    //         }
-    //     });
-    //     curr_l.retain(|&x| !to_split.contains(&x));
-
-    //     //Delete nodes to be split from curr_l
-    //     curr_l.retain(|&x| !to_split.contains(&x));
-
-    //     // Done with figuring out which/how many to split
-    //     // let how_many = how_many;
-    //     let to_split = to_split;
-
-    //     // create to be split hashmap to manage things
-    //     //TODO add best cost to state
-    //     let mut to_split_map: FxHashMap<Arc<T>, (usize,isize,Vec<EdgeId>)> = Default::default();
-    //     let mut split_count = 0; // using this as split id
-    //     for node_id in &to_split{
-    //         for edge_id in &get!(node node_id,self).incoming{
-    //             match to_split_map.entry(get!(edge edge_id,self).state.clone()) {
-    //                 Entry::Vacant(e) => {
-    //                     e.insert((split_count,
-    //                         get!(node self.edges[edge_id.0].from,self).value_top.saturating_add(self.edges[edge_id.0].cost),
-    //                         vec![*edge_id]));
-    //                     split_count += 1;
-    //                 }
-    //                 Entry::Occupied(mut e) => {
-    //                     let ids = e.get_mut();
-    //                     //update cost
-    //                     ids.1 = std::cmp::max(ids.1,
-    //                         get!(node self.edges[edge_id.0].from,self).value_top.saturating_add(self.edges[edge_id.0].cost));
-    //                     ids.2.push(*edge_id);
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     //to split map is collection of inbound edges
-    //     let fully_split = how_many >= to_split_map.len();
-
-    //     let split_state_edges: Vec<(Vec<Arc<T>>,Vec<EdgeId>)> = if fully_split {
-    //         to_split_map
-    //             .into_iter()
-    //             .map(|(state,(id,cost,edge_ids))| (vec![state],Vec::from(edge_ids)))
-    //             .collect()
-    //     } else {
-    //         let all_node_costs = to_split_map.iter()
-    //             .map(|(_,(id,cost,_))| NodeClusterHelper::new(NodeId(*id,0),*cost))
-    //             .collect::<Vec<_>>();
-    //         let clustering = kmeans(how_many, &all_node_costs, 100);
-    //         let mut result = vec![Vec::new(); clustering.membership.len()];
-    //         for (label, h) in clustering.membership.into_iter().zip(clustering.elements) {
-    //             result[label].push(h.id);
-    //         }
-    //         result.retain(|v| !v.is_empty()); 
-
-
-    //         to_split_map
-    //             .into_iter()
-    //             .map(|(state,(id,cost,edge_ids))| (vec![state],Vec::from(edge_ids)))
-    //             .collect()
-    //     };
-
-        
-    //     let mut split_states: Vec<(Arc<T>, bool, Vec<EdgeId>)> = vec![];
-
-    //     for (states,inbound_edges) in split_state_edges {
-    //         let mut is_merged = false;
-    //         //if cluster state is all one state just return that state and don't merge anything
-    //         let merged = if states.len()>1 
-    //                                 {is_merged = true; 
-    //                                 self._merge_states_from_incoming_edges(input, &inbound_edges)}
-    //                              else
-    //                                 {states[0].clone()};
-            
-    //         //if cluster state is recycled, ignore it? NO! Redirect incoming edges there --- but how?
-    //         //check both with curr_l and recycling w/i the new set
-    //         let recycled_kept = curr_l
-    //             .iter()
-    //             .find(|id| get!(node *id, self).state.eq(&merged))
-    //             .copied();
-
-    //         let recycled_split = split_states
-    //             .iter()
-    //             .position(|(state,is_merged,edge_ids)| state.eq(&merged));
-
-    //         if recycled_kept.is_some(){
-    //             //redirect incoming edges to the kept node
-    //             for e_id in inbound_edges {       
-    //                 // update edge destination (cost and state stay the same)
-    //                 get!(mut edge e_id, self).to = recycled_kept.unwrap();
-    //                 redirect_edge!(self, e_id, get!(edge e_id, self));
-    //             }
-    //         }
-    //         else if recycled_split.is_some(){
-    //             //redirect incoming edges to the already split node
-    //             split_states[recycled_split.unwrap()].2.extend(inbound_edges);
-    //             split_states[recycled_split.unwrap()].1 = split_states[recycled_split.unwrap()].1 || is_merged;
-    //         }
-    //         else{
-    //             // add it to the set of split states to redirect
-    //             split_states.push((merged,is_merged,inbound_edges));
-    //         }
-
-    //     }
-
-        
-    //     // for each split state, create new nodes and redirect outbound edges
-    //     // rub check handled during edge redirection
-    //     let mut new_nodes =
-    //         self._redirect_edges_after_split(input, &split_states, LayerId(curr_layer_id));
-
-    //     curr_l.retain(|&x| !to_split.contains(&x));
-    //     curr_l.append(&mut new_nodes);
-
-    //     for node_id in &to_split {
-    //         //Delete split node
-    //         get!(mut node node_id, self).flags.set_deleted(true);
-    //     }
-        
-    //     // // /* 
-    //     // // ***************** visualise *****************
-    //     // // *********************************************
-    //     // let mut config = VizConfigBuilder::default().build().unwrap();
-    //     // // config.show_deleted = true;
-    //     // // config.show_deleted = true;
-    //     // config.group_merged = true;
-    //     // print!("\n after split layer {curr_layer_id}\n\n");
-    //     // let s = self.as_graphviz(&config);
-    //     // fs::write("incremental.dot", s).expect("Unable to write file");
-    //     // // *************************************************
-    //     // // */
-    //     // for node_id in curr_l.iter(){
-    //     //     let state = get!(node node_id, self).state.as_ref();
-    //     //     input.problem.print_state(state);
-    //     // }
-
-
-    //     fully_split
-
-    // }
    
     fn _split(
         &mut self,
@@ -2173,20 +1837,54 @@ where
         curr_l: &mut Vec<NodeId>,
         curr_layer_id: usize,
     ) -> bool {
-        // order vec node by ranking
+
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("\n before split layer {curr_layer_id}\n\n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // *************************************************
+        // */
+
+        // // order vec node by ranking
+        // curr_l.sort_unstable_by(|a, b| {
+        //     get!(node a, self)
+        //         .value_top
+        //         .cmp(&get!(node b, self).value_top)
+        //         .then_with(|| {
+        //             get!(node a, self)
+        //                 .conflict_count
+        //                 .cmp(&get!(node b, self).conflict_count)
+        //         })
+        // }); // no reverse because greater means more likely to be split
+
+        // order vec node by conflict count ranking
         curr_l.sort_unstable_by(|a, b| {
             get!(node a, self)
-                .value_top
-                .cmp(&get!(node b, self).value_top)
+                .conflict_count
+                .cmp(&get!(node b, self).conflict_count)
                 .then_with(|| {
                     get!(node a, self)
-                        .conflict_count
-                        .cmp(&get!(node b, self).conflict_count)
+                        .value_top
+                        .cmp(&get!(node b, self).value_top)
                 })
         }); // no reverse because greater means more likely to be split
 
+
+        //// print confict count per node
+        // for curr_node_id in curr_l.iter(){
+        //     println!("conflict is {:?},{:?}",curr_node_id,get!(node curr_node_id,self).conflict_count);
+        // }
+
+
         // select worst node and split
-        let mut index = curr_l.len();
+        let mut index = 
+        curr_l.len();
         while index > 0 {
             let node_to_split_id = curr_l[index - 1];
             let node_to_split = get!(node node_to_split_id, self);
@@ -2237,12 +1935,18 @@ where
                 }
             }
         }
-        // let mut config = VizConfigBuilder::default().build().unwrap();
-        // // config.show_deleted = true;
-        // config.group_merged = true;
-        // print!("after split layer {curr_layer_id}\n");
-        // let s = self.as_graphviz(&config);
-        // fs::write("incremental.dot", s).expect("Unable to write file");
+        // /* 
+        // ***************** visualise *****************
+        // *********************************************
+        let mut config = VizConfigBuilder::default().build().unwrap();
+        // config.show_deleted = true;
+        // config.show_deleted = true;
+        config.group_merged = true;
+        print!("\n after split layer {curr_layer_id}\n\n");
+        let s = self.as_graphviz(&config);
+        fs::write("incremental.dot", s).expect("Unable to write file");
+        // *************************************************
+        // */
 
         true
     }
@@ -2367,7 +2071,7 @@ where
         state: &&Arc<T>,
         split_id: NodeId,
     ) {
-        let mut conflict_count = 0;
+        
         for edge_id in edges_to_append {
             // update edge state
             let from_node_id = get!(edge edge_id, self).from;
@@ -2395,7 +2099,7 @@ where
         // TODO: when is a node exact now?
 
         let split_node = get!(mut node split_id, self);
-        split_node.conflict_count = conflict_count;
+        
     }
     //TODO these are not checked for duplications? What if there's already an edge like this to that destination node?
     fn _redirect_outgoing_edges(
@@ -2407,6 +2111,7 @@ where
     ) -> Vec<NodeId> {
         //TODO replicate all edges outbound - we need to recalculate the decision states because it changes upon split - also filter infeasible outbounds
         let mut outgoing_nodes_to_update = Vec::with_capacity(outbound_edges.len());
+
         for (dec,edge_id) in outbound_edges {
             let e = get!(edge edge_id,self);
             let dst = e.to;
@@ -2423,6 +2128,17 @@ where
                     new_state.as_ref(),
                     e.decision,
                 );
+
+                //update conflict count
+                foreach!(incoming edge of split_id, self, |in_edge: Edge<T>| {
+                    get!(mut node split_id, self).conflict_count += get!(node in_edge.from,self).conflict_count;
+                    if input
+                        .problem
+                        .check_conflict(&in_edge.state, &in_edge.decision, &new_state, &e.decision) //using out edge state and decision
+                    {
+                        get!(mut node split_id, self).conflict_count += 1;
+                    }
+                });
 
                 append_edge_to!(
                     self,
@@ -2470,6 +2186,7 @@ where
                 }
 
                 foreach!(outgoing edge of node_id, self, |out_edge: Edge<T>| {
+                    get!(mut node node_id, self).conflict_count += get!(node in_edge.from,self).conflict_count;
                     if input
                         .problem
                         .check_conflict(&in_edge.state, &in_edge.decision, &out_edge.state, &out_edge.decision)
@@ -2697,6 +2414,7 @@ where
 
         if config.show_value {
             out.push_str(&format!("\\nval: {}", node.value_top));
+            out.push_str(&format!("\\ncc: {}", node.conflict_count));
         }
         if config.show_locb {
             out.push_str(&format!("\\nlocb: {}", Self::extreme(node.value_bot)));

@@ -30,11 +30,13 @@ mod node_flags;
 mod clean;
 mod pooled;
 mod vector;
+mod vector_new;
 
 pub use node_flags::*;
 pub use clean::*;
 pub use pooled::*;
 pub use vector::*;
+pub use vector_new::*;
 
 use crate::{LAST_EXACT_LAYER, FRONTIER};
 
@@ -58,4 +60,4 @@ pub type DefaultMDDLEL<T> = Mdd<T, LAST_EXACT_LAYER>;
 pub type DefaultMDDFC<T> = Mdd<T, FRONTIER>;
 
 
-pub type DefaultVectorLEL<T> = VectorMdd<T, LAST_EXACT_LAYER>;
+pub type DefaultVectorLEL<T> = vector::VectorMdd<T, LAST_EXACT_LAYER>;

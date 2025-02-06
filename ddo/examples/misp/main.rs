@@ -21,6 +21,7 @@
 //! using ddo. It is a fairly simple example but it features most of the aspects you will
 //! want to copy when implementing your own solver.
 use std::{cell::RefCell, fs::{self, File}, io::{BufRead, BufReader}, num::ParseIntError, time::{Duration, Instant}};
+use std::{sync::Arc, hash::Hash};
 
 use bit_set::BitSet;
 use serde_json::json;
@@ -336,6 +337,44 @@ impl StateRanking for MispRanking {
 }
 
 
+/// Dominance (dummy)
+pub struct MispKey(Arc<MispState>);
+impl Hash for MispKey {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        // self.0.previous.hash(state);
+        self.0.available.hash(state);
+    }
+}
+impl PartialEq for MispKey {
+    fn eq(&self, other: &Self) -> bool {
+        // self.0.previous == other.0.previous &&
+        self.0.available == other.0.available
+    }
+}
+impl Eq for MispKey {}
+
+pub struct MispDominance;
+impl Dominance for MispDominance {
+    type State = MispState;
+    type Key = MispKey;
+
+    fn get_key(&self, state: Arc<Self::State>) -> Option<Self::Key> {
+        Some(MispKey(state))
+    }
+
+    fn nb_dimensions(&self, _: &Self::State) -> usize {
+        0
+    }
+
+    fn get_coordinate(&self, _: &Self::State, _: usize) -> isize {
+        0
+    }
+
+    fn use_value(&self) -> bool {
+        true
+    }
+}
+
 // #########################################################################################
 // # THE INFORMATION BEYOND THIS LINE IS NOT DIRECTLY RELATED TO THE IMPLEMENTATION OF     #
 // # A SOLVER BASED ON DDO. INSTEAD, THAT PORTION OF THE CODE CONTAINS GENERIC FUNCTION    #
@@ -363,6 +402,9 @@ struct Args {
     /// /// Whether or not to use clustering to split nodes. True if -c supplied. Uses ckmeans clustering.
     #[clap(short, long, action)]
     cluster: bool,
+    /// /// Whether or not to use dominance.
+    #[clap(long, action)]
+    dominance: bool,
     /// /// Whether or not to use fast upper bound.
     #[clap(long, action)]
     rub: bool,
@@ -501,7 +543,8 @@ fn main() {
     let ranking = MispRanking;
 
     let width = max_width(&problem, args.width);
-    let dominance = EmptyDominanceChecker::default();
+    let dominance = SimpleDominanceChecker::new(MispDominance, problem.nb_variables());
+    let no_dominance:EmptyDominanceChecker<MispState> = EmptyDominanceChecker::default();
     let cutoff = cutoff(args.duration);
     let mut fringe = NoDupFringe::new(MaxUB::new(&ranking));
 
@@ -567,7 +610,7 @@ fn main() {
                 &relaxation,
                 &ranking, 
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 cutoff.as_ref(), 
                 &mut fringe,
                 args.cluster_compile,
@@ -580,7 +623,7 @@ fn main() {
                 &relaxation,
                 &ranking, 
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 cutoff.as_ref(), 
                 &mut fringe,
                 args.binary_split,
@@ -595,7 +638,7 @@ fn main() {
                 &relaxation, 
                 &ranking, 
                 width.as_ref(),
-                &dominance,
+                if args.dominance{&dominance} else{&no_dominance},
                 cutoff.as_ref(), 
                 &mut fringe,
                 args.threads,

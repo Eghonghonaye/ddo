@@ -75,6 +75,8 @@ pub struct Knapsack {
     rub: bool,
     /// Whether we use variable ordering or random,
     variable_order: bool,
+    /// Whether we use conflict count in IR node selection,
+    conflict_count: bool,
     // Optional ml model to support decision making
     ml_model: Option<TfModel>,
 }
@@ -87,6 +89,7 @@ impl Knapsack {
         clustering: bool,
         rub: bool,
         variable_order: bool,
+        conflict_count: bool,
         ml_model: Option<TfModel>,
     ) -> Self {
         let mut order = (0..profit.len()).collect::<Vec<usize>>();
@@ -100,6 +103,7 @@ impl Knapsack {
             clustering,
             rub,
             variable_order,
+            conflict_count,
             ml_model,
         }
     }
@@ -269,6 +273,17 @@ impl Problem for Knapsack {
         }
     }
 
+    // fn check_conflict(
+    //     &self,
+    //     in_state: &Self::State,
+    //     _in_decision: &Decision,
+    //     _out_state: &Self::State,
+    //     out_decision: &Decision,
+    // ) -> bool {
+    //     self.filter(in_state,out_decision)
+    // }
+
+
     fn split_edges(
         &self,
         decisions: &mut dyn Iterator<Item = (usize, isize, &Decision, &Self::State)>,
@@ -347,9 +362,14 @@ impl Problem for Knapsack {
         _out_state: &Self::State,
         out_decision: &Decision,
     ) -> bool {
-        if out_decision.value == TAKE_IT {
-            self.weight[out_decision.variable.id()] > in_state.capacity
-        } else {
+        if self.conflict_count{
+            if out_decision.value == TAKE_IT {
+                self.weight[out_decision.variable.id()] > in_state.capacity
+            } else {
+                false
+            }
+        }
+        else{
             false
         }
     }
@@ -515,9 +535,12 @@ struct Args {
     /// Have nodes split into two instead of a whole layer split
     #[clap(short = 'b', long, action)]
     binary_split: bool,
-    /// Compile top down by clustering for mwege
+    /// Compile top down by clustering for merge
     #[clap(short = 'k', long, action)]
     cluster_compile: bool,
+    /// Use conflict count to select node in incremental refinement
+    #[clap(long, action)]
+    conflict_count: bool,
 }
 
 /// This enumeration simply groups the kind of errors that might occur when parsing a
@@ -583,7 +606,7 @@ fn read_instance(args: &Args) -> Result<Knapsack, Error> {
     } else {
         None
     };
-    Ok(Knapsack::new(capa, profit, weight, args.cluster,args.rub,args.variable_order, model))
+    Ok(Knapsack::new(capa, profit, weight, args.cluster,args.rub,args.variable_order, args.conflict_count,model))
 }
 
 pub fn read_model<P: AsRef<Path>>(
