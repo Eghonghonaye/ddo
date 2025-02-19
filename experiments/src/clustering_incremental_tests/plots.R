@@ -24,6 +24,7 @@ plot_cluster <- function(){
   # load data
   df <-read.csv("~/Documents/PhD/ddo/experiments/all.csv")
   df$Conditions[df$Conditions == "Gewoon"] <- "minLB"
+  df <- subset(df, Problem != "max2sat")
   df$Problem <- toupper(df$Problem)
   colnames(df)
   View(df)
@@ -82,7 +83,44 @@ plot_cluster <- function(){
 }
 plot_cluster()
 
-
+plot_split_choices <- function(){
+  # load data
+  df <-read.csv("~/Documents/PhD/ddo/experiments/all_['BinaryGewoon', 'Gewoon', 'Cluster'].csv")
+  colnames(df)
+  df$Conditions[df$Conditions == "Gewoon"] <- "minLB"
+  df$Conditions[df$Conditions == "BinaryGewoon"] <- "pairSplit"
+  df$Conditions[df$Conditions == "Dominance"] <- "Dominance+minLB"
+  df$Problem <- toupper(df$Problem)
+  View(df)
+  df <- subset(df, Solver == "incremental")
+  # df <- subset(df, Solver == "top-down")
+  gap <- ggplot(df, aes(x=Width)) +
+    geom_line(aes(y = RealGap,color=Conditions,linetype=Conditions)) + 
+    geom_point(aes(y=RealGap,shape=Conditions,color=Conditions)) +
+    facet_wrap(Problem~., scales = "free_y", nrow=1) +
+    scale_shape_manual(values = c(16,17,18,19)) +
+    scale_linetype_manual(values = c("dashed","solid","dashed","solid")) +
+    scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
+    ylab("Gap") +
+    xlab("Width")  +
+    ggtitle("") + 
+    theme(panel.border = element_rect(color = "black",
+                                      fill = NA,
+                                      size = 0.1),
+          axis.title = element_text(size = 18,face="bold"),
+          axis.text.x = element_text(size = 12,color="black"),
+          axis.text.y = element_text(size = 12,color="black"),
+          plot.title = element_text(size = 18,hjust = 0.5),
+          strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+          strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+          legend.position="right",
+          legend.title=element_blank(),
+          legend.text=element_text(size=12))
+  
+  gap
+  ggsave(plot = gap, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/splittypes.pdf")
+}
+plot_split_choices()
 
 plot_cluster_raw <- function(){
   # load data
@@ -180,8 +218,8 @@ plot_cluster_dominance <- function(){
   df$Conditions[df$Conditions == "Dominance"] <- "Dominance+minLB"
   df$Problem <- toupper(df$Problem)
   View(df)
-  df <- subset(df, Solver == "incremental")
-  # df <- subset(df, Solver == "top-down")
+  # df <- subset(df, Solver == "incremental")
+  df <- subset(df, Solver == "top-down")
   gap <- ggplot(df, aes(x=Width)) +
     geom_line(aes(y = RealGap,color=Conditions,linetype=Conditions)) + 
     geom_point(aes(y=RealGap,shape=Conditions,color=Conditions)) +
@@ -206,7 +244,7 @@ plot_cluster_dominance <- function(){
           legend.text=element_text(size=12))
   
   gap
-  ggsave(plot = gap, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/clusterdomIR.pdf")
+  ggsave(plot = gap, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/clusterdom.pdf")
 }
 plot_cluster_dominance()
 

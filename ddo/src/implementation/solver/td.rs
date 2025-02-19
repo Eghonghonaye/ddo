@@ -69,7 +69,9 @@ pub struct TDSolver<
     // option to merge in top down compile by clustering
     pub cluster_compile: bool,
     //best merge quality
-    pub merge_quality: f64
+    pub merge_quality: f64,
+    //merge ratio
+    pub merge_ratio: f64
 }
 
 impl<'a, State, D, C> TDSolver<'a, State, D, C>
@@ -123,6 +125,7 @@ where
             dominance,
             cluster_compile,
             merge_quality: 0.0,
+            merge_ratio: 0.0,
         }
     }
 
@@ -177,6 +180,7 @@ where
     /// bounds.
     fn maybe_update_best(&mut self) {
         self.merge_quality = self.mdd.merge_quality();
+        self.merge_ratio = self.mdd.merge_ratio();
         let dd_best_value = self.mdd.best_exact_value().unwrap_or(isize::MIN);
         if dd_best_value > self.best_lb {
             self.best_lb = dd_best_value;
@@ -292,5 +296,9 @@ where
 
     fn merge_quality(&self)->f64{
         self.merge_quality
+    }
+
+    fn merge_ratio(&self)->f64{
+        self.merge_ratio
     }
 }

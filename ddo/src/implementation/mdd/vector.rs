@@ -207,6 +207,9 @@ where
     /// merge relaxation quality metric
     // merge_quality: (f64,usize),
     merge_quality: Vec<isize>,
+    /// count of merged and unmerged nodes
+    merged_nodes: usize,
+    unmerged_nodes: usize,
 }
 
 // Tech note: WHY AM I USING MACROS HERE ?
@@ -354,6 +357,10 @@ where
         self._merge_quality()
     }
 
+    fn merge_ratio(&self)->f64{
+        self._merge_ratio()
+    }
+
     fn drain_cutset<F>(&mut self, func: F)
     where
         F: FnMut(SubProblem<Self::State>),
@@ -385,6 +392,8 @@ where
             has_exact_best_path: false,
             // merge_quality:(0.0,0)
             merge_quality:vec![],
+            merged_nodes:0,
+            unmerged_nodes:0,
         }
     }
 
@@ -471,6 +480,9 @@ where
         }
     
         
+    }
+    fn _merge_ratio(&self) -> f64{
+        self.merged_nodes as f64/(self.merged_nodes+self.unmerged_nodes) as f64
     }
 
     fn _compile(&mut self, input: &CompilationInput<T>) -> Result<Completion, Reason> {
@@ -1269,6 +1281,7 @@ where
                             self._relax(input, curr_l)
                         }
                     } else {
+                        self.unmerged_nodes += curr_l.len();
                         self._maybe_save_lel();
                     }
                 }
@@ -1413,9 +1426,10 @@ where
         for id in keep.drain(..) {
             curr_l.push(id);
         }
-        let mut total_merge_err = 0;
+        // let mut total_merge_err = 0;
         let mut max_merge_err = 0;
-        let mut total_merges:usize = 0;
+        let mut total_merged:usize = 0;
+        let mut total_unmerged:usize = 0;
 
         //--
         for node_ids in result.iter(){
@@ -1495,8 +1509,11 @@ where
                 max_merge_err = std::cmp::max(max_merge_err,*merge_err);
 
                 // total_merge_err += merge_err;
-                // total_merges += 1;
+                total_merged += 1;
                 
+            }
+            else{
+                total_unmerged += 1;
             }
         }
 
@@ -1512,6 +1529,8 @@ where
         // // average merge error over the layer
         // self.merge_quality.push(total_merge_err/curr_l.len() as isize);
         self.merge_quality.push(max_merge_err);
+        self.merged_nodes += total_merged;
+        self.unmerged_nodes += total_unmerged;
     }
 
 
@@ -1523,6 +1542,9 @@ where
         //         .then_with(|| input.ranking.compare(get!(node a, self).state.as_ref(), get!(node b, self).state.as_ref()))
         //         .reverse()
         // }); // reverse because greater means more likely to be kept
+
+        let mut total_merged:usize = 0;
+        let mut total_unmerged:usize = 0;
 
         curr_l.sort_unstable_by(|a, b| {
             get!(node a, self)
@@ -1545,6 +1567,7 @@ where
 
         //--
         let (keep, merge) = curr_l.split_at_mut(input.max_width - 1);
+        total_unmerged = keep.len();
 
         let merged = Arc::new(
             input
@@ -1575,6 +1598,7 @@ where
                 depth,
                 conflict_count: 0,
             });
+            total_merged += 1;
             node_id
         });
 
@@ -1631,6 +1655,8 @@ where
         // // average merge error over the layer
         // self.merge_quality.push(merge_err/curr_l.len() as isize);
         self.merge_quality.push(*merge_err);
+        self.merged_nodes += total_merged;
+        self.unmerged_nodes += total_unmerged;
     }
 
    

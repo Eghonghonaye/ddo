@@ -95,4 +95,8 @@ pub trait Solver {
     fn merge_quality(&self)->f64{
         0.0
     }
+    ///Returns merge ratio measure of diagram
+    fn merge_ratio(&self)->f64{
+        0.0
+    }
 }

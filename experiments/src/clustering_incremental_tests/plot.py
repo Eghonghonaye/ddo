@@ -209,7 +209,15 @@ if __name__ == "__main__":
         ("sop", "sop", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
         ("alp", "alp", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"min"),
         ("lcs", "lcs",  ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
+        # ("misp", "misp", ["Dominance","Dominance+Cluster","Gewoon","Cluster"],"max"),
         ])
+    
+    # plot([
+    #     ("tsptw", "tsptw/AFG",  ["BinaryGewoon","Gewoon","Cluster"],"min"),
+    #     ("knapsack", "knapsack", ["BinaryGewoon","Gewoon","Cluster"],"max"),
+    #     # ("sop", "sop", ["BinaryGewoon","Gewoon","Cluster"],"min"),
+    #     ("misp", "misp", ["BinaryGewoon","Gewoon","Cluster"],"max"),
+    #     ])
 
     # plot([
     #     # ("max2sat", "max2sat",  ["Cluster","VarOrd","Cluster+VarOrd","Gewoon"],"max"),
@@ -229,7 +237,7 @@ if __name__ == "__main__":
     #     ("knapsack", "knapsack_subset", ["BinaryConflict","BinaryGewoon"],"max"),
     #     ])
 
-    plot([
-        ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
-        ("misp", "misp", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
-        ])
+    # plot([
+    #     ("knapsack", "knapsack", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+    #     ("misp", "misp", ["Dominance","VarOrd","Dominance+VarOrd","Gewoon"],"max"),
+    #     ])

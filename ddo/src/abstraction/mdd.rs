@@ -129,6 +129,10 @@ pub trait DecisionDiagram {
     fn merge_quality(&self)->f64{
         0.0
     }
+    ///Returns merge quality measure of diagram
+    fn merge_ratio(&self)->f64{
+        0.0
+    }
     /// Iteratively applies the given function `func` to each element of the
     /// exact cut-set that was computed during DD compilation.
     ///

@@ -584,6 +584,7 @@ fn main() {
         // println!("Solution:   {:?}",          best_solution.unwrap_or_default());
 
         let merge_quality = solver.merge_quality();
+        let merge_ratio = solver.merge_ratio();
 
         let result = json!({
             "Duration": format!("{:.3}", duration.as_secs_f32()),
@@ -596,6 +597,7 @@ fn main() {
             "Compile Cluster":    format!("{}", args.cluster_compile),
             "Binary Split":    format!("{}", args.binary_split),
             "MergeQuality":    format!("{:.3}", merge_quality),
+            "MergeRatio":    format!("{:.3}", merge_ratio),
             "Solver":    format!("{}", args.solver),
             "Width":    format!("{}", args.width.unwrap_or(0)),
             "Solution":   format!("{:?}", best_solution.unwrap_or_default())

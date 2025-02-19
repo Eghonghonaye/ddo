@@ -261,13 +261,13 @@ function runConflictCount {
 # run "srflp" "srflp" "min" "Gewoon" "TD"
 # run "tsptw" "tsptw/AFG" "min" "Gewoon" "TD"
 # run "misp" "misp" "max" "Gewoon" "TD"
-# run "sop" "sop" "min" "Gewoon" "TD"
+run "sop" "sop" "min" "Gewoon" "TD"
 # run "mcp" "mcp" "max" "Gewoon" "TD"
-# run "knapsack" "knapsack" "max" "Gewoon" "TD"
+run "knapsack" "knapsack" "max" "Gewoon" "TD"
 # run "max2sat" "max2sat" "max" "Gewoon" "TD"
 # run "psp" "psp/instancesWith2items" "min" "Gewoon" "TD"
-# run "lcs" "lcs" "max" "Gewoon" "TD"
-# run "alp" "alp" "min" "Gewoon" "TD"
+run "lcs" "lcs" "max" "Gewoon" "TD"
+run "alp" "alp" "min" "Gewoon" "TD"
 ################
 
 # #############
@@ -275,22 +275,22 @@ function runConflictCount {
 # run "srflp" "srflp" "min" "Cluster" "TD"
 # run "tsptw" "tsptw/AFG" "min" "Cluster" "TD"
 # run "misp" "misp" "max" "Cluster" "TD"
-# run "sop" "sop" "min" "Cluster" "TD"
+run "sop" "sop" "min" "Cluster" "TD"
 # run "mcp" "mcp" "max" "Cluster" "TD"
-# run "knapsack" "knapsack" "max" "Cluster" "TD"
+run "knapsack" "knapsack" "max" "Cluster" "TD"
 # run "max2sat" "max2sat" "max" "Cluster" "TD"
 # run "psp" "psp/instancesWith2items" "min" "Cluster" "TD"
-# run "lcs" "lcs" "max" "Cluster" "TD"
-# run "alp" "alp" "min" "Cluster" "TD"
+run "lcs" "lcs" "max" "Cluster" "TD"
+run "alp" "alp" "min" "Cluster" "TD"
 # ###############
 
 ##############
 # run "knapsack" "knapsack" "max" "Dominance" "TD"
-# run "lcs" "lcs" "max" "Dominance" "TD"
+run "lcs" "lcs" "max" "Dominance" "TD"
 # run "tsptw" "tsptw/AFG" "min" "Dominance" "TD"
 # run "sop" "sop" "min" "Dominance" "TD"
 # run "alp" "alp" "min" "Dominance" "TD"
-run "misp" "misp" "max" "Dominance" "TD"
+# run "misp" "misp" "max" "Dominance" "TD"
 ################
 
 ##############
@@ -348,7 +348,7 @@ run "misp" "misp" "max" "Dominance" "TD"
 # ##############
 # # ############## "Dominance+Cluster" 
 # run "knapsack" "knapsack" "max" "Dominance+Cluster" "TD"
-# run "lcs" "lcs" "max" "Dominance+Cluster" "TD"
+run "lcs" "lcs" "max" "Dominance+Cluster" "TD"
 # run "tsptw" "tsptw/AFG" "min" "Dominance+Cluster" "TD"
 # run "sop" "sop" "min" "Dominance+Cluster" "TD"
 # run "alp" "alp" "min" "Dominance+Cluster" "TD"
@@ -366,12 +366,12 @@ run "misp" "misp" "max" "Dominance" "TD"
 # run "knapsack" "knapsack" "max" "Gewoon" "IR"
 # ###############
 
-#############
-run "tsptw" "tsptw/AFG" "min" "BinaryGewoon" "IR"
-run "misp" "misp" "max" "BinaryGewoon" "IR"
-run "sop" "sop" "min" "BinaryGewoon" "IR"
-run "knapsack" "knapsack" "max" "BinaryGewoon" "IR"
-###############
+# #############
+# run "tsptw" "tsptw/AFG" "min" "BinaryGewoon" "IR"
+# run "misp" "misp" "max" "BinaryGewoon" "IR"
+# run "sop" "sop" "min" "BinaryGewoon" "IR"
+# run "knapsack" "knapsack" "max" "BinaryGewoon" "IR"
+# ###############
 
 # #############
 # run "tsptw" "tsptw/AFG" "min" "Cluster" "IR"
@@ -407,7 +407,7 @@ run "knapsack" "knapsack" "max" "BinaryGewoon" "IR"
 # runOracle "knapsack" "knapsack" "max" "All"
 # runOracle "max2sat" "max2sat" "max" "All"
 # runOracle "psp" "psp/instancesWith2items" "min" "All"
-# runOracle "lcs" "lcs" "max" "All"
+runOracle "lcs" "lcs" "max" "All"
 ################
 
 # runConflictCount "knapsack" "knapsack_subset" "max" "BinaryGewoon" "IR"
