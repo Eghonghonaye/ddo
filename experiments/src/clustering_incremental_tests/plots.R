@@ -22,9 +22,13 @@ par(mfrow=c(1,2))
 
 plot_cluster <- function(){
   # load data
-  df <-read.csv("~/Documents/PhD/ddo/experiments/all.csv")
+  # df <-read.csv("~/Documents/PhD/ddo/experiments/all.csv")
+  df <-read.csv("~/Documents/PhD/ddo/experiments/all_['Dominance', 'Dominance+Cluster', 'Gewoon', 'Cluster'].csv")
   df$Conditions[df$Conditions == "Gewoon"] <- "minLB"
   df <- subset(df, Problem != "max2sat")
+  df <- subset(df, Conditions != 'Dominance')
+  df <- subset(df, Conditions != 'Dominance+Cluster')
+  df <- subset(df, Solver == "top-down")
   df$Problem <- toupper(df$Problem)
   colnames(df)
   View(df)
@@ -229,22 +233,49 @@ plot_cluster_dominance <- function(){
     scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
     ylab("Gap") +
     xlab("Width")  +
-    ggtitle("") + 
-    theme(panel.border = element_rect(color = "black",
-                                      fill = NA,
-                                      size = 0.1),
-          axis.title = element_text(size = 18,face="bold"),
-          axis.text.x = element_text(size = 12,color="black"),
-          axis.text.y = element_text(size = 12,color="black"),
-          plot.title = element_text(size = 18,hjust = 0.5),
-          strip.text.x = element_text(size = 16, color = "black", face = "bold"),
-          strip.text.y = element_text(size = 16, color = "black", face = "bold"),
-          legend.position="right",
-          legend.title=element_blank(),
-          legend.text=element_text(size=12))
+    ggtitle("") 
   
-  gap
-  ggsave(plot = gap, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/clusterdom.pdf")
+  ratio <- ggplot(df, aes(x=Width)) +
+    geom_line(aes(y = MergeRatio, group=Conditions,color=Conditions)) + 
+    geom_point(aes(y=MergeRatio,shape=Conditions,color=Conditions)) +
+    facet_wrap(.~Problem, scales = "free_y", nrow=1) +
+    scale_shape_manual(values = c(16,17,18,19)) +
+    scale_linetype_manual(values = c("dashed","solid","dashed","solid")) +
+    scale_color_manual(values=c("darkgreen", "darkblue", "red","purple")) +
+    ylab("Merge Ratio") +
+    xlab("Width")  +
+    ggtitle("")
+  
+  finalplot <- ggarrange(gap + 
+                           theme(panel.border = element_rect(color = "black",
+                                                             fill = NA,
+                                                             size = 0.1),
+                                 axis.title = element_text(size = 18,face="bold"),
+                                 axis.text.x = element_text(size = 12,color="black"),
+                                 axis.text.y = element_text(size = 12,color="black"),
+                                 plot.title = element_text(size = 18,hjust = 0.5),
+                                 strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+                                 strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+                                 legend.position="right",
+                                 legend.title=element_blank(),
+                                 legend.text=element_text(size=12)),
+                         ratio + 
+                           theme(panel.border = element_rect(color = "black",
+                                                             fill = NA,
+                                                             size = 0.1),
+                                 axis.title = element_text(size = 18,face="bold"),
+                                 axis.text.x = element_text(size = 12,color="black"),
+                                 axis.text.y = element_text(size = 12,color="black"),
+                                 plot.title = element_text(size = 18,hjust = 0.5),
+                                 strip.text.x = element_text(size = 16, color = "black", face = "bold"),
+                                 strip.text.y = element_text(size = 16, color = "black", face = "bold"),
+                                 legend.position="right",
+                                 legend.title=element_blank(),
+                                 legend.text=element_text(size=12)), 
+                         nrow = 2)
+
+  finalplot
+  ggsave(plot = finalplot, file = "~/Documents/PhD/Diagrams/ComparativeDD_Paper/clusterdom.pdf")
 }
 plot_cluster_dominance()
 

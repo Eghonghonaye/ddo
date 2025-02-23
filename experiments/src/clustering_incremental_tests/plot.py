@@ -30,6 +30,7 @@ def plot_bound_width(files,type):
 
         if type == "max":
             df["MergeQuality"] = abs(df["MergeQuality"].astype(float))
+            df["MergeRatio"] = abs(df["MergeRatio"].astype(float))
             df['Upper'] = df['Upper'].astype(float)
 
             df["RealUpper"] = df.groupby('Name')['Upper'].transform('min')
@@ -38,11 +39,12 @@ def plot_bound_width(files,type):
             print(file,df.columns)
             # new_df = df
             # new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","MergeQuality","Width"],as_index=False)["RealGap"].mean()
-            new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","Width"],as_index=False).agg({"RealGap":"mean","MergeQuality":"mean"})
+            new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","Width"],as_index=False).agg({"RealGap":"mean","MergeQuality":"mean","MergeRatio":"mean"})
             all_df.append(new_df)
         else: #is min
             # df["Upper"] = df["Upper"]*(-1)
             df["MergeQuality"] = abs(df["MergeQuality"].astype(float))
+            df["MergeRatio"] = abs(df["MergeRatio"].astype(float))
             df['Upper'] = df['Upper'].astype(float)
 
             df["RealUpper"] = df.groupby('Name')['Upper'].transform('max')
@@ -51,7 +53,7 @@ def plot_bound_width(files,type):
             print(file,df.columns)
             # new_df = df
             # new_df = df.groupby(["Solver","CompileCluster","RefineCluster","Binary","MergeQuality","Width"],as_index=False)["RealGap"].mean()
-            new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","Width"],as_index=False).agg({"RealGap":"mean","MergeQuality":"mean"})
+            new_df =df.groupby(["Solver","CompileCluster","RefineCluster","Binary","Width"],as_index=False).agg({"RealGap":"mean","MergeQuality":"mean","MergeRatio":"mean"})
             all_df.append(new_df)
  
         
@@ -95,6 +97,7 @@ def analyse(input,output):
             {results["Compile Cluster"]},\
             {"-" if "Dominance" not in results else results["Dominance"]},\
             {float(0) if "MergeQuality" not in results else float(results["MergeQuality"])},\
+            {float(0) if "MergeRatio" not in results else float(results["MergeRatio"])},\
             {results["Binary Split"]},\
             {results["Solver"]},\
             {results["Width"]},\
@@ -113,7 +116,7 @@ def plot(problem_names):
             if os.path.exists(summary_file):
                 os.remove(summary_file)
             with open(summary_file,'a') as f:
-                f.write("Name,Lower,Upper,Duration,Aborted,RefineCluster,CompileCluster,Dominance,MergeQuality,Binary,Solver,Width,Gap,Objective\n")
+                f.write("Name,Lower,Upper,Duration,Aborted,RefineCluster,CompileCluster,Dominance,MergeQuality,MergeRatio,Binary,Solver,Width,Gap,Objective\n")
 
 
             directories = [x[0] for x in os.walk(path) if x[0]!=path]
@@ -139,8 +142,10 @@ def plot(problem_names):
 
     # print(all_df.to_string())
     # all_df = all_df.drop(all_df[all_df["Solver"] == 'top-down'].index)
+    # all_df = all_df.drop(all_df[all_df["Solver"] == 'incremental'].index)
     all_df = all_df.drop(all_df[all_df["Solver"] == 'branch-bound'].index)
     all_df["MergeQuality"] =  all_df["MergeQuality"].astype(float)
+    all_df["MergeRatio"] =  all_df["MergeRatio"].astype(float)
     all_df = all_df.dropna()
     all_df.to_csv(f"experiments/all_{experiments}.csv")
 
@@ -157,6 +162,7 @@ def plot(problem_names):
     # g = sns.FacetGrid(all_df, row="Problem", col="Conditions",margin_titles=True)
     g = sns.FacetGrid(all_df, col="Problem", margin_titles=True)
     g.map_dataframe(sns.lineplot,x="Width", y="RealGap", hue="Label").add_legend() 
+    # g.map_dataframe(sns.lineplot,x="Width", y="MergeRatio", hue="Label").add_legend() 
     # g.map_dataframe(joint_plot, x_name="Width", y1_name="RealGap", y2_name="MergeQuality",
     #                 ylabel1="Gap", ylabel2="Error")
     # g.set_ylabels("Normalised Bound")

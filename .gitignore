@@ -12,5 +12,6 @@ venv/*
 perf.*
 trained_models/*
 experiments/results/*
+experiments/results_old/*
 *.png
 *.csv

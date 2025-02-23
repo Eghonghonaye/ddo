@@ -1680,12 +1680,12 @@ where
         // // *************************************************************
         // // */
 
-        // order vec node by ranking
-        curr_l.sort_unstable_by(|a, b| {
-            get!(node a, self)
-                .value_top
-                .cmp(&get!(node b, self).value_top)
-        }); // no reverse because greater means more likely to be split
+        // // order vec node by ranking --- no point sorting
+        // curr_l.sort_unstable_by(|a, b| {
+        //     get!(node a, self)
+        //         .value_top
+        //         .cmp(&get!(node b, self).value_top)
+        // }); // no reverse because greater means more likely to be split
 
         // send all inbound to be split into n nodes
         let mut how_many = input.max_width;
@@ -1783,43 +1783,19 @@ where
                     Entry::Vacant(e) => {
                         // create new entry
                         e.insert((cluster.len()>1,cluster.clone()));
-                        // println!("pure new layer {:?}",curr_layer_id);
-                        // for edge_id in cluster{
-                        //     println!("cost is {:?}",get!(node self.edges[edge_id.0].from,self).value_top.saturating_add(self.edges[edge_id.0].cost));
-                        // }
                     }
                     Entry::Occupied(mut e) =>{
-                        // println!("found similar state node layer {:?}",curr_layer_id);
-                        
-
-                        // redirect existing entries
-                        // what to do if in split states and if unsplit?
-                        // reduce split states also from this
                         let ids = e.get_mut();
-
-                        // println!("similar new");
-                        // for edge_id in &ids.1{
-                        //     println!("cost is {:?}",get!(node self.edges[edge_id.0].from,self).value_top.saturating_add(self.edges[edge_id.0].cost));
-                        // }
-
-                        // println!("similar existing");
-                        // for edge_id in cluster{
-                        //     println!("cost is {:?}",get!(node self.edges[edge_id.0].from,self).value_top.saturating_add(self.edges[edge_id.0].cost));
-                        // }
-
                         ids.1.extend(cluster);
                         ids.0 = ids.0 || cluster.len()>1;
-                        // in_edges.extend(cluster);
-                        // is_already_merged = is_already_merged || cluster.len()>1;
-    
                     }
                 }
             }
         }
 
-        let mut split_states:Vec<(Arc<T>, bool, Vec<EdgeId>)> = vec![];
+        let mut split_states:Vec<(Arc<T>, bool, isize, Vec<EdgeId>)> = vec![];
         for (state,(is_merged,in_edges)) in split_states_map.drain() {
-            split_states.push((state,is_merged,in_edges));
+            split_states.push((state,is_merged,0,in_edges)); //here 0 for dummy value of best val to state as not used in this split idea
         }
         //for each split state, create new nodes and redirect outbound edges
         // println!("here layer {:?}",curr_layer_id);
@@ -1889,78 +1865,205 @@ where
         //         })
         // }); // no reverse because greater means more likely to be split
 
-        // order vec node by conflict count ranking
-        curr_l.sort_unstable_by(|a, b| {
-            get!(node a, self)
-                .conflict_count
-                .cmp(&get!(node b, self).conflict_count)
-                .then_with(|| {
-                    get!(node a, self)
-                        .value_top
-                        .cmp(&get!(node b, self).value_top)
-                })
-        }); // no reverse because greater means more likely to be split
+        
 
 
         //// print confict count per node
         // for curr_node_id in curr_l.iter(){
         //     println!("conflict is {:?},{:?}",curr_node_id,get!(node curr_node_id,self).conflict_count);
         // }
+        let mut fully_split = false;
+        let mut new_states: Vec<(Arc<T>, bool, isize, Vec<EdgeId>)> = vec![];
+
+        //TODO: update all nodes in current layer before split because this implementation 
+        // counts on redirect edges but only edges of changed outgoing nodes are redirected so we cant count on correctness
+        for node_id in curr_l.iter() {
+            self.update_node(input, *node_id);
+        }
+
+        while !fully_split && (curr_l.len() + new_states.len()) < input.max_width {
+            // order vec node 
+            curr_l.sort_unstable_by(|a, b| {
+                get!(node a, self)
+                    .value_top
+                    .cmp(&get!(node b, self).value_top)
+                    .then_with(|| {
+                        input.ranking.compare(
+                            get!(node a, self).state.as_ref(),
+                            get!(node b, self).state.as_ref(),
+                        )
+                    }).reverse()
+                }); // reverse because greater means more likely to be split -- i start splitting from first index
+
+            // new_states.sort_unstable_by(|(a_state,_,a_val,_), (b_state,_,b_val,_)| {
+                new_states.sort_unstable_by(|(a_state,_,a_val,_), (b_state,_,b_val,_)| {
+                            a_val.cmp(&b_val)
+                                .then_with(|| {
+                                    input.ranking.compare(
+                                        a_state.as_ref(),
+                                        b_state.as_ref(),
+                                    )
+                                }).reverse()
+                            }); // reverse because greater means more likely to be split -- i start splitting from first index
+
+            let index_curr = curr_l.iter().position(|id| get!(node id, self).incoming.len()>1);
+            let index_new = new_states.iter().position(|(_,_,_,inedges)| inedges.len()>1);
+            let mut split_curr = false;
+            let mut split_new = false;
+
+            if let Some(i) = index_curr{
+                if let Some(j) = index_new{
+                    if get!(node curr_l[i],self).value_top < new_states[j].2{
+                        split_new = true;
+                    }
+                }
+                split_curr = true;
+            }
+
+            else if let Some(_) = index_new{
+                split_new = true;
+            }
 
 
-        // select worst node and split
-        let mut index = 
-        curr_l.len();
-        while index > 0 {
-            let node_to_split_id = curr_l[index - 1];
-            let node_to_split = get!(node node_to_split_id, self);
 
-            // collect inbound and outbound edges from linked list structure
-            let mut inbound_edges = node_to_split
-                .incoming
-                .iter()
-                .map(|x| {
-                    (
-                        x.0,
-                        get!(node self.edges[x.0].from,self).value_top + self.edges[x.0].cost,
-                        &self.edges[x.0].decision,
-                        self.edges[x.0].state.as_ref(),
-                    )
-                })
-                .collect::<Vec<_>>();
+            if split_curr{
+            // if let Some(i) = index_curr{
+                let i = index_curr.unwrap();
+                let node_to_split_id = curr_l[i];
+                let node_to_split = get!(node node_to_split_id, self);
+                // collect inbound edges
+                let inbound_edges = node_to_split
+                                                    .incoming.iter()
+                                                    .map(|x| {(x.0,
+                                                            get!(node self.edges[x.0].from,self).value_top + self.edges[x.0].cost,
+                                                            &self.edges[x.0].decision,
+                                                            self.edges[x.0].state.as_ref(),
+                                                        )
+                                                    })
+                                                    .collect::<Vec<_>>();
 
-            if inbound_edges.len() > 1 {
-                let split_states = self._split_node(input, &mut inbound_edges.into_iter());
+                // create split states from node
+                let mut split_states = self._split_node(input, &mut inbound_edges.into_iter());
+                // create node 
 
+                // add split states to new states
+                new_states.append(&mut split_states);
+                
                 //Delete split node
                 get!(mut node node_to_split_id, self)
                     .flags
                     .set_deleted(true);
+                curr_l.remove(i);
+            }
+            else if split_new{
+            // else if let Some(j) = index_new{
+                let j = index_new.unwrap();
+                // get to split id
+                let (_,_,_,inedges) = &new_states[j];
 
-                let mut new_nodes =
-                    self._redirect_edges_after_split(input, &split_states, LayerId(curr_layer_id));
+                // get incoming edges from the state vector itself
+                let inbound_edges = inedges.iter()
+                                                                            .map(|x| {(
+                                                                                    x.0,
+                                                                                    get!(node self.edges[x.0].from,self).value_top + self.edges[x.0].cost,
+                                                                                    &self.edges[x.0].decision,
+                                                                                    self.edges[x.0].state.as_ref(),
+                                                                                )
+                                                                            })
+                                                                            .collect::<Vec<_>>();
 
-                curr_l.remove(index - 1);
-                curr_l.append(&mut new_nodes);
-
-                // let mut config = VizConfigBuilder::default().build().unwrap();
-                // // config.show_deleted = true;
-                // // config.show_deleted = true;
-                // config.group_merged = true;
-                // print!("after split layer {curr_layer_id}\n");
-                // let s = self.as_graphviz(&config);
-                // fs::write("incremental.dot", s).expect("Unable to write file");
-
-                return false;
-            } else {
-                index -= 1;
-                if inbound_edges.is_empty() {
-                    get!(mut node node_to_split_id, self)
-                        .flags
-                        .set_deleted(true);
-                }
+                // create split states from node
+                let mut split_states = self._split_node(input, &mut inbound_edges.into_iter());
+                                                        
+                // delete split states node
+                new_states.remove(j);
+                // add split states to new states
+                new_states.append(&mut split_states);
+            }
+            else{
+                fully_split = true;
             }
         }
+
+        // redirect edges at the end
+        //for each split state, create new nodes and redirect outbound edges
+        // println!("here layer {:?}",curr_layer_id);
+        let mut new_nodes =
+            self._redirect_edges_after_split(input, &new_states, LayerId(curr_layer_id));
+        // println!("redirect");
+
+        // curr_l.retain(|&x| !to_split.contains(&x));
+        curr_l.append(&mut new_nodes);
+
+        // true
+
+        // ***************** old binary split *************************
+        // // order vec node by conflict count ranking
+        // curr_l.sort_unstable_by(|a, b| {
+        //     get!(node a, self)
+        //         .conflict_count
+        //         .cmp(&get!(node b, self).conflict_count)
+        //         .then_with(|| {
+        //             get!(node a, self)
+        //                 .value_top
+        //                 .cmp(&get!(node b, self).value_top)
+        //         })
+        // }); // no reverse because greater means more likely to be split
+        // // select worst node and split
+        // let mut index = curr_l.len();
+        // while index > 0 {
+        //     let node_to_split_id = curr_l[index - 1];
+        //     let node_to_split = get!(node node_to_split_id, self);
+
+        //     // collect inbound and outbound edges from linked list structure
+        //     let mut inbound_edges = node_to_split
+        //         .incoming
+        //         .iter()
+        //         .map(|x| {
+        //             (
+        //                 x.0,
+        //                 get!(node self.edges[x.0].from,self).value_top + self.edges[x.0].cost,
+        //                 &self.edges[x.0].decision,
+        //                 self.edges[x.0].state.as_ref(),
+        //             )
+        //         })
+        //         .collect::<Vec<_>>();
+
+        //     if inbound_edges.len() > 1 {
+        //         let split_states = self._split_node(input, &mut inbound_edges.into_iter());
+
+        //         //Delete split node
+        //         get!(mut node node_to_split_id, self)
+        //             .flags
+        //             .set_deleted(true);
+
+        //         let mut new_nodes =
+        //             self._redirect_edges_after_split(input, &split_states, LayerId(curr_layer_id));
+
+        //         curr_l.remove(index - 1);
+        //         curr_l.append(&mut new_nodes);
+
+        //         // let mut config = VizConfigBuilder::default().build().unwrap();
+        //         // // config.show_deleted = true;
+        //         // // config.show_deleted = true;
+        //         // config.group_merged = true;
+        //         // print!("after split layer {curr_layer_id}\n");
+        //         // let s = self.as_graphviz(&config);
+        //         // fs::write("incremental.dot", s).expect("Unable to write file");
+
+        //         return false;
+        //     } else {
+        //         index -= 1;
+        //         if inbound_edges.is_empty() {
+        //             get!(mut node node_to_split_id, self)
+        //                 .flags
+        //                 .set_deleted(true);
+        //         }
+        //     }
+        // }
+
+
+
         // // /* 
         // // ***************** visualise *****************
         // // *********************************************
@@ -1981,17 +2084,26 @@ where
         &self,
         input: &CompilationInput<T>,
         inbound_edges: &mut dyn Iterator<Item = (usize, isize, &Decision, &T)>,
-    ) -> Vec<(Arc<T>, bool, Vec<EdgeId>)> {
+    ) -> Vec<(Arc<T>, bool, isize, Vec<EdgeId>)> {
         // by default tries to split into 2
         let split_state_edges = input.problem.split_edges(inbound_edges, 2);
 
         split_state_edges
             .into_iter()
             .map(|cluster| {
-                let cluster_as_edges = cluster.iter()
-                .map(|x| EdgeId(*x)).collect();
+                let cluster_as_edges = cluster.iter().map(|x| EdgeId(*x)).collect();
                 let merged = self._merge_states_from_incoming_edges(input, &cluster_as_edges);
-                (merged, cluster.len()>1,cluster_as_edges)
+                let value_top = {
+                    let mut max_val = isize::MIN;
+                    for e_id in &cluster_as_edges{
+                        let edge_val = get!(node get!(edge e_id, self).from, self).value_top.saturating_add(get!(edge e_id, self).cost);
+                        if edge_val >= max_val{
+                            max_val = edge_val;
+                        }
+                    }
+                    max_val
+                };
+                (merged, cluster.len()>1, value_top, cluster_as_edges)
             })
             .collect()
     }
@@ -2020,13 +2132,13 @@ where
     fn _redirect_edges_after_split(
         &mut self,
         input: &CompilationInput<T>,
-        split_states: &Vec<(Arc<T>, bool, Vec<EdgeId>)>,
+        split_states: &Vec<(Arc<T>, bool, isize, Vec<EdgeId>)>,
         curr_layer_id: LayerId,
     ) -> Vec<NodeId> {
         let mut new_nodes = Vec::with_capacity(split_states.len());
         let mut outgoing_nodes_to_update = FxHashSet::default();
 
-        for (state, is_merged, incoming_edges) in split_states {
+        for (state, is_merged, _, incoming_edges) in split_states {
             // create new node
             // (rightly) assumes all nodes at incoming edges are at same depth          
 
